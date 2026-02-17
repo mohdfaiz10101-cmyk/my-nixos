@@ -39,6 +39,10 @@
     VSCODE_TERMINAL_SCROLL_ON_OUTPUT = "true";
   };
 
+# 在 configuration.nix 中添加
+nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+
   # --- 系统基础环境 ---
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
