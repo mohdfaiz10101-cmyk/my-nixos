@@ -1,0 +1,14 @@
+fig, pkgs, ... }: {
+  # 交互之魂：Zsh 配置
+  programs.zsh = {
+    enable = true;
+    autosuggestions.enable = true;
+    syntaxHighlighting.enable = true;
+  };
+  
+  # 意识输入：小鹤双拼逻辑
+  i18n.inputMethod = {
+    enabled = "fcitx5";
+    fcitx5.addons = with pkgs; [ fcitx5-rime ];
+  };
+}

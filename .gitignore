@@ -1,0 +1,16 @@
+# 硬件差异隔离（这是共享系统的关键）
+hardware-configuration.nix
+
+# 结果链接隔离
+result
+result-*
+
+# 敏感文件隔离
+secrets.nix
+*.env
+
+# 临时文件隔离
+*.swp
+*~
+.DS_Store
+user-secrets.nix
