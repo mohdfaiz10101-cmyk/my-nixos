@@ -1,9 +1,21 @@
-{ config, pkgs, inputs, ... }: {
-  imports = [
-    ./hardware-configuration.nix
-    ./modules/storage.nix
-    ./user/charlie.nix
-  ];
+{ config, pkgs, inputs, ... }: 
+let
+  # --- 逻辑探测：智能插槽 ---
+  secretsFile = ./user-secrets.nix;
+  secrets = if builtins.pathExists secretsFile 
+            then import secretsFile 
+            else { 
+              password = null; # 留空，由 NixOS 提示设置或使用默认
+              hashedPassword = null; 
+            };
+in
+{
+  imports = [ 
+  ./hardware-configuration.nix
+  ./modules/storage.nix
+  ./modules/community.nix  # <--- 手动输入这一行
+  ./user/charlie.nix
+];
 
   # --- 1. 引导与内核 ---
   boot.loader.systemd-boot.enable = true;
@@ -18,7 +30,7 @@
   services.xserver.enable = true;
   services.displayManager.sddm = {
     enable = true;
-    autoNumlock = true; # 物理层开启 NumLock
+    autoNumlock = true; 
   };
   services.desktopManager.plasma6.enable = true;
 
@@ -26,18 +38,20 @@
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
   
-  services.input-remapper.enable = true; # 鼠标手势硬件服务
+  services.input-remapper.enable = true; 
   
   users.users.charlie = {
     isNormalUser = true;
     extraGroups = [ "networkmanager" "wheel" "docker" "input" "uinput" ];
+    # 动态注入隐私：如果是你的 personal 分支，这里会自动生效
+    initialPassword = if (secrets.password != null) then secrets.password else "nixos";
   };
 
   # --- 5. 实验性功能 (Flakes) ---
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   system.stateVersion = "25.11"; 
 
-  # --- 6. 高能豁免：FlClash TUN 免密协议 ---
+  # --- 6. 高能豁免：Polkit 免密协议 ---
   security.polkit.enable = true;
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {
@@ -51,19 +65,14 @@
     });
   '';
 
-  # --- 7. 声明式软件：汽水音乐 ---
+  # --- 7. 容器化应用管理 (已清理无效安装项) ---
   services.flatpak.enable = true;
-  system.activationScripts.flatpak-setup = {
-    text = ''
-      ${pkgs.flatpak}/bin/flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-      ${pkgs.flatpak}/bin/flatpak install -y flathub com.vmos.qishui
-    '';
-  };
 
   # --- 8. 系统环境补丁 ---
   environment.systemPackages = with pkgs; [
-    numlockx       # 确保小键盘控制工具存在
-    input-remapper # 鼠标手势配置工具
-    flatpak        # 容器化应用管理
+    numlockx       
+    input-remapper 
+    flatpak        
+    git            # 确保 Git 始终可用
   ];
 }
