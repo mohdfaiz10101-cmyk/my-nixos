@@ -52,6 +52,7 @@ in
     os-prober
     flclash         
     google-chrome   
+    firefox
     vscode
     wechat-uos
     scrcpy
