@@ -46,6 +46,7 @@ in
     initialPassword = "nixos";
   };
 
+  programs.zsh.enable = true;
   environment.systemPackages = with pkgs; [
     git
     os-prober
