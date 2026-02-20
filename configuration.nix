@@ -51,6 +51,10 @@ in
     os-prober
     flclash         
     google-chrome   
+    vscode
+    wechat-uos
+    scrcpy
+    android-tools
     fastfetch       
   ];
 
