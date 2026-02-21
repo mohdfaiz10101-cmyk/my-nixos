@@ -36,6 +36,22 @@
     };
   };
 
+programs.tmux = {
+    enable = true;
+    extraConfig = ''
+      # 1. 視覺提示：按住 Ctrl+B 時，左下角會變色並顯示 "WAIT"
+      set -g status-left "#{?client_prefix,#[bg=red] WAIT ,#[bg=green] TMUX } "
+
+      # 2. 開啟滑鼠：可以直接用滑鼠點視窗、滾動螢幕（不用記快捷鍵）
+      set -g mouse on
+
+      # 3. 增加狀態欄反應速度
+      set -g status-interval 1
+    '';
+  };
+
+
+
   # --- 意识输入：Fcitx5 神经通路 (25.11 终极适配) ---
   i18n.inputMethod = {
     enable = true;

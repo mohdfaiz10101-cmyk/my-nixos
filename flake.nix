@@ -2,17 +2,17 @@
   description = "Charlie's Tony Snowflake System - Minimal Base";
 
   inputs = {
-    # 核心系统源
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # 引入 openclaw 來源
+    openclaw.url = "github:openclaw/nix-openclaw";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs: {
+  outputs = { self, nixpkgs, openclaw, ... }@inputs: {
     nixosConfigurations.charlie = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      specialArgs = { inherit inputs; };
+      specialArgs = { inherit inputs; }; # 確保傳遞 inputs 給 configuration.nix
       modules = [
         ./configuration.nix
-        # 注意：这里也需要去你的 configuration.nix 里暂时注释掉关于 flatpak 的配置
       ];
     };
   };
