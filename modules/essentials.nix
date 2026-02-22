@@ -1,12 +1,12 @@
 { config, pkgs, lib, ... }: {
   environment.systemPackages = let
     checkPkg = name: if builtins.hasAttr name pkgs then [ pkgs.${name} ] else [];
-  in (checkPkg "uTools") ++ (checkPkg "utools") ++ [ pkgs.appimage-run pkgs.wget pkgs.git ];
+  in (checkPkg "uTools") ++ (checkPkg "utools") ++ [ pkgs.appimage-run pkgs.wget pkgs.git pkgs.ntfs3g ];
 
   fileSystems."/mnt/storage_1.8t" = {
     device = "/dev/disk/by-uuid/B2BCF4DBBCF49B55";
-    fsType = "ntfs3";
-    options = [ "nofail" "uid=1000" "gid=100" "umask=000" ];
+    fsType = "ntfs";
+    options = [ "nofail" "uid=1000" "gid=100" "umask=000" "errors=continue" ];
   };
 
   systemd.services.openclaw-config-fix = {

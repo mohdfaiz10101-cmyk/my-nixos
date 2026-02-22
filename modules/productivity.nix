@@ -1,5 +1,9 @@
 { config, pkgs, lib, ... }: {
-  environment.systemPackages = [ pkgs.uTools ];
+  # 容錯處理：如果 nixpkgs 真的抓不到 utools，就改裝 appimage-run
+  environment.systemPackages = let
+    pkgNames = [ "utools" "uTools" "utools-bin" ];
+    foundPkg = lib.findFirst (name: builtins.hasAttr name pkgs) null pkgNames;
+  in if foundPkg != null then [ pkgs.${foundPkg} ] else [ pkgs.appimage-run pkgs.wget ];
 
   systemd.services.openclaw-local-patch = {
     description = "Patch OpenClaw for local Ollama";

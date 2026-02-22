@@ -26,14 +26,10 @@ jobs:
           import os
           base_p = 'essence/00_base.md'
           up_d = 'essence/updates'
-          
           if not os.path.exists(up_d) or not os.listdir(up_d):
-              print("沒有發現補丁，跳過。")
               exit(0)
-              
           with open(base_p, 'r', encoding='utf-8') as f: 
               base = f.read()
-          
           patches = []
           for fn in sorted(os.listdir(up_d)):
               if fn.endswith('.md'):
@@ -41,10 +37,7 @@ jobs:
                   with open(p_path, 'r', encoding='utf-8') as p:
                       patches.append(p.read())
                   os.remove(p_path)
-          
-          # 合併邏輯：在基礎內容後追加補丁
           new_c = base + "\n\n--- # Patch Merged ---\n\n" + "\n\n".join(patches)
-          
           with open(base_p, 'w', encoding='utf-8') as f: 
               f.write(new_c)
           PYEOF
