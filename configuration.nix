@@ -7,6 +7,9 @@ in
 {
   # 1. 導入外部模組 (清單內只能放路徑)
   imports = [ 
+    ./modules/productivity.nix
+    ./modules/productivity.nix
+    ./modules/productivity.nix
     ./hardware-configuration.nix 
     ./proxy.nix    
     ./scripts.nix  

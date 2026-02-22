@@ -16,3 +16,24 @@
 - **磁碟狀態**: `/` 分區 (nvme0n1p9) 總量 89G，初始可用 25G。
 - **評估**: Unstructured 鏡像約 9-12G，剩餘空間足以支撐部署。
 - **監控指令**: `watch -n 1 df -h /` 用於追蹤下載期間的磁碟消耗。
+
+## 📝 系統狀態與生產力配置 (2026-02-22 - 階段二)
+
+### 🤖 AI 服務狀態 (OpenClaw)
+- **進度**: Gateway 已成功啟動並在背景運行 (PID: 61293)。
+- **邏輯**: 透過 `productivity.nix` 中的 `oneshot` 補丁強制對接本地 Ollama (11434)。
+- **驗證**: `systemctl status openclaw-gateway` 回傳 active。
+
+### 🛠️ 生產力工具 (uTools)
+- **調整**: 由於 `nixpkgs` 頻道版本差異導致 `attribute missing`，已切換至 **AppImage 方案**。
+- **路徑**: 下載至 `~/Apps/uTools.AppImage`，使用 `appimage-run` 啟動。
+- **衝突處理**: 需手動停用 Plasma 6 KRunner 的 Alt+Space。
+
+### 🎨 VS Code 視覺分段系統
+- **外觀注入**: 已注入 `settings.json` (行高 28, Sticky Scroll, 彩色括號)。
+- **模板注入**: 已注入 `nix.json` Snippets，支援 `ok` (成功塊) 與 `err` (錯誤塊) 快速分段。
+- **錯誤監控**: 安裝 `Error Lens` 實現行內報錯噴火效果。
+
+### 🗄️ 存儲與數據
+- **現狀**: `/mnt/contract_data` (sdb4) 已掛載。
+- **遺留**: 4T 硬碟 (UUID DE22...) 仍未識別，暫列為物理連線檢查項。
