@@ -1,0 +1,21 @@
+{ config, pkgs, lib, ... }: {
+  environment.systemPackages = let
+    checkPkg = name: if builtins.hasAttr name pkgs then [ pkgs.${name} ] else [];
+  in (checkPkg "uTools") ++ (checkPkg "utools") ++ [ pkgs.appimage-run pkgs.wget pkgs.git ];
+
+  fileSystems."/mnt/storage_1.8t" = {
+    device = "/dev/disk/by-uuid/B2BCF4DBBCF49B55";
+    fsType = "ntfs3";
+    options = [ "nofail" "uid=1000" "gid=100" "umask=000" ];
+  };
+
+  systemd.services.openclaw-config-fix = {
+    description = "AI Essence Service: Auto-config OpenClaw";
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      mkdir -p /var/lib/openclaw/data
+      printf '{"gateway":{"mode":"local","port":18789},"models":{"default":"llama3","providers":{"ollama":{"base_url":"http://127.0.0.1:11434","enabled":true}}}}' > /var/lib/openclaw/openclaw.json
+    '';
+  };
+}
