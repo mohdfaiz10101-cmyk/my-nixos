@@ -39,3 +39,19 @@
 
 ## specialisation
 - `F3 - Recovery Stable Mode`：開機選單救援選項，強制啟用 NetworkManager + allowUnfree
+
+## 用戶偏好
+- 改動合理時自動 git commit，不需要每次確認
+- 保持 CLAUDE.md 和 CONTEXT.md 同步更新，記錄每次操作結果
+- CONTEXT.md 是跨 AI 共享的上下文檔案（Gemini、Claude 等共用）
+
+## 操作日誌
+### 2026-02-25 Session 1
+- 診斷 GRUB 黑屏根因：EFI 分區 95% 滿
+- UUID 驗證通過（根分區 + EFI 均一致）
+- 部署防護：configurationLimit=3、安全 ns alias、Gen 64 GC root
+- 新增 F3 Recovery Stable Mode specialisation
+- 加回 direnv 支援（.envrc 含 Anthropic API 配置）
+- .envrc 從 git 移除（含 API key，已加入 .gitignore）
+- npm install 報錯：VSCode 內部 xterm 插件嘗試寫入 /nix/store（唯讀），非配置問題
+- 待執行：安全修復流程（釘 Gen64 → 清理 → build → switch --install-bootloader）
