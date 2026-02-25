@@ -1,9 +1,16 @@
 { config, pkgs, inputs, lib, ... }: {
+  # --- 1. Ollama 推理後端 (NVIDIA CUDA 加速) ---
   services.ollama = {
     enable = true;
-    package = pkgs.ollama-cuda;
+    package = pkgs.ollama-cuda; 
+    host = "0.0.0.0";           
+    port = 11434;
   };
 
+  # 開放防火牆端口
+  networking.firewall.allowedTCPPorts = [ 11434 18789 ];
+
+  # --- 2. OpenClaw 閘道器配置 ---
   imports = [ 
     inputs.openclaw.nixosModules.openclaw-gateway 
   ];
@@ -14,35 +21,37 @@
     package = inputs.openclaw.packages.${pkgs.system}.default;
   };
 
-  # 1. 設置 OpenClaw 守護進程
+  # OpenClaw 守護進程 (聲明式重構版)
   systemd.services.openclaw-gateway = {
     path = [ pkgs.lsof pkgs.nodejs_22 pkgs.coreutils ];
+    after = [ "network.target" "ollama.service" ];
+    
     environment = {
       HOME = lib.mkForce "/var/lib/openclaw";
       OPENCLAW_NIX_MODE = lib.mkForce "1";
-      OPENCLAW_CONFIG_PATH = lib.mkForce "/var/lib/openclaw/openclaw.json";
+      OPENCLAW_CONFIG_PATH = lib.mkForce (pkgs.writeText "openclaw-config.json" ''
+        {
+          "gateway": { "mode": "local", "port": 18789 },
+          "models": {
+            "default": "qwen2.5-coder:7b",
+            "providers": { "ollama": { "base_url": "http://127.0.0.1:11434", "enabled": true } }
+          }
+        }
+      '');
     };
+    
     serviceConfig = {
       User = lib.mkForce "root";
-      TimeoutStartSec = 300;
       ExecStartPre = lib.mkForce (pkgs.writeShellScript "openclaw-pre-start" ''
         mkdir -p /var/lib/openclaw
-        if [ ! -f /var/lib/openclaw/openclaw.json ]; then
-          echo '{"gateway": {"mode": "local"}}' > /var/lib/openclaw/openclaw.json
-        fi
+        chown -R root:root /var/lib/openclaw
       '');
-      ExecStart = lib.mkForce "${inputs.openclaw.packages.${pkgs.system}.default}/bin/openclaw gateway --port 18789 --allow-unconfigured --force";
+      ExecStart = lib.mkForce "${inputs.openclaw.packages.${pkgs.system}.default}/bin/openclaw gateway --port 18789 --allow-unconfigured";
       Restart = lib.mkForce "always";
-      RestartSec = lib.mkForce 10;
       StateDirectory = lib.mkForce "openclaw";
       WorkingDirectory = lib.mkForce "/var/lib/openclaw";
     };
   };
 
-  # 2. 佈署 Unstructured API (容器化)
-  virtualisation.oci-containers.containers."unstructured-api" = {
-    image = "downloads.unstructured.io/unstructured-io/unstructured-api:latest";
-    ports = [ "8000:8000" ];
-    extraOptions = [ "--pull=always" ];
-  };
+  environment.systemPackages = with pkgs; [ ollama ];
 }

@@ -8,9 +8,12 @@ result-*
 # 敏感文件隔离
 secrets.nix
 *.env
+.envrc
 
 # 临时文件隔离
 *.swp
 *~
 .DS_Store
+.idea/
+.claude/
 user-secrets.nix
