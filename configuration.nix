@@ -5,10 +5,10 @@ let
   secrets = if builtins.pathExists secretsFile then import secretsFile else { password = null; };
 in
 {
-  imports = [ 
+  imports = [
     ./hardware-configuration.nix
-    ./modules/storage.nix     
-    ./modules/ai.nix           
+    ./modules/storage.nix
+    ./modules/ai.nix
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---
@@ -43,13 +43,13 @@ in
   # --- 2. 引導與磁盤：雙系統與防掉盤機制 ---
   boot.loader = {
     efi.canTouchEfiVariables = false;
-    systemd-boot.enable = false; 
+    systemd-boot.enable = false;
     grub = {
       enable = true;
       device = "nodev";
-      useOSProber = true; 
+      useOSProber = true;
       efiSupport = true;
-      
+
       # ⚠️ 核心加固：強制寫入萬用引導路徑 /EFI/BOOT/BOOTX64.EFI
       # 徹底根治華碩 BIOS 升級或重置後「認不到硬碟」的毛病
       efiInstallAsRemovable = true;
@@ -120,12 +120,21 @@ in
       # 清理時保留被釘住的 Generation（pinned GC root 不會被刪）
       nc = "sudo nix-collect-garbage -d";
       ai-log = "journalctl -u ollama.service -u openclaw-gateway.service -f";
-    }; 
+    };
+  };
+
+  # 正确配置 direnv (从 grub 配置中移出，放到顶层 programs 下)
+  programs.direnv = {
+    enable = true;
+    nix-direnv = {
+      enable = true;
+    };
   };
 
   # --- 5. 開發矩陣與環境變數 ---
   environment.systemPackages = with pkgs; [
     firefox
+    flclash
     git
     vscode
     jetbrains.idea # 明確指定社區免費版，避免授權報錯
@@ -134,17 +143,16 @@ in
     nodejs_22
     ntfs3g
     direnv
+    wechat-uos
+     python313
+     python313Packages.anthropic
   ];
-
-  # direnv：進入目錄時自動載入 .envrc 環境變數
-  programs.direnv.enable = true;
-  programs.direnv.nix-direnv.enable = true;
 
   # --- 6. 輸入法與區域設定 ---
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
-    fcitx5.addons = with pkgs; [ 
+    fcitx5.addons = with pkgs; [
       qt6Packages.fcitx5-chinese-addons
       fcitx5-rime
       qt6Packages.fcitx5-configtool
@@ -152,5 +160,5 @@ in
   };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  system.stateVersion = "24.11"; 
+  system.stateVersion = "24.11";
 }
