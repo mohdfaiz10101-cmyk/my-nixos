@@ -1,4 +1,5 @@
 # NixOS 系統維護手冊 — Charlie's Snowflake
+# 完整系統上下文見 CONTEXT.md（跨 AI 共用）
 
 ## 架構概覽
 - Flake 架構，入口 `flake.nix`，輸出端點 `charlie`
