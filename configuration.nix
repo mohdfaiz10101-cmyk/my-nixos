@@ -133,7 +133,12 @@ in
     tmux
     nodejs_22
     ntfs3g
+    direnv
   ];
+
+  # direnv：進入目錄時自動載入 .envrc 環境變數
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
 
   # --- 6. 輸入法與區域設定 ---
   i18n.inputMethod = {
