@@ -25,8 +25,13 @@
 ## 安全操作規範
 - 重構指令：`ns`（先 build 驗證，成功才 switch + --install-bootloader）
 - 清理指令：`nc`（nix-collect-garbage -d，不會刪除被釘住的 Generation）
+- 遠端恢復：`nix-recover`（Git pull 最新配置 → build → switch，自動處理代理）
 - 緊急回滾：
   ```bash
+  # 方法 1：GRUB 選 Gen 64 開機，然後拉遠端配置重建
+  nix-recover
+
+  # 方法 2：手動切回 Gen 64
   sudo nix-env --profile /nix/var/nix/profiles/system --switch-generation 64
   sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
   ```
@@ -82,4 +87,5 @@
 - 關閉 TUN 模式：改為手動代理（port 7890），不再劫持全部流量
 - 從 mihomo 訂閱配置中移除已注入的 TUN 段
 - chown /etc/nixos 給 charlie 用戶（JetBrains 可直接編輯，不需 root）
+- 新增 nix-recover 遠端恢復腳本（Git pull → build → switch，自動偵測代理）
 - nixos-rebuild switch 成功，直連 + 代理均正常
