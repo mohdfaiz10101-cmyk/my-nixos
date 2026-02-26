@@ -61,6 +61,7 @@
 - 改動合理時自動 git commit，不需要每次確認
 - 保持 CLAUDE.md 和 CONTEXT.md 同步更新，記錄每次操作結果
 - CONTEXT.md 是跨 AI 共享的上下文檔案（Gemini、Claude 等共用）
+- 錯誤與踩坑也要記錄到 CLAUDE.md，避免跨 session 重複犯錯
 
 ## 操作日誌
 ### 2026-02-25 Session 1
@@ -145,3 +146,8 @@
 - 完全重置 Docker data-root，清理 18 個幽靈容器
 - 部署 AI 自動化集群：Dify (port 3000) + n8n (port 5678) + Chroma (port 8000)
 - 所有服務數據落盤 /mnt/ai，系統盤 64%，/mnt/ai 31%
+
+### 2026-02-27 Session 6
+- 踩坑：Continue 插件只寫了 config.yaml，但 JetBrains 版 (v1.0.60) 需要 config.json 才能識別
+- 補寫 `~/.continue/config.json`，插件恢復正常
+- 新增用戶偏好：錯誤與踩坑必須記錄到 CLAUDE.md，防止重複
