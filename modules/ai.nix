@@ -2,13 +2,14 @@
   # --- 1. Ollama 推理後端 (NVIDIA CUDA 加速) ---
   services.ollama = {
     enable = true;
-    package = pkgs.ollama-cuda; 
-    host = "0.0.0.0";           
+    package = pkgs.ollama-cuda;
+    host = "0.0.0.0";
     port = 11434;
+    home = "/mnt/ai/ollama";
   };
 
   # 開放防火牆端口
-  networking.firewall.allowedTCPPorts = [ 11434 18789 ];
+  networking.firewall.allowedTCPPorts = [ 11434 18789 8283 3000 5678 8000 ];
 
   # --- 2. OpenClaw 閘道器配置 ---
   imports = [ 
@@ -33,7 +34,7 @@
         {
           "gateway": { "mode": "local", "port": 18789 },
           "models": {
-            "default": "qwen2.5-coder:7b",
+            "default": "qwen3:8b",
             "providers": { "ollama": { "base_url": "http://127.0.0.1:11434", "enabled": true } }
           }
         }

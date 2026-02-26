@@ -17,3 +17,4 @@ secrets.nix
 .idea/
 .claude/
 user-secrets.nix
+secrets/

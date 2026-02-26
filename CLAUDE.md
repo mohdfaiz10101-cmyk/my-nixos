@@ -40,7 +40,7 @@
 - `configuration.nix`：主配置（引導、桌面、網路、用戶、套件）
 - `hardware-configuration.nix`：硬體偵測（UUID、kernel modules）
 - `modules/proxy.nix`：代理方案（mihomo HTTP/SOCKS5 代理，無 TUN）
-- `modules/ai.nix`：AI 相關服務（Ollama、OpenClaw）
+- `modules/ai.nix`：AI 相關服務（Ollama、OpenClaw、Letta）
 - `modules/storage.nix`：儲存掛載
 - `modules/productivity.nix`：生產力工具
 
@@ -89,3 +89,39 @@
 - chown /etc/nixos 給 charlie 用戶（JetBrains 可直接編輯，不需 root）
 - 新增 nix-recover 遠端恢復腳本（Git pull → build → switch，自動偵測代理）
 - nixos-rebuild switch 成功，直連 + 代理均正常
+
+## AI 服務架構
+- Ollama：本地推理後端，CUDA 加速，port 11434，數據存放 `/mnt/ai/ollama`
+- 已安裝模型：qwen3:8b、deepseek-r1:14b
+- OpenClaw：API 閘道器，port 18789，預設模型 qwen3:8b
+- Gemini API key 存放於 `/etc/nixos/secrets/letta.env`（已 gitignore）
+- secrets 目錄不進 git
+
+## AI 自動化集群（2026-02-27 部署）
+- 所有服務容器化，compose 文件位於 `/mnt/ai/ai-cluster/`
+- Dify：多模態 AI 入口，port 3000，初始密碼 `charlie2026`
+  - compose: `/mnt/ai/ai-cluster/dify/docker/docker-compose.yaml`
+  - 數據: `/mnt/ai/ai-cluster/dify/docker/volumes/`
+  - 含 PostgreSQL + Redis + Weaviate + Sandbox + Plugin Daemon
+- n8n：自動化工作流引擎，port 5678
+  - compose: `/mnt/ai/ai-cluster/n8n/docker-compose.yml`（project: n8n2）
+  - 數據: `/mnt/ai/n8n-data/`
+- Chroma：向量知識庫，port 8000
+  - compose: `/mnt/ai/ai-cluster/chroma/docker-compose.yml`（project: chroma2）
+  - 數據: `/mnt/ai/chroma-data/`
+- AutoGen：核心調度大腦（待部署）
+
+## 存儲架構（2026-02-26 更新）
+- 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
+- sda4 `/mnt/data`：932GB NTFS（UUID: C672D33272D32649）
+- `/mnt/ai`：100GB ext4 loopback 映像（位於 /mnt/data/ai-data.img）
+  - Docker data-root：`/mnt/ai/docker`
+  - Ollama 模型：`/mnt/ai/ollama`
+  - Letta 數據：`/mnt/ai/letta`
+- EFI `/boot`：252MB（configurationLimit=3 防溢出）
+
+### 2026-02-27 Session 5
+- 修復 Docker containerd snapshot 嚴重損坏（上次拉鏡像中斷導致）
+- 完全重置 Docker data-root，清理 18 個幽靈容器
+- 部署 AI 自動化集群：Dify (port 3000) + n8n (port 5678) + Chroma (port 8000)
+- 所有服務數據落盤 /mnt/ai，系統盤 64%，/mnt/ai 31%

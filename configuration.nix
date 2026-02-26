@@ -33,6 +33,10 @@ in
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
+  # --- 鼠標主題：Catppuccin Mocha Dark ---
+  environment.variables.XCURSOR_THEME = "catppuccin-mocha-dark-cursors";
+  environment.variables.XCURSOR_SIZE = "24";
+
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
@@ -83,6 +87,7 @@ in
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
+      data-root = "/mnt/ai/docker";
       proxies = {
         http-proxy = "http://127.0.0.1:7890";
         https-proxy = "http://127.0.0.1:7890";
@@ -140,6 +145,7 @@ in
     direnv
     wechat-uos
     cursor-cli
+    catppuccin-cursors.mochaDark
 
     # 核心修复：替换普通 vscode 为带渲染补丁的版本
     vscode-with-extensions
