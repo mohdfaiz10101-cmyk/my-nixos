@@ -109,7 +109,10 @@
 - Chroma：向量知識庫，port 8000
   - compose: `/mnt/ai/ai-cluster/chroma/docker-compose.yml`（project: chroma2）
   - 數據: `/mnt/ai/chroma-data/`
-- AutoGen：核心調度大腦（待部署）
+- AutoGen Studio：核心調度大腦，port 8080，自建鏡像（autogenstudio 0.4.2）
+  - compose: `/mnt/ai/ai-cluster/autogen/docker-compose.yml`（project: autogen）
+  - 數據: `/mnt/ai/autogen-data/`
+  - 支援 Ollama (host.docker.internal:11434) + Claude + Gemini API
 
 ## 存儲架構（2026-02-26 更新）
 - 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
