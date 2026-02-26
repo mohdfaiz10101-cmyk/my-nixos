@@ -6,6 +6,9 @@
     host = "0.0.0.0";
     port = 11434;
     home = "/mnt/ai/ollama";
+    environmentVariables = {
+      OLLAMA_KEEP_ALIVE = "30s";   # 30 秒無調用自動卸載模型，釋放顯存
+    };
   };
 
   # 開放防火牆端口

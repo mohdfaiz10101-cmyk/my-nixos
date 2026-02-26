@@ -118,6 +118,9 @@ in
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
       nc = "sudo nix-collect-garbage -d";
       ai-log = "journalctl -u ollama.service -u openclaw-gateway.service -f";
+      ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && echo 'AI 集群全部啟動'";
+      ai-ps = "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'";
+      distill = "cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build";
       proxy-status = "systemctl status mihomo";
       proxy-restart = "sudo systemctl restart mihomo";
       proxy-log = "journalctl -u mihomo -f";
@@ -153,6 +156,7 @@ in
     # AI 相关依赖
     python313
     python313Packages.anthropic
+    libnotify
   ];
 
   # --- 6. 輸入法與區域設定 ---
