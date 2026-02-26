@@ -113,6 +113,15 @@
   - compose: `/mnt/ai/ai-cluster/autogen/docker-compose.yml`（project: autogen）
   - 數據: `/mnt/ai/autogen-data/`
   - 支援 Ollama (host.docker.internal:11434) + Claude + Gemini API
+- LiteLLM：智能路由代理，port 4000，master_key: `sk-litellm-charlie-2026`
+  - compose: `/mnt/ai/ai-cluster/litellm/docker-compose.yml`（project: litellm）
+  - 路由配置: `/mnt/ai/ai-cluster/litellm/config.yaml`
+  - 模型：local/qwen3-8b, local/deepseek-r1-14b, cloud/claude-opus, cloud/gemini-flash, cloud/gemini-pro
+  - Fallback 鏈：qwen3 → deepseek → gemini-flash；claude → gemini-pro
+- 知識洗鍊引擎：`/mnt/ai/ai-cluster/knowledge-distiller/`
+  - 輸入: `/mnt/ai/conversations/`（放入 Gemini/Claude JSON 導出）
+  - 運行: `cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up`
+  - 用 DeepSeek-R1 遞歸總結 → Chroma 覆蓋寫入
 
 ## 存儲架構（2026-02-26 更新）
 - 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
