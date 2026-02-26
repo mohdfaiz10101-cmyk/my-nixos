@@ -1,6 +1,6 @@
 # NixOS 系統上下文 — Charlie's Snowflake
 # 此檔案供所有 AI 助手共用（Claude、Gemini 等），請勿刪除
-# 最後更新：2026-02-25
+# 最後更新：2026-02-26
 
 ## 系統架構
 - OS: NixOS (Flake 架構)，入口 `flake.nix`，輸出端點 `charlie`
@@ -93,10 +93,13 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - 包定義使用 `builtins.hasAttr` 容錯檢查（見 productivity.nix）
 - `/nix/store` 唯讀，不能在裡面跑 `npm install`
 
-## 代理與網路（舊配置，供參考）
-- Mihomo (Clash) 主代理 Port 7890
-- dae 備用代理（預設不啟動）
-- proxy-watchdog：每 30 秒檢測，Mihomo 掛了自動切 dae
+## 代理與網路
+- mihomo 系統代理，port 7890，HTTP/SOCKS5 手動模式（無 TUN）
+- metacubexd Web UI：http://127.0.0.1:9090/ui（節點管理）
+- networking.proxy 系統環境變數（git/curl 自動走代理）
+- 訂閱更新：`sudo proxy-sub <URL>`（自動追加 &flag=meta）
+- Firefox 需手動設定代理或用 FoxyProxy
+- 已移除：clash-verge-rev、TUN 模式、dae、proxy-watchdog
 
 ## Essence 同步協議
 - `up` alias：git pull → commit → push → rclone sync 到 Google Drive
@@ -108,7 +111,7 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - AI 改動合理時自動 git commit，不需要每次確認
 - 視覺散熱：避免數字列表，用分割線區分邏輯區塊
 - Zsh 多行指令封裝在 EOF 區塊中
-- /etc/nixos/ 下操作強制 sudo
+- /etc/nixos/ 下檔案已 chown 給 charlie（IDE 可直接編輯，nixos-rebuild 仍需 sudo）
 
 ## 已知陷阱
 - EFI 分區只有 252MB，不能存太多 Generation
@@ -126,3 +129,9 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - .envrc 從 git 移除（含 API key，已加入 .gitignore）
 - npm install 報錯：VSCode xterm 插件嘗試寫入 /nix/store（唯讀），非配置問題
 - 待執行：安全修復流程（釘 Gen64 → 清理 → build → switch --install-bootloader）
+
+### 2026-02-26 Session 3
+- 修復代理衝突：mihomo TUN + clash-verge-rev 雙引擎互搶流量 → 全系統斷網
+- 移除 clash-verge-rev、關閉 TUN 模式，改為手動代理 port 7890
+- chown /etc/nixos 給 charlie（JetBrains 可直接編輯）
+- nixos-rebuild switch 成功

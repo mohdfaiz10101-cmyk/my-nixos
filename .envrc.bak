@@ -1,0 +1,30 @@
+# AI 服务栈 - Claude Opus 配置（不进 Git，见 .gitignore）
+export ANTHROPIC_AUTH_TOKEN="sk-WRoD7peu0UAVbaEqHi1qN6AV5PmYn6FojDfkrO7TX9dt5SC6"
+export ANTHROPIC_BASE_URL="https://hone.vvvv.ee"
+
+# 临时/永久环境标识
+export CLAUDE_ENV_TYPE="permanent"  # permanent/temp 切换
+
+# 修复 nix-direnv 加载逻辑（解决找不到 default.nix 的问题）
+# 改用 flake 兼容的写法，避免直接引用 <nixpkgs> 导致的路径错误
+use flake --impure <<EOF
+{
+  inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
+  outputs = { self, nixpkgs }: {
+    devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+      packages = with nixpkgs.legacyPackages.x86_64-linux; [
+        python311
+        python311Packages.anthropic
+      ];
+      # 把环境变量传递到 nix shell 中
+      shellHook = ''
+        export ANTHROPIC_AUTH_TOKEN="${ANTHROPIC_AUTH_TOKEN}"
+        export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL}"
+        export CLAUDE_ENV_TYPE="${CLAUDE_ENV_TYPE}"
+      '';
+    };
+  };
+}
+EOF
+
+echo "✅ Claude Opus 环境加载完成（${CLAUDE_ENV_TYPE}）- 适配 AI 服务栈"
