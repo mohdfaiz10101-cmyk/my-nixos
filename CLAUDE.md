@@ -123,6 +123,14 @@
   - 運行: `cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up`
   - 用 DeepSeek-R1 遞歸總結 → Chroma 覆蓋寫入
 
+## IDE 整合
+- JetBrains Continue 插件（v1.0.60）：AI 編碼助手
+  - 配置: `~/.continue/config.json`（同時有 config.yaml）
+  - 全部模型走 LiteLLM 路由 (127.0.0.1:4000/v1)
+  - 模型列表：Auto (本地優先)、Claude Opus、DeepSeek R1
+  - Tab 補全：Qwen3 8B
+  - API Key: `sk-litellm-charlie-2026`
+
 ## 存儲架構（2026-02-26 更新）
 - 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
 - sda4 `/mnt/data`：932GB NTFS（UUID: C672D33272D32649）
