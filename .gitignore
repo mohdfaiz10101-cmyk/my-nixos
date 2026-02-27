@@ -9,6 +9,8 @@ result-*
 secrets.nix
 *.env
 .envrc
+.envrc.bak
+.envrc.save
 
 # 临时文件隔离
 *.swp
@@ -18,3 +20,11 @@ secrets.nix
 .claude/
 user-secrets.nix
 secrets/
+
+# 测试脚本（含 API token）
+claude-*.js
+claude-*.py
+claude_*.py
+
+# Git 凭证
+.git-credentials
