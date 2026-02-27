@@ -238,6 +238,7 @@
   - 系統狀態監控（磁盤、服務、容器）
   - Letta 對話面板（三個 agent 切換，直接在 Web 聊天）
   - 命令輸出終端（SSE 流式輸出）
+  - 知識蒸餾流程說明（Gemini 清洗工作流程文檔）
 - 技術棧：
   - 後端：Flask + Python 3.13（nix-shell wrapper）
   - 前端：單頁 HTML + Vanilla JS（Catppuccin Mocha 暗色主題）
@@ -257,3 +258,8 @@
   - 6 個端點：listAgents, sendMessage, getCoreMemory, updateCoreMemory, getArchivalMemory, searchArchivalMemory
   - 認證：Bearer Token `letta-charlie-2026`
   - Base URL：`http://host.docker.internal:8283/v1`
+- 知識蒸餾工作流程（2026-02-27 更新）：
+  - 準備：導出 Gemini/Claude 對話 JSON → 放入 `/mnt/ai/conversations/`
+  - 執行：點擊「知識蒸餾」按鈕，DeepSeek-R1 遞歸總結
+  - 完成：知識寫入 Chroma（覆蓋模式），Letta agents 可檢索
+  - 注意：蒸餾會覆蓋 Chroma 現有數據，執行前需備份
