@@ -94,6 +94,19 @@ h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
 .chat-send { background: var(--mauve); border: none; color: var(--bg); padding: 4px 12px; border-radius: var(--radius); cursor: pointer; font-size: 11px; font-family: inherit; }
 .chat-send:hover { filter: brightness(1.2); }
 .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.action-col { background: var(--bg); border-radius: var(--radius); padding: 8px; }
+.todo-list { display: flex; flex-direction: column; gap: 6px; }
+.todo-item { background: var(--overlay); padding: 6px 8px; border-radius: var(--radius); font-size: 11px; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
+.todo-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.todo-item.done { opacity: 0.4; }
+.todo-item.done .todo-text { text-decoration: line-through; color: var(--dim); }
+.todo-text { flex: 1; color: var(--text); word-break: break-word; }
+.todo-delete { background: none; border: none; color: var(--red); cursor: pointer; padding: 0 4px; font-size: 14px; opacity: 0.6; }
+.todo-delete:hover { opacity: 1; }
+.todo-add { display: flex; gap: 4px; margin-top: 8px; }
+.todo-input { flex: 1; background: var(--overlay); border: 1px solid var(--dim); color: var(--text); padding: 4px 8px; border-radius: var(--radius); font-size: 11px; font-family: inherit; }
+.todo-btn { background: var(--green); border: none; color: var(--bg); padding: 4px 12px; border-radius: var(--radius); cursor: pointer; font-size: 11px; font-family: inherit; }
+.todo-btn:hover { filter: brightness(1.2); }
 </style>
 </head>
 <body>
@@ -169,28 +182,11 @@ h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
 </div>
 
 <div class="section">
-  <div class="section-title">⚗️ 知識蒸餾流程（Gemini 清洗）</div>
-  <div style="font-size:11px;color:var(--subtext);line-height:1.6;">
-    <div style="margin-bottom:8px;padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--yellow);">
-      <div style="color:var(--yellow);font-weight:bold;margin-bottom:4px;">📋 準備階段</div>
-      <div>1. 導出對話記錄：從 Gemini/Claude 導出 JSON 格式對話</div>
-      <div>2. 放置文件：將 JSON 文件放入 <code style="color:var(--teal);">/mnt/ai/conversations/</code></div>
-    </div>
-    <div style="margin-bottom:8px;padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--green);">
-      <div style="color:var(--green);font-weight:bold;margin-bottom:4px;">⚙️ 執行階段</div>
-      <div>3. 點擊上方「知識蒸餾」按鈕，或手動執行：</div>
-      <div style="margin-left:12px;color:var(--dim);font-family:monospace;">cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build -d</div>
-      <div>4. 引擎使用 DeepSeek-R1 遞歸總結對話內容</div>
-    </div>
-    <div style="padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--mauve);">
-      <div style="color:var(--mauve);font-weight:bold;margin-bottom:4px;">💾 完成階段</div>
-      <div>5. 提取的知識自動寫入 Chroma 向量庫（覆蓋模式）</div>
-      <div>6. Letta agents 可通過 archival memory 檢索這些知識</div>
-      <div>7. 查看日誌：<code style="color:var(--teal);">docker logs -f distiller-runner-1</code></div>
-    </div>
-    <div style="margin-top:8px;padding:6px;background:#11111b;border-radius:var(--radius);color:var(--dim);font-size:10px;">
-      ⚠️ 注意：蒸餾過程會覆蓋 Chroma 現有數據，執行前請確認備份重要記憶
-    </div>
+  <div class="section-title">📝 待辦清單</div>
+  <div class="todo-list" id="todo-list"></div>
+  <div class="todo-add">
+    <input class="todo-input" id="todo-input" type="text" placeholder="添加待辦事項..." onkeypress="if(event.key==='Enter')addTodo()">
+    <button class="todo-btn" onclick="addTodo()">添加</button>
   </div>
 </div>
 
@@ -310,9 +306,53 @@ async function sendChat() {
   }
 }
 
+let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+
+function saveTodos() {
+  localStorage.setItem('todos', JSON.stringify(todos));
+}
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  if (todos.length === 0) {
+    list.innerHTML = '<div style="color:var(--dim);font-size:11px;text-align:center;padding:12px;">暫無待辦事項</div>';
+    return;
+  }
+  list.innerHTML = todos.map((todo, idx) => `
+    <div class="todo-item ${todo.done ? 'done' : ''}">
+      <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${idx})">
+      <span class="todo-text">${todo.text}</span>
+      <button class="todo-delete" onclick="deleteTodo(${idx})">×</button>
+    </div>
+  `).join('');
+}
+
+function addTodo() {
+  const input = document.getElementById('todo-input');
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ text, done: false });
+  input.value = '';
+  saveTodos();
+  renderTodos();
+}
+
+function toggleTodo(idx) {
+  todos[idx].done = !todos[idx].done;
+  saveTodos();
+  renderTodos();
+}
+
+function deleteTodo(idx) {
+  todos.splice(idx, 1);
+  saveTodos();
+  renderTodos();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   refreshStatus();
   setInterval(refreshStatus, 30000);
+  renderTodos();
 });
 </script>
 
