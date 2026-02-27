@@ -66,10 +66,13 @@
     serviceConfig = {
       Type = "simple";
       User = "charlie";
-      ExecStart = "/etc/nixos/scripts/dashboard.sh";
+      ExecStart = "${pkgs.nix}/bin/nix-shell -p python313Packages.flask python313Packages.requests --run 'python3 /etc/nixos/dashboard/app.py'";
       Restart = "on-failure";
-      RestartSec = 5;
-      Environment = "HOME=/home/charlie";
+      RestartSec = "5s";
+      Environment = [
+        "HOME=/home/charlie"
+        "NIX_PATH=nixpkgs=${pkgs.path}"
+      ];
     };
   };
 
