@@ -44,8 +44,11 @@
 - `modules/storage.nix`：儲存掛載
 - `modules/productivity.nix`：生產力工具
 
-## 代理架構（2026-02-26 更新）
+## 代理架構（2026-02-27 更新）
 - mihomo：系統級代理，開機自啟，port 7890，手動代理模式（無 TUN）
+- allow-lan: true（Docker 容器需要通過代理訪問外部 API）
+- 防火牆已開放 7890（Docker 網段訪問用）
+- proxy-sub 腳本自動注入 `allow-lan: true`（訂閱配置預設 false）
 - metacubexd：Web UI 面板，http://127.0.0.1:9090/ui（節點切換用）
 - networking.proxy：系統環境變數，git/curl 等自動走代理
 - 訂閱更新：`sudo proxy-sub <URL>`（自動追加 &flag=meta）
@@ -91,11 +94,13 @@
 - 新增 nix-recover 遠端恢復腳本（Git pull → build → switch，自動偵測代理）
 - nixos-rebuild switch 成功，直連 + 代理均正常
 
-## AI 服務架構
+## AI 服務架構（2026-02-27 更新）
 - Ollama：本地推理後端，CUDA 加速，port 11434，數據存放 `/mnt/ai/ollama`
+- OLLAMA_KEEP_ALIVE=30m（冷啟動要 50 秒，30 秒太短會頻繁卸載）
 - 已安裝模型：qwen3:8b、deepseek-r1:14b
 - OpenClaw：API 閘道器，port 18789，預設模型 qwen3:8b
 - Gemini API key 存放於 `/etc/nixos/secrets/letta.env`（已 gitignore）
+- Gemini 免費額度已用完（2026-02-27），需要升級付費方案或等待重置
 - secrets 目錄不進 git
 
 ## AI 自動化集群（2026-02-27 部署）
@@ -117,20 +122,28 @@
 - LiteLLM：智能路由代理，port 4000，master_key: `sk-litellm-charlie-2026`
   - compose: `/mnt/ai/ai-cluster/litellm/docker-compose.yml`（project: litellm）
   - 路由配置: `/mnt/ai/ai-cluster/litellm/config.yaml`
-  - 模型：local/qwen3-8b, local/deepseek-r1-14b, cloud/claude-opus, cloud/gemini-flash, cloud/gemini-pro
+  - 容器已配置 HTTP_PROXY/HTTPS_PROXY 指向 host.docker.internal:7890
+  - auto 路由 = Gemini Flash（需代理出網，免費額度已用完待重置）
+  - 直選模型：local/qwen3-8b, local/deepseek-r1-14b, cloud/claude-opus, cloud/gemini-flash, cloud/gemini-pro
   - Fallback 鏈：qwen3 → deepseek → gemini-flash；claude → gemini-pro
+  - 踩坑：LiteLLM routing_strategy 不尊重 priority（usage-based-routing-v2 和 simple-shuffle 都不行）
 - 知識洗鍊引擎：`/mnt/ai/ai-cluster/knowledge-distiller/`
   - 輸入: `/mnt/ai/conversations/`（放入 Gemini/Claude JSON 導出）
   - 運行: `cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up`
   - 用 DeepSeek-R1 遞歸總結 → Chroma 覆蓋寫入
 
-## IDE 整合
-- JetBrains Continue 插件（v1.0.60）：AI 編碼助手
-  - 配置: `~/.continue/config.json`（同時有 config.yaml）
-  - 全部模型走 LiteLLM 路由 (127.0.0.1:4000/v1)
-  - 模型列表：Auto (本地優先)、Claude Opus、DeepSeek R1
-  - Tab 補全：Qwen3 8B
-  - API Key: `sk-litellm-charlie-2026`
+## IDE 整合（2026-02-27 更新）
+- JetBrains Continue 插件：AI 編碼助手
+  - 配置: `~/.continue/config.yaml`（新版 schema v1，需要 name/version/schema 欄位）
+  - config.json 已棄用，新版用 config.yaml
+  - Chat 模型：Qwen3 8B + DeepSeek R1（直連 Ollama）、Claude Opus（走 LiteLLM）
+  - Tab 補全：Qwen3 8B（直連 Ollama）
+  - 踩坑：qwen3/deepseek-r1 的 thinking mode 導致 content 為空
+    - Ollama OpenAI 兼容端點不支持 `think: false`
+    - LiteLLM 的 `merge_reasoning_content_in_choices` 在 streaming 模式下無效
+    - Continue 的 `requestOptions.extraBodyProperties` 無法正確傳遞 `think: false`
+    - 解法：Continue 用原生 Ollama provider 直連（繞過 LiteLLM）
+  - LiteLLM 保留給 Claude Opus 等需要路由/代理的雲端模型
 
 ## 存儲架構（2026-02-26 更新）
 - 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
@@ -151,3 +164,33 @@
 - 踩坑：Continue 插件只寫了 config.yaml，但 JetBrains 版 (v1.0.60) 需要 config.json 才能識別
 - 補寫 `~/.continue/config.json`，插件恢復正常
 - 新增用戶偏好：錯誤與踩坑必須記錄到 CLAUDE.md，防止重複
+
+### 2026-02-27 Session 7 — Continue 插件 + LiteLLM 全鏈路調試
+- Continue config.yaml 升級到 schema v1（需要 name/version/schema 頂層欄位，models 用 name 不用 title）
+- 診斷 Continue "Generating..." 卡住問題，根因鏈：
+  1. qwen3/deepseek-r1 thinking mode 導致 streaming 回應只有 `reasoning_content`，`content` 為空
+  2. LiteLLM `usage-based-routing-v2` 和 `simple-shuffle` 都不尊重 model_info.priority
+  3. Gemini Flash 從 LiteLLM 容器出網超時（mihomo 只聽 127.0.0.1，Docker 容器訪問不到）
+  4. 開放 mihomo allow-lan + 防火牆 7890 後，Gemini 免費額度已用完（429）
+- 修復措施：
+  - Ollama KEEP_ALIVE 從 30s → 30m（減少冷啟動）
+  - mihomo allow-lan: true + 防火牆開 7890（Docker 容器代理出網）
+  - proxy-sub 腳本自動注入 allow-lan: true
+  - LiteLLM 容器加 HTTP_PROXY/HTTPS_PROXY 環境變數
+  - LiteLLM config 加 `drop_params: true` + `merge_reasoning_content_in_choices: true`
+  - Continue 改用原生 Ollama provider 直連（繞過 LiteLLM thinking mode 問題）
+  - LiteLLM 保留給 Claude Opus 等雲端模型
+- nixos-rebuild switch 成功（OLLAMA_KEEP_ALIVE + 防火牆 7890）
+- 待驗證：Continue Ollama provider 是否正確處理 thinking mode
+
+## Letta 記憶整合（2026-02-27 Session 8）
+- 修復 archival memory seeding：embedding 從 letta-free（404）改為 Ollama nomic-embed-text
+  - 關鍵：`embedding_endpoint_type` 必須用 `openai`，endpoint 帶 `/v1` 後綴
+  - 三個 agent 各插入 31 條知識（CLAUDE.md + CONTEXT.md）
+- 新增 `letta-sync.py`：從 Letta API 導出 core memory + archival memory 到 Claude Code 記憶目錄
+  - 輸出：`~/.claude/projects/-etc-nixos/memory/letta-memory.md`
+- 新增 `letta-sync.sh`：wrapper 腳本，帶 1 小時 cooldown 防重複
+- zsh interactiveShellInit 後台自動同步（每次開終端觸發，不阻塞）
+- 新增 alias：`letta-sync`（手動觸發同步）
+- 踩坑：Letta `ollama` endpoint type 用原生 API，不走 OpenAI 兼容端點，導致 404
+  - 解法：用 `openai` type + `http://host.docker.internal:11434/v1`

@@ -43,6 +43,10 @@ in
   environment.variables.XCURSOR_THEME = "catppuccin-mocha-dark-cursors";
   environment.variables.XCURSOR_SIZE = "24";
 
+  # --- Electron 渲染修復（NVIDIA + Wayland）---
+  environment.variables.NIXOS_OZONE_WL = "1";
+  environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
+
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
@@ -120,11 +124,15 @@ in
     enable = true;
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
+    interactiveShellInit = ''
+      # Auto-sync Letta memory to Claude Code (background, max once/hour)
+      /etc/nixos/scripts/letta-sync.sh &>/dev/null &
+    '';
     shellAliases = {
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
       nc = "sudo nix-collect-garbage -d";
       ai-log = "journalctl -u ollama.service -u openclaw-gateway.service -f";
-      ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && echo 'AI 集群全部啟動'";
+      ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && cd /mnt/ai/ai-cluster/letta && docker compose -p letta up -d && echo 'AI 集群全部啟動'";
       ai-ps = "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'";
       distill = "cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build";
       proxy-status = "systemctl status mihomo";
@@ -132,6 +140,9 @@ in
       proxy-log = "journalctl -u mihomo -f";
       proxy-ui = "echo 'Web UI: http://127.0.0.1:9090/ui'";
       nix-recover = "sudo /etc/nixos/scripts/recover-from-git.sh";
+      nix-chat = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/nixos-chat.py'";
+      nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
+      letta-sync = "/etc/nixos/scripts/letta-sync.sh";
     };
   };
 
@@ -157,6 +168,7 @@ in
     direnv
     wechat-uos
     cursor-cli
+    code-cursor-fhs
     catppuccin-cursors.mochaDark
 
     # 核心修复：替换普通 vscode 为带渲染补丁的版本
