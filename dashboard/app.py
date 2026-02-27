@@ -69,6 +69,10 @@ COMMANDS = {
         "cmd": "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'",
         "label": "知識注入", "group": "letta", "icon": "💉", "danger": False, "long": True,
     },
+    "pin-recovery": {
+        "cmd": "current_gen=$(sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | grep current | awk '{print $1}') && sudo ln -sf /nix/var/nix/profiles/system-${current_gen}-link /nix/var/nix/gcroots/pinned-recovery-$(date +%Y%m%d-%H%M%S) && echo \"已釘死 Generation ${current_gen} 為 Recovery 版本\"",
+        "label": "設為 Recovery", "group": "system", "icon": "📌", "danger": False, "long": False,
+    },
 }
 
 # Rate limiting
