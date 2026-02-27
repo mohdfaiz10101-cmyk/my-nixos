@@ -169,6 +169,32 @@ h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
 </div>
 
 <div class="section">
+  <div class="section-title">⚗️ 知識蒸餾流程（Gemini 清洗）</div>
+  <div style="font-size:11px;color:var(--subtext);line-height:1.6;">
+    <div style="margin-bottom:8px;padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--yellow);">
+      <div style="color:var(--yellow);font-weight:bold;margin-bottom:4px;">📋 準備階段</div>
+      <div>1. 導出對話記錄：從 Gemini/Claude 導出 JSON 格式對話</div>
+      <div>2. 放置文件：將 JSON 文件放入 <code style="color:var(--teal);">/mnt/ai/conversations/</code></div>
+    </div>
+    <div style="margin-bottom:8px;padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--green);">
+      <div style="color:var(--green);font-weight:bold;margin-bottom:4px;">⚙️ 執行階段</div>
+      <div>3. 點擊上方「知識蒸餾」按鈕，或手動執行：</div>
+      <div style="margin-left:12px;color:var(--dim);font-family:monospace;">cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build -d</div>
+      <div>4. 引擎使用 DeepSeek-R1 遞歸總結對話內容</div>
+    </div>
+    <div style="padding:8px;background:var(--overlay);border-radius:var(--radius);border-left:3px solid var(--mauve);">
+      <div style="color:var(--mauve);font-weight:bold;margin-bottom:4px;">💾 完成階段</div>
+      <div>5. 提取的知識自動寫入 Chroma 向量庫（覆蓋模式）</div>
+      <div>6. Letta agents 可通過 archival memory 檢索這些知識</div>
+      <div>7. 查看日誌：<code style="color:var(--teal);">docker logs -f distiller-runner-1</code></div>
+    </div>
+    <div style="margin-top:8px;padding:6px;background:#11111b;border-radius:var(--radius);color:var(--dim);font-size:10px;">
+      ⚠️ 注意：蒸餾過程會覆蓋 Chroma 現有數據，執行前請確認備份重要記憶
+    </div>
+  </div>
+</div>
+
+<div class="section">
   <div class="section-title">命令輸出</div>
   <div id="terminal" class="terminal"></div>
 </div>

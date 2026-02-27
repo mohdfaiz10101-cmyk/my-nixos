@@ -31,6 +31,8 @@ let
       exit 1
     fi
     mv "$CONFIG.tmp" "$CONFIG"
+    # Docker 容器需要通過代理訪問外部 API，確保 allow-lan 開啟
+    ${pkgs.gnused}/bin/sed -i 's/^allow-lan: false/allow-lan: true/' "$CONFIG"
     chmod 600 "$CONFIG"
     echo "配置已更新: $CONFIG"
     echo "重啟 mihomo..."
@@ -65,6 +67,9 @@ in
   environment.systemPackages = [
     proxySub
   ];
+
+  # 開放 7890 給 Docker 容器訪問代理（allow-lan 需配合防火牆）
+  networking.firewall.allowedTCPPorts = [ 7890 ];
 
   # 系統級代理環境變數（讓 git/curl 等自動走代理）
   networking.proxy = {

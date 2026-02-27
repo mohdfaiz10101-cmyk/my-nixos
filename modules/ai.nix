@@ -58,7 +58,9 @@
   };
 
   # --- 3. Dashboard 服務 ---
-  systemd.services.nixos-dashboard = {
+  systemd.services.nixos-dashboard = let
+    pythonEnv = pkgs.python313.withPackages (ps: [ ps.flask ps.requests ]);
+  in {
     description = "NixOS System Dashboard";
     after = [ "network.target" "docker.service" ];
     wantedBy = [ "multi-user.target" ];
@@ -66,13 +68,10 @@
     serviceConfig = {
       Type = "simple";
       User = "charlie";
-      ExecStart = "${pkgs.nix}/bin/nix-shell -p python313Packages.flask python313Packages.requests --run 'python3 /etc/nixos/dashboard/app.py'";
+      ExecStart = "${pythonEnv}/bin/python3 /etc/nixos/dashboard/app.py";
       Restart = "on-failure";
       RestartSec = "5s";
-      Environment = [
-        "HOME=/home/charlie"
-        "NIX_PATH=nixpkgs=${pkgs.path}"
-      ];
+      Environment = "HOME=/home/charlie";
     };
   };
 

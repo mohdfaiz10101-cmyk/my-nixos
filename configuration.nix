@@ -156,21 +156,6 @@ in
   # nix-ld：讓 JetBrains 插件等預編譯 binary 能在 NixOS 上運行
   programs.nix-ld.enable = true;
 
-  # Dashboard service
-  systemd.services.nixos-dashboard = {
-    description = "NixOS System Dashboard";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "simple";
-      User = "charlie";
-      ExecStart = "/etc/nixos/scripts/dashboard.sh";
-      Restart = "on-failure";
-      RestartSec = "5";
-      Environment = "HOME=/home/charlie";
-    };
-  };
-
   # --- 5. 開發矩陣與環境變數 ---
   environment.systemPackages = with pkgs; [
     # 基础工具

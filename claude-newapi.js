@@ -5,7 +5,7 @@ const https = require('https');
 // New API 平台的核心配置（vvvv.ee 专用）
 const API_KEY = process.env.ANTHROPIC_AUTH_TOKEN;
 const BASE_URL = `${process.env.ANTHROPIC_BASE_URL}/v1/chat/completions`;
-const MODEL = "claude-3-opus";
+const MODEL = "claude";
 
 // 修复 TLS 代理配置（解决握手断开问题）
 const httpsAgent = new https.Agent({
@@ -41,7 +41,7 @@ async function callClaudeViaNewAPI() {
         proxy: {
           protocol: 'http:', // 代理是 HTTP 协议，不是 HTTPS
           host: "127.0.0.1",
-          port: 7890
+          port: 7891
         },
         httpsAgent: httpsAgent,
         timeout: 60000 // 延长超时时间
