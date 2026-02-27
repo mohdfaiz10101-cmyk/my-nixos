@@ -224,3 +224,30 @@
   - `/etc/nixos/dashboard/templates/index.html`：單頁面前端
   - `/etc/nixos/scripts/dashboard.sh`：nix-shell wrapper
 - Dify OpenAPI 插件配置：Bearer Token 填 `letta-charlie-2026`
+
+## NixOS Dashboard（2026-02-27 Session 9）
+- 新增統一 Web 控制台：http://127.0.0.1:9099
+- 功能：
+  - 快捷操作按鈕（系統/AI/代理/Letta 四類命令）
+  - 系統狀態監控（磁盤、服務、容器）
+  - Letta 對話面板（三個 agent 切換，直接在 Web 聊天）
+  - 命令輸出終端（SSE 流式輸出）
+- 技術棧：
+  - 後端：Flask + Python 3.13（nix-shell wrapper）
+  - 前端：單頁 HTML + Vanilla JS（Catppuccin Mocha 暗色主題）
+  - 部署：systemd 服務 `nixos-dashboard.service`
+  - 安全：命令白名單（不接受任何用戶輸入），危險操作需確認
+- 文件結構：
+  - `/etc/nixos/dashboard/app.py` - Flask 後端
+  - `/etc/nixos/dashboard/templates/index.html` - 前端
+  - `/etc/nixos/scripts/dashboard.sh` - nix-shell wrapper
+  - `configuration.nix` - systemd 服務定義 + `dashboard` alias
+- 使用：
+  - 啟動：`sudo systemctl start nixos-dashboard`（或 `ns` 後自動啟動）
+  - 訪問：`dashboard` alias 或直接打開 http://127.0.0.1:9099
+  - 停止：`sudo systemctl stop nixos-dashboard`
+- Dify OpenAPI 整合：
+  - 新增 `/mnt/ai/ai-cluster/letta/openapi-dify.yaml` - Letta API spec for Dify
+  - 6 個端點：listAgents, sendMessage, getCoreMemory, updateCoreMemory, getArchivalMemory, searchArchivalMemory
+  - 認證：Bearer Token `letta-charlie-2026`
+  - Base URL：`http://host.docker.internal:8283/v1`
