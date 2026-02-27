@@ -202,6 +202,19 @@
   - 系統狀態監控（磁盤、服務、容器）
   - Letta 對話面板（三個 agent 切換）
   - 命令輸出終端（SSE 流式輸出）
+  - 服務鏈接（Dify/n8n/Chroma/LiteLLM/Letta/mihomo）
+- 技術棧：
+  - 後端：Flask + Python 3.13（nix-shell wrapper）
+  - 前端：Vanilla JS + Catppuccin Mocha 暗色主題
+  - 部署：systemd service (nixos-dashboard.service)
+  - 安全：命令白名單 + localhost only + rate limiting
+- 文件結構：
+  - `/etc/nixos/dashboard/app.py` — Flask 後端
+  - `/etc/nixos/dashboard/templates/index.html` — 單頁前端
+  - `/etc/nixos/scripts/dashboard.sh` — nix-shell wrapper
+  - `modules/ai.nix` — systemd service 配置
+- 新增 alias：`dashboard`（打開瀏覽器）
+- 防火牆開放 9099 端口
   - 服務鏈接快捷入口
 - 技術棧：Flask + vanilla HTML/CSS/JS，Catppuccin Mocha 暗色主題
 - 部署：systemd service（nixos-dashboard.service），nix-shell wrapper
