@@ -17,6 +17,12 @@ in
   hardware.enableAllFirmware = true;
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.usb-modeswitch.enable = true;
+
+  # --- Realtek RTL8710BU WiFi 網卡：自動從 DISK 模式切換到 WiFi 模式 ---
+  services.udev.extraRules = ''
+    ATTR{idVendor}=="0bda", ATTR{idProduct}=="1a2b", RUN+="${pkgs.usb-modeswitch}/bin/usb_modeswitch -v 0x0bda -p 0x1a2b -K 1"
+  '';
 
   # --- NVIDIA RTX 3060 Ti 驅動 ---
   hardware.graphics.enable = true;
@@ -135,6 +141,9 @@ in
     nix-direnv.enable = true;
   };
 
+  # nix-ld：讓 JetBrains 插件等預編譯 binary 能在 NixOS 上運行
+  programs.nix-ld.enable = true;
+
   # --- 5. 開發矩陣與環境變數 ---
   environment.systemPackages = with pkgs; [
     # 基础工具
@@ -157,6 +166,10 @@ in
     python313
     python313Packages.anthropic
     libnotify
+
+    # 硬體診斷工具
+    pciutils
+    usbutils
   ];
 
   # --- 6. 輸入法與區域設定 ---
