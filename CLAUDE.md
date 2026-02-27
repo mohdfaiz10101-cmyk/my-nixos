@@ -194,3 +194,20 @@
 - 新增 alias：`letta-sync`（手動觸發同步）
 - 踩坑：Letta `ollama` endpoint type 用原生 API，不走 OpenAI 兼容端點，導致 404
   - 解法：用 `openai` type + `http://host.docker.internal:11434/v1`
+
+## NixOS Dashboard（2026-02-27 Session 9）
+- 新增統一 Web 控制台：http://127.0.0.1:9099
+- 功能：
+  - 快捷操作按鈕（系統/AI/代理/Letta 四類命令）
+  - 系統狀態監控（磁盤、服務、容器）
+  - Letta 對話面板（三個 agent 切換）
+  - 命令輸出終端（SSE 流式輸出）
+  - 服務鏈接快捷入口
+- 技術棧：Flask + vanilla HTML/CSS/JS，Catppuccin Mocha 暗色主題
+- 部署：systemd service（nixos-dashboard.service），nix-shell wrapper
+- 新增 alias：`dashboard`（打開瀏覽器）
+- 文件：
+  - `/etc/nixos/dashboard/app.py`：Flask 後端，命令白名單 + 狀態 API + chat API
+  - `/etc/nixos/dashboard/templates/index.html`：單頁面前端
+  - `/etc/nixos/scripts/dashboard.sh`：nix-shell wrapper
+- Dify OpenAPI 插件配置：Bearer Token 填 `letta-charlie-2026`

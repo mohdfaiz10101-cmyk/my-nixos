@@ -143,6 +143,7 @@ in
       nix-chat = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/nixos-chat.py'";
       nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
       letta-sync = "/etc/nixos/scripts/letta-sync.sh";
+      dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
     };
   };
 
@@ -154,6 +155,21 @@ in
 
   # nix-ld：讓 JetBrains 插件等預編譯 binary 能在 NixOS 上運行
   programs.nix-ld.enable = true;
+
+  # Dashboard service
+  systemd.services.nixos-dashboard = {
+    description = "NixOS System Dashboard";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "simple";
+      User = "charlie";
+      ExecStart = "/etc/nixos/scripts/dashboard.sh";
+      Restart = "on-failure";
+      RestartSec = "5";
+      Environment = "HOME=/home/charlie";
+    };
+  };
 
   # --- 5. 開發矩陣與環境變數 ---
   environment.systemPackages = with pkgs; [

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snowflake 控制台</title>
+<style>
+:root {
+  --bg: #1e1e2e; --surface: #313244; --overlay: #45475a;
+  --text: #cdd6f4; --subtext: #a6adc8; --dim: #6c7086;
+  --blue: #89b4fa; --green: #a6e3a1; --yellow: #f9e2af;
+  --red: #f38ba8; --mauve: #cba6f7; --peach: #fab387;
+  --teal: #94e2d5; --sky: #89dceb;
+  --radius: 8px; --gap: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  background: var(--bg); color: var(--text);
+  padding: 16px; font-size: 13px; line-height: 1.5;
+}
+h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--gap); }
+.header-sub { color: var(--dim); font-size: 11px; }
+.refresh-btn {
+  background: var(--surface); border: 1px solid var(--overlay); color: var(--subtext);
+  padding: 4px 12px; border-radius: var(--radius); cursor: pointer; font-size: 12px;
+}
+.refresh-btn:hover { background: var(--overlay); }
+.section {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 12px; margin-bottom: var(--gap);
+}
+.section-title {
+  font-size: 13px; font-weight: bold; color: var(--mauve);
+  margin-bottom: 8px; border-bottom: 1px solid var(--overlay); padding-bottom: 4px;
+}
+.actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.action-group-label { font-size: 11px; color: var(--dim); text-align: center; margin-bottom: 4px; }
+.action-col { display: flex; flex-direction: column; gap: 4px; }
+.btn {
+  background: var(--overlay); border: none; color: var(--text);
+  padding: 8px 6px; border-radius: var(--radius); cursor: pointer;
+  font-size: 12px; font-family: inherit; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  text-decoration: none;
+}
+.btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.danger { border: 1px solid var(--red); color: var(--red); }
+.btn.danger:hover { background: var(--red); color: var(--bg); }
+.btn.running { opacity: 0.5; pointer-events: none; }
+.btn-system { border-left: 3px solid var(--blue); }
+.btn-ai { border-left: 3px solid var(--green); }
+.btn-proxy { border-left: 3px solid var(--peach); }
+.btn-letta { border-left: 3px solid var(--mauve); }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.disk-bar-wrap { margin-bottom: 6px; }
+.disk-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--subtext); }
+.disk-bar { height: 6px; background: var(--overlay); border-radius: 3px; overflow: hidden; }
+.disk-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.disk-fill.ok { background: var(--green); }
+.disk-fill.warn { background: var(--yellow); }
+.disk-fill.crit { background: var(--red); }
+.svc-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.svc-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.svc-dot { width: 8px; height: 8px; border-radius: 50%; }
+.svc-dot.on { background: var(--green); }
+.svc-dot.off { background: var(--red); }
+.container-table { width: 100%; font-size: 11px; }
+.container-table th { text-align: left; color: var(--dim); padding: 2px 6px; }
+.container-table td { padding: 2px 6px; color: var(--subtext); }
+.container-table tr:hover td { color: var(--text); }
+.terminal {
+  background: #11111b; border-radius: var(--radius); padding: 8px;
+  font-size: 11px; max-height: 250px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-all; color: var(--subtext);
+  display: none;
+}
+.terminal.active { display: block; }
+.terminal .cmd { color: var(--green); }
+.terminal .err { color: var(--red); }
+.terminal .done { color: var(--blue); }
+.chat-panel { background: var(--bg); border-radius: var(--radius); padding: 8px; max-height: 300px; display: flex; flex-direction: column; }
+.chat-header { display: flex; gap: 4px; margin-bottom: 8px; }
+.chat-agent-btn { background: var(--overlay); border: none; color: var(--subtext); padding: 4px 8px; border-radius: var(--radius); cursor: pointer; font-size: 11px; font-family: inherit; }
+.chat-agent-btn.active { background: var(--mauve); color: var(--bg); }
+.chat-messages { flex: 1; overflow-y: auto; margin-bottom: 8px; font-size: 11px; }
+.chat-msg { margin-bottom: 6px; padding: 4px 6px; border-radius: var(--radius); }
+.chat-msg.user { background: var(--overlay); color: var(--text); text-align: right; }
+.chat-msg.assistant { background: var(--surface); color: var(--subtext); }
+.chat-input-row { display: flex; gap: 4px; }
+.chat-input { flex: 1; background: var(--overlay); border: 1px solid var(--dim); color: var(--text); padding: 4px 8px; border-radius: var(--radius); font-size: 11px; font-family: inherit; }
+.chat-send { background: var(--mauve); border: none; color: var(--bg); padding: 4px 12px; border-radius: var(--radius); cursor: pointer; font-size: 11px; font-family: inherit; }
+.chat-send:hover { filter: brightness(1.2); }
+.chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>❄️ Snowflake 控制台</h1>
+    <div class="header-sub">Charlie's NixOS System Dashboard</div>
+  </div>
+  <button class="refresh-btn" onclick="refreshStatus()">刷新狀態</button>
+</div>
+
+<div class="section">
+  <div class="section-title">快捷操作</div>
+  <div class="actions-grid">
+    <div class="action-col">
+      <div class="action-group-label">系統</div>
+      {% for cmd_id, cmd in commands.items() if cmd.group == 'system' %}
+      <button class="btn btn-{{cmd.group}} {% if cmd.danger %}danger{% endif %}" onclick="runCmd('{{cmd_id}}', {{cmd.long|tojson}}, {{cmd.danger|tojson}})">{{cmd.icon}} {{cmd.label}}</button>
+      {% endfor %}
+    </div>
+    <div class="action-col">
+      <div class="action-group-label">AI 服務</div>
+      {% for cmd_id, cmd in commands.items() if cmd.group == 'ai' %}
+      <button class="btn btn-{{cmd.group}}" onclick="runCmd('{{cmd_id}}', {{cmd.long|tojson}}, {{cmd.danger|tojson}})">{{cmd.icon}} {{cmd.label}}</button>
+      {% endfor %}
+    </div>
+    <div class="action-col">
+      <div class="action-group-label">代理</div>
+      {% for cmd_id, cmd in commands.items() if cmd.group == 'proxy' %}
+      <button class="btn btn-{{cmd.group}}" onclick="runCmd('{{cmd_id}}', {{cmd.long|tojson}}, {{cmd.danger|tojson}})">{{cmd.icon}} {{cmd.label}}</button>
+      {% endfor %}
+      <a href="http://127.0.0.1:9090/ui" target="_blank" class="btn btn-proxy">🌐 Web UI ↗</a>
+    </div>
+    <div class="action-col">
+      <div class="action-group-label">Letta</div>
+      {% for cmd_id, cmd in commands.items() if cmd.group == 'letta' %}
+      <button class="btn btn-{{cmd.group}}" onclick="runCmd('{{cmd_id}}', {{cmd.long|tojson}}, {{cmd.danger|tojson}})">{{cmd.icon}} {{cmd.label}}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">系統狀態</div>
+  <div class="status-grid">
+    <div>
+      <h3 style="font-size:12px;color:var(--subtext);margin-bottom:8px;">磁盤使用</h3>
+      <div id="disk-status"></div>
+    </div>
+    <div>
+      <h3 style="font-size:12px;color:var(--subtext);margin-bottom:8px;">服務 & 容器</h3>
+      <div id="service-status"></div>
+      <div id="container-status" style="margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">💬 Letta 對話</div>
+  <div class="chat-panel">
+    <div class="chat-header">
+      <button class="chat-agent-btn active" data-agent="nixos-sysadmin" onclick="switchAgent(this)">nixos-sysadmin</button>
+      <button class="chat-agent-btn" data-agent="code-assistant" onclick="switchAgent(this)">code-assistant</button>
+      <button class="chat-agent-btn" data-agent="opus-analyst" onclick="switchAgent(this)">opus-analyst</button>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" type="text" placeholder="輸入消息..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" id="chat-send" onclick="sendChat()">發送</button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">命令輸出</div>
+  <div id="terminal" class="terminal"></div>
+</div>
+
+<script>
+let statusData = null;
+let currentAgent = 'nixos-sysadmin';
+
+async function refreshStatus() {
+  try {
+    const resp = await fetch('/api/status');
+    statusData = await resp.json();
+    renderStatus();
+  } catch (e) {
+    console.error('Status fetch failed:', e);
+  }
+}
+
+function renderStatus() {
+  if (!statusData) return;
+  let diskHtml = '';
+  for (const [mount, info] of Object.entries(statusData.disk)) {
+    const cls = info.pct > 90 ? 'crit' : info.pct > 70 ? 'warn' : 'ok';
+    diskHtml += `<div class="disk-bar-wrap"><div class="disk-label"><span>${mount}</span><span>${info.used}/${info.total} (${info.pct}%)</span></div><div class="disk-bar"><div class="disk-fill ${cls}" style="width:${info.pct}%"></div></div></div>`;
+  }
+  document.getElementById('disk-status').innerHTML = diskHtml;
+  let svcHtml = '<div class="svc-list">';
+  for (const [name, active] of Object.entries(statusData.services)) {
+    svcHtml += `<div class="svc-item"><div class="svc-dot ${active?'on':'off'}"></div>${name}</div>`;
+  }
+  svcHtml += '</div>';
+  document.getElementById('service-status').innerHTML = svcHtml;
+  let contHtml = '<table class="container-table"><tr><th>容器</th><th>狀態</th><th>端口</th></tr>';
+  for (const c of statusData.containers.slice(0, 8)) {
+    contHtml += `<tr><td>${c.name}</td><td>${c.status}</td><td>${c.ports}</td></tr>`;
+  }
+  contHtml += '</table>';
+  document.getElementById('container-status').innerHTML = contHtml;
+}
+
+async function runCmd(cmdId, isLong, isDanger) {
+  if (isDanger && !confirm(`確定執行危險操作：${cmdId}？`)) return;
+  const term = document.getElementById('terminal');
+  term.classList.add('active');
+  term.innerHTML = `<div class="cmd">$ ${cmdId}</div>`;
+  if (isLong) {
+    const es = new EventSource(`/api/stream/${cmdId}`);
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.line) {
+        term.innerHTML += data.line + '\n';
+        term.scrollTop = term.scrollHeight;
+      }
+      if (data.done) {
+        term.innerHTML += `<div class="done">✓ 完成 (exit ${data.exit_code})</div>`;
+        es.close();
+        refreshStatus();
+      }
+    };
+    es.onerror = () => {
+      term.innerHTML += '<div class="err">✗ 連接中斷</div>';
+      es.close();
+    };
+  } else {
+    try {
+      const resp = await fetch(`/api/run/${cmdId}`, {method: 'POST'});
+      const data = await resp.json();
+      term.innerHTML += data.output + '\n';
+      term.innerHTML += data.ok ? '<div class="done">✓ 完成</div>' : '<div class="err">✗ 失敗</div>';
+      refreshStatus();
+    } catch (e) {
+      term.innerHTML += `<div class="err">✗ 錯誤: ${e}</div>`;
+    }
+  }
+}
+
+function switchAgent(btn) {
+  document.querySelectorAll('.chat-agent-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentAgent = btn.dataset.agent;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const history = document.getElementById('chat-messages');
+  history.innerHTML += `<div class="chat-msg user">${msg}</div>`;
+  input.value = '';
+  sendBtn.disabled = true;
+  history.innerHTML += '<div class="chat-msg assistant" style="color:var(--dim);">思考中...</div>';
+  history.scrollTop = history.scrollHeight;
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, agent: currentAgent})
+    });
+    const data = await resp.json();
+    history.removeChild(history.lastChild);
+    if (data.ok) {
+      history.innerHTML += `<div class="chat-msg assistant">${data.reply}</div>`;
+    } else {
+      history.innerHTML += `<div class="chat-msg assistant" style="color:var(--red);">錯誤: ${data.error}</div>`;
+    }
+    history.scrollTop = history.scrollHeight;
+  } catch (e) {
+    history.removeChild(history.lastChild);
+    history.innerHTML += `<div class="chat-msg assistant" style="color:var(--red);">網絡錯誤: ${e}</div>`;
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  refreshStatus();
+  setInterval(refreshStatus, 30000);
+});
+</script>
+
+</body>
+</html>
