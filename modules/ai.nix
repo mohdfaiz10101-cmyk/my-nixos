@@ -7,12 +7,12 @@
     port = 11434;
     home = "/mnt/ai/ollama";
     environmentVariables = {
-      OLLAMA_KEEP_ALIVE = "30s";   # 30 秒無調用自動卸載模型，釋放顯存
+      OLLAMA_KEEP_ALIVE = "30m";   # 30 分鐘無調用才卸載模型（冷啟動要 50 秒太慢）
     };
   };
 
   # 開放防火牆端口
-  networking.firewall.allowedTCPPorts = [ 11434 18789 8283 3000 5678 8000 ];
+  networking.firewall.allowedTCPPorts = [ 11434 18789 8283 3000 5678 8000 7890 9099 ];
 
   # --- 2. OpenClaw 閘道器配置 ---
   imports = [ 
@@ -54,6 +54,22 @@
       Restart = lib.mkForce "always";
       StateDirectory = lib.mkForce "openclaw";
       WorkingDirectory = lib.mkForce "/var/lib/openclaw";
+    };
+  };
+
+  # --- 3. Dashboard 服務 ---
+  systemd.services.nixos-dashboard = {
+    description = "NixOS System Dashboard";
+    after = [ "network.target" "docker.service" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      Type = "simple";
+      User = "charlie";
+      ExecStart = "/etc/nixos/scripts/dashboard.sh";
+      Restart = "on-failure";
+      RestartSec = 5;
+      Environment = "HOME=/home/charlie";
     };
   };
 
