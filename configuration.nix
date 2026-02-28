@@ -224,6 +224,23 @@ in
     INPUT_METHOD = "fcitx";
   };
 
+  # --- 7. 窗口假死检测 ---
+  systemd.user.services.freeze-detector = {
+    description = "Window Freeze Detector";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/freeze-detector.sh";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+    environment = {
+      DISPLAY = ":0";
+      WAYLAND_DISPLAY = "wayland-0";
+      DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/1000/bus";
+    };
+  };
+
   # Nix 实验特性
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # 系统版本锁定

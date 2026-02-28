@@ -98,6 +98,53 @@ ai-up
 ai-ps
 ```
 
+## 手机端查看/拉取配置
+
+### Android（Termux）
+```bash
+# 1. 安装 Termux（从 F-Droid 或 GitHub 下载，不要用 Play Store 版本）
+# 2. 打开 Termux 执行：
+pkg install git
+git clone https://github.com/mohdfaiz10101-cmyk/my-nixos.git
+cd my-nixos
+
+# 查看文件
+ls -la
+cat configuration.nix
+
+# 拉取最新更新
+git pull
+```
+
+### iOS（iSH / a-Shell / Working Copy）
+```bash
+# 方法 1: iSH（免费终端模拟器）
+apk add git
+git clone https://github.com/mohdfaiz10101-cmyk/my-nixos.git
+
+# 方法 2: Working Copy（付费 Git 客户端，图形界面，推荐）
+# 直接在 App 里添加仓库 URL：
+# https://github.com/mohdfaiz10101-cmyk/my-nixos.git
+
+# 方法 3: 直接浏览器访问 GitHub
+# https://github.com/mohdfaiz10101-cmyk/my-nixos
+```
+
+### 手机端推送更改
+```bash
+# 需要 GitHub Personal Access Token (PAT)
+# 1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained
+# 2. 创建 token，勾选 Contents 读写权限
+# 3. 配置 git：
+git config user.name "你的名字"
+git config user.email "你的邮箱"
+
+# 推送时输入用户名和 PAT（替代密码）
+git push
+# Username: 你的GitHub用户名
+# Password: 粘贴 PAT
+```
+
 ## 获取帮助
 
 - 查看系统文档：`/etc/nixos/CLAUDE.md`
