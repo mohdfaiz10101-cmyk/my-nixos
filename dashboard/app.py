@@ -65,13 +65,9 @@ COMMANDS = {
         "cmd": "/etc/nixos/scripts/letta-sync.sh",
         "label": "記憶同步", "group": "letta", "icon": "🧠", "danger": False, "long": False,
     },
-    "letta-obsidian": {
-        "cmd": "python3 /etc/nixos/scripts/letta-obsidian-sync.py",
-        "label": "Letta→Obsidian", "group": "letta", "icon": "📝", "danger": False, "long": False,
-    },
-    "memory-manage": {
-        "cmd": "python3 /etc/nixos/scripts/memory-fragment-manager.py",
-        "label": "記憶碎片整理", "group": "letta", "icon": "🗂️", "danger": False, "long": True,
+    "memory-sync": {
+        "cmd": "/etc/nixos/scripts/memory-sync.sh",
+        "label": "全量記憶同步", "group": "letta", "icon": "🔄", "danger": False, "long": True,
     },
     "nix-seed": {
         "cmd": "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'",
@@ -336,6 +332,112 @@ def api_chat():
         return jsonify({"ok": True, "reply": reply or "(無回應)"})
     except http_requests.Timeout:
         return jsonify({"ok": False, "error": "Letta 回應超時"}), 504
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/procurement")
+def procurement_page():
+    return render_template("procurement.html")
+
+
+@app.route("/api/procurement/stats")
+def api_procurement_stats():
+    """获取采购统计"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        return jsonify(filter_sys.get_stats())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/procurement/items")
+def api_procurement_items():
+    """获取采购项目列表"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        status = request.args.get("status", "pending")
+        items = filter_sys.items
+        if status != "all":
+            items = {k: v for k, v in items.items() if v.get("status") == status}
+        return jsonify({"items": items, "suppliers": filter_sys.suppliers, "blacklist": list(filter_sys.blacklist)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/procurement/add", methods=["POST"])
+def api_procurement_add():
+    """添加采购项目"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        data = request.get_json()
+        result = filter_sys.add_item(
+            url=data.get("url", ""),
+            title=data.get("title", ""),
+            supplier=data.get("supplier"),
+            price=data.get("price"),
+            tags=data.get("tags", []),
+            notes=data.get("notes")
+        )
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/procurement/status", methods=["POST"])
+def api_procurement_status():
+    """更新项目状态"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        data = request.get_json()
+        item_id = data.get("id")
+        new_status = data.get("status")
+        if item_id in filter_sys.items:
+            filter_sys.items[item_id]["status"] = new_status
+            filter_sys._save_json(filter_sys.items_file, filter_sys.items)
+            return jsonify({"ok": True})
+        return jsonify({"ok": False, "error": "Item not found"}), 404
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/procurement/blacklist", methods=["POST"])
+def api_procurement_blacklist():
+    """添加黑名单"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        data = request.get_json()
+        result = filter_sys.add_blacklist(data.get("entry", ""))
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/procurement/export", methods=["POST"])
+def api_procurement_export():
+    """导出到 Obsidian"""
+    import sys
+    sys.path.insert(0, "/etc/nixos/scripts")
+    try:
+        from procurement_filter import ProcurementFilter
+        filter_sys = ProcurementFilter()
+        filter_sys.export_to_obsidian()
+        return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 

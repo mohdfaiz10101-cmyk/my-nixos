@@ -131,8 +131,10 @@ in
       # Auto-sync Letta memory to Claude Code (background, max once/hour)
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
 
-      # Auto-sync Letta → Obsidian (background, daily)
-      python3 /etc/nixos/scripts/letta-obsidian-sync.py &>/dev/null &
+      # fcitx5 输入法：默认简体，每窗口独立状态
+      export GTK_IM_MODULE=fcitx
+      export QT_IM_MODULE=fcitx
+      export XMODIFIERS=@im=fcitx
     '';
     shellAliases = {
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
@@ -149,8 +151,11 @@ in
       nix-chat = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/nixos-chat.py'";
       nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
       letta-sync = "/etc/nixos/scripts/letta-sync.sh";
-      letta-obsidian = "python3 /etc/nixos/scripts/letta-obsidian-sync.py";
-      memory-manage = "python3 /etc/nixos/scripts/memory-fragment-manager.py";
+      letta-obsidian = "nix-shell -p python313Packages.requests --run 'python3 /etc/nixos/scripts/letta-obsidian-sync.py'";
+      memory-sync = "/etc/nixos/scripts/memory-sync.sh";
+      memory-fragments = "nix-shell -p python313Packages.requests --run 'python3 /etc/nixos/scripts/memory/manage-fragments.py'";
+      obsidian-letta = "xdg-open obsidian://open?vault=Obsidian&file=Letta-Memory%2FINDEX.md 2>/dev/null || true";
+      obsidian-fragments = "xdg-open obsidian://open?vault=Obsidian&file=Memory-Fragments%2FINDEX.md 2>/dev/null || true";
       dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
 
       # Claude Code CLI 交互式选择（默认 LiteLLM）

@@ -1,171 +1,110 @@
 #!/usr/bin/env python3
 """
-Letta → Obsidian 双向同步脚本
-功能：
-1. 从 Letta 导出 core memory + archival memory
-2. 转换为 Obsidian markdown 格式（带 YAML frontmatter）
-3. 自动分类、打标签
-4. 记录操作日志
+Letta 记忆同步到 Obsidian
+将 core memory + archival memory 导出为 Markdown 文件
 """
+
 import json
-import os
+import requests
 from datetime import datetime
+import os
 from pathlib import Path
 
-LETTA_URL = "http://127.0.0.1:8283/v1"
-LETTA_TOKEN = "letta-charlie-2026"
-HEADERS = {
-    "Authorization": f"Bearer {LETTA_TOKEN}",
-    "Content-Type": "application/json",
-}
+# 配置
+LETTA_BASE_URL = "http://127.0.0.1:8283"
 OBSIDIAN_VAULT = Path.home() / "Documents" / "Obsidian" / "Letta-Memory"
-OBSIDIAN_VAULT.mkdir(parents=True, exist_ok=True)
+AGENTS = {
+    "nixos-sysadmin": "🖥️ 系统管理",
+    "code-assistant": "💻 代码助手",
+    "opus-analyst": "🧠 分析专家"
+}
 
-def get_letta_agents():
-    import subprocess
-    try:
-        result = subprocess.run(
-            ["curl", "-s", f"{LETTA_URL}/agents/",
-             "-H", f"Authorization: Bearer {LETTA_TOKEN}"],
-            capture_output=True, text=True, timeout=5
-        )
-        if not result.stdout.strip():
-            return []
-        data = json.loads(result.stdout)
-        return data if isinstance(data, list) else []
-    except Exception as e:
-        print(f"⚠️  获取 agents 失败: {e}")
-        return []
-
-def get_agent_memory(agent_id, agent_name):
-    import subprocess
+def fetch_memories(agent_id):
+    """获取 agent 的所有记忆"""
     try:
         # Core memory
-        result = subprocess.run(
-            ["curl", "-s", f"{LETTA_URL}/agents/{agent_id}/core-memory",
-             "-H", f"Authorization: Bearer {LETTA_TOKEN}"],
-            capture_output=True, text=True, timeout=5
-        )
-        core = json.loads(result.stdout) if result.stdout.strip() else {}
-        blocks = core.get("blocks", []) if isinstance(core, dict) else []
+        core_resp = requests.get(f"{LETTA_BASE_URL}/agent/{agent_id}/core-memory")
+        core_data = core_resp.json() if core_resp.status_code == 200 else {}
 
         # Archival memory
-        result = subprocess.run(
-            ["curl", "-s", f"{LETTA_URL}/agents/{agent_id}/archival-memory?limit=100",
-             "-H", f"Authorization: Bearer {LETTA_TOKEN}"],
-            capture_output=True, text=True, timeout=5
-        )
-        archival = json.loads(result.stdout) if result.stdout.strip() else []
-        memories = archival if isinstance(archival, list) else []
+        archival_resp = requests.get(f"{LETTA_BASE_URL}/agent/{agent_id}/archival-memory")
+        archival_data = archival_resp.json() if archival_resp.status_code == 200 else {}
 
-        return {"blocks": blocks, "memories": memories}
+        return {"core": core_data, "archival": archival_data}
     except Exception as e:
-        print(f"⚠️  获取 {agent_name} 记忆失败: {e}")
-        return {"blocks": [], "memories": []}
+        return {"error": str(e)}
 
-def memory_to_markdown(agent_name, agent_id, memory_data):
-    """转换为 Obsidian markdown 格式"""
-    blocks = memory_data.get("blocks", [])
-    memories = memory_data.get("memories", [])
-
+def to_obsidian_md(agent_id, agent_name, memories):
+    """转换为 Obsidian Markdown 格式"""
+    timestamp = datetime.now().isoformat()
     md = f"""---
-agent: {agent_name}
-agent_id: {agent_id}
 type: letta-memory
-updated: {datetime.now().isoformat()}
-tags: [letta, memory, {agent_name.lower().replace(' ', '-')}]
+agent: {agent_id}
+agent_name: {agent_name}
+synced_at: {timestamp}
+tags: [letta, {agent_id}, memory]
 ---
 
-# {agent_name} Memory
+# {agent_name} - 记忆同步
 
-> 最后更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+## 最后更新
+{timestamp}
 
 ## Core Memory
 
 """
 
-    for block in blocks:
-        label = block.get("label", "?")
-        value = block.get("value", "").strip()
-        if value:
-            md += f"""### {label}
+    if "error" in memories:
+        md += f"❌ 错误: {memories['error']}\n"
+    else:
+        core = memories.get("core", {})
+        if isinstance(core, dict):
+            for key, value in core.items():
+                md += f"### {key}\n{value}\n\n"
+        elif isinstance(core, list):
+            for item in core:
+                md += f"- {item}\n"
 
-{value}
+        md += "\n## Archival Memory\n\n"
+        archival = memories.get("archival", {})
+        if isinstance(archival, list):
+            for item in archival[:50]:  # 限制显示数量
+                text = item.get("text", str(item))[:200]
+                md += f"- {text}...\n"
+        elif isinstance(archival, dict):
+            for key, value in list(archival.items())[:20]:
+                md += f"### {key}\n{value}\n\n"
 
-"""
-
-    md += f"""## Archival Memory ({len(memories)} 条)
-
-"""
-
-    for idx, item in enumerate(memories[:100], 1):
-        text = item.get("text", "") if isinstance(item, dict) else str(item)
-        md += f"""### [{idx}] 记忆条目
-
-{text}
-
----
-
-"""
     return md
 
 def sync_to_obsidian():
-    """同步到 Obsidian"""
-    log_file = OBSIDIAN_VAULT / "sync-log.md"
+    """同步所有 agent 记忆到 Obsidian"""
+    OBSIDIAN_VAULT.mkdir(parents=True, exist_ok=True)
 
-    agents = get_letta_agents()
-    if not agents:
-        print("⚠️  未找到 Letta agents")
-        return
+    for agent_id, agent_name in AGENTS.items():
+        print(f"🔄 同步 {agent_name}...")
+        memories = fetch_memories(agent_id)
+        md_content = to_obsidian_md(agent_id, agent_name, memories)
 
-    log_entries = []
+        # 写入 Obsidian
+        file_path = OBSIDIAN_VAULT / f"{agent_id}.md"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(md_content)
+        print(f"✅ {agent_name} → {file_path}")
 
-    for agent in agents:
-        agent_id = agent.get('id')
-        agent_name = agent.get('name', 'unknown')
+    # 创建索引文件
+    index_md = """# Letta 记忆索引
 
-        memory_data = get_agent_memory(agent_id, agent_name)
-        md_content = memory_to_markdown(agent_name, agent_id, memory_data)
-
-        output_file = OBSIDIAN_VAULT / f"{agent_name}.md"
-        output_file.write_text(md_content, encoding='utf-8')
-
-        archival_count = len(memory_data.get("memories", []))
-        log_entries.append(f"- [{datetime.now().strftime('%H:%M:%S')}] **{agent_name}**: {archival_count} 条记忆 → {output_file.name}")
-        print(f"✓ {agent_name}: {archival_count} 条记忆")
-
-    # 更新同步日志
-    if log_entries:
-        log_content = f"""# Letta 同步日志
-
-最后同步: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-## 最近同步记录
-
-{''.join(log_entries)}
+## Agent 列表
 
 """
-        log_file.write_text(log_content, encoding='utf-8')
+    for agent_id, agent_name in AGENTS.items():
+        index_md += f"- [{agent_name}]({agent_id}.md)\n"
 
-    # 生成索引文件
-    index_md = f"""# Letta Memory Index
-
-更新时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-## Agents
-
-"""
-    for agent in agents:
-        agent_name = agent.get('name', 'unknown')
-        index_md += f"- [[{agent_name}]]\n"
-
-    (OBSIDIAN_VAULT / "INDEX.md").write_text(index_md, encoding='utf-8')
-
-def main():
-    print("🔄 Letta → Obsidian 同步开始...")
-    print(f"   目标: {OBSIDIAN_VAULT}")
-    sync_to_obsidian()
-    print("✓ 同步完成!")
+    index_path = OBSIDIAN_VAULT / "INDEX.md"
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(index_md)
+    print(f"✅ 索引文件 → {index_path}")
 
 if __name__ == "__main__":
-    main()
+    sync_to_obsidian()

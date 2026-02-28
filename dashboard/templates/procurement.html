@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1688 采购筛选</title>
+<style>
+:root {
+  --bg: #1e1e2e; --surface: #313244; --overlay: #45475a;
+  --text: #cdd6f4; --subtext: #a6adc8; --dim: #6c7086;
+  --blue: #89b4fa; --green: #a6e3a1; --yellow: #f9e2af;
+  --red: #f38ba8; --mauve: #cba6f7; --peach: #fab387;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 16px; max-width: 800px; margin: 0 auto; }
+h1 { color: var(--blue); margin-bottom: 16px; }
+.section { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat-card { background: var(--overlay); padding: 12px; border-radius: var(--radius); text-align: center; }
+.stat-value { font-size: 24px; font-weight: bold; color: var(--green); }
+.stat-label { font-size: 12px; color: var(--subtext); }
+.input-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+input, select, textarea {
+  flex: 1; min-width: 120px;
+  background: var(--overlay); border: 1px solid var(--dim);
+  color: var(--text); padding: 8px 12px; border-radius: var(--radius);
+  font-size: 14px;
+}
+button {
+  background: var(--blue); border: none; color: var(--bg);
+  padding: 8px 16px; border-radius: var(--radius); cursor: pointer;
+  font-weight: bold;
+}
+button:hover { filter: brightness(1.2); }
+button.danger { background: var(--red); }
+button.success { background: var(--green); }
+.item-list { display: flex; flex-direction: column; gap: 8px; }
+.item-card {
+  background: var(--overlay); padding: 12px; border-radius: var(--radius);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.item-info h3 { font-size: 14px; margin-bottom: 4px; }
+.item-meta { font-size: 12px; color: var(--subtext); }
+.item-actions { display: flex; gap: 8px; }
+.item-actions button { padding: 4px 8px; font-size: 12px; }
+.status-pending { border-left: 3px solid var(--yellow); }
+.status-contacted { border-left: 3px solid var(--blue); }
+.status-ordered { border-left: 3px solid var(--green); }
+.status-rejected { border-left: 3px solid var(--red); opacity: 0.6; }
+.tag { background: var(--mauve); color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+@media (max-width: 600px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .input-group { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<h1>🛒 1688 采购筛选</h1>
+
+<div class="section">
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="section">
+  <h2>➕ 添加新项目</h2>
+  <div class="input-group">
+    <input id="url" type="url" placeholder="网址">
+    <input id="title" type="text" placeholder="产品名称">
+    <input id="supplier" type="text" placeholder="供应商">
+    <input id="price" type="text" placeholder="价格">
+    <button onclick="addItem()">添加</button>
+  </div>
+  <div class="input-group">
+    <input id="tags" type="text" placeholder="标签 (逗号分隔)">
+  </div>
+  <div id="addResult" style="font-size:12px;"></div>
+</div>
+
+<div class="section">
+  <h2>📋 待处理项目</h2>
+  <div class="input-group">
+    <select id="filterStatus" onchange="loadItems()">
+      <option value="pending">待处理</option>
+      <option value="contacted">已联系</option>
+      <option value="ordered">已下单</option>
+      <option value="rejected">已拒绝</option>
+      <option value="all">全部</option>
+    </select>
+    <button class="danger" onclick="exportObsidian()">导出 Obsidian</button>
+  </div>
+  <div class="item-list" id="itemList"></div>
+</div>
+
+<div class="section">
+  <h2>🚫 黑名单管理</h2>
+  <div class="input-group">
+    <input id="blacklistInput" type="text" placeholder="域名或供应商名称">
+    <button class="danger" onclick="addBlacklist()">添加</button>
+  </div>
+  <div id="blacklist" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+</div>
+
+<script>
+let items = {};
+let suppliers = {};
+let blacklist = [];
+
+async function loadStats() {
+  const resp = await fetch('/api/procurement/stats');
+  const stats = await resp.json();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-value">${stats.pending || 0}</div><div class="stat-label">待处理</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.ordered || 0}</div><div class="stat-label">已下单</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.suppliers || 0}</div><div class="stat-label">供应商</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.blacklisted || 0}</div><div class="stat-label">黑名单</div></div>
+  `;
+}
+
+async function loadItems() {
+  const filter = document.getElementById('filterStatus').value;
+  const resp = await fetch(`/api/procurement/items?status=${filter}`);
+  const data = await resp.json();
+  items = data.items || {};
+  suppliers = data.suppliers || {};
+  blacklist = data.blacklist || [];
+
+  const list = document.getElementById('itemList');
+  if (Object.keys(items).length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--dim);padding:20px;">暂无项目</div>';
+    return;
+  }
+
+  list.innerHTML = Object.values(items)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .map(item => `
+      <div class="item-card status-${item.status}">
+        <div class="item-info">
+          <h3>${item.title}</h3>
+          <div class="item-meta">
+            供应商: ${item.supplier || '未知'} |
+            价格: ${item.price || '未知'} |
+            <a href="${item.url}" target="_blank" style="color:var(--blue);">${item.domain}</a>
+          </div>
+          <div style="margin-top:4px;">
+            ${(item.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button onclick="updateStatus('${item.id}', 'contacted')">联系</button>
+          <button onclick="updateStatus('${item.id}', 'ordered')">下单</button>
+          <button class="danger" onclick="updateStatus('${item.id}', 'rejected')">拒绝</button>
+        </div>
+      </div>
+    `).join('');
+}
+
+async function addItem() {
+  const url = document.getElementById('url').value.trim();
+  const title = document.getElementById('title').value.trim();
+  const supplier = document.getElementById('supplier').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t);
+
+  if (!url || !title) {
+    document.getElementById('addResult').innerHTML = '<span style="color:var(--red)">请填写网址和产品名称</span>';
+    return;
+  }
+
+  const resp = await fetch('/api/procurement/add', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url, title, supplier, price, tags})
+  });
+  const result = await resp.json();
+
+  if (result.ok) {
+    document.getElementById('addResult').innerHTML = '<span style="color:var(--green)">✓ 添加成功</span>';
+    document.getElementById('url').value = '';
+    document.getElementById('title').value = '';
+    document.getElementById('supplier').value = '';
+    document.getElementById('price').value = '';
+    document.getElementById('tags').value = '';
+    loadItems();
+    loadStats();
+  } else {
+    document.getElementById('addResult').innerHTML = `<span style="color:var(--red)">✗ ${result.error}</span>`;
+  }
+}
+
+async function updateStatus(id, status) {
+  const resp = await fetch('/api/procurement/status', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id, status})
+  });
+  if ((await resp.json()).ok) {
+    loadItems();
+    loadStats();
+  }
+}
+
+async function addBlacklist() {
+  const input = document.getElementById('blacklistInput');
+  const entry = input.value.trim();
+  if (!entry) return;
+
+  const resp = await fetch('/api/procurement/blacklist', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({entry})
+  });
+  if ((await resp.json()).ok) {
+    input.value = '';
+    loadItems();
+    loadStats();
+  }
+}
+
+async function exportObsidian() {
+  const resp = await fetch('/api/procurement/export', {method: 'POST'});
+  const result = await resp.json();
+  alert(result.ok ? '✓ 已导出到 Obsidian' : '✗ 导出失败');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadItems();
+});
+</script>
+
+</body>
+</html>
