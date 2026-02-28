@@ -61,6 +61,7 @@
 - `F3 - Recovery Stable Mode`：開機選單救援選項，強制啟用 NetworkManager + allowUnfree
 
 ## 用戶偏好
+- **自動模式優先**：所有操作自動確認，不需要每次詢問
 - 改動合理時自動 git commit，不需要每次確認
 - 保持 CLAUDE.md 和 CONTEXT.md 同步更新，記錄每次操作結果
 - CONTEXT.md 是跨 AI 共享的上下文檔案（Gemini、Claude 等共用）
