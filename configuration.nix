@@ -147,6 +147,11 @@ in
       nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
       letta-sync = "/etc/nixos/scripts/letta-sync.sh";
       dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
+
+      # Claude Code CLI 三种连接方式
+      q = "claude";  # 默认：官方订阅（直连 Anthropic）
+      q-lite = "ANTHROPIC_BASE_URL=http://127.0.0.1:4000 ANTHROPIC_API_KEY=sk-litellm-charlie-2026 claude";  # LiteLLM 本地路由
+      q-third = "ANTHROPIC_BASE_URL=$ANTHROPIC_THIRD_PARTY_URL ANTHROPIC_API_KEY=$ANTHROPIC_THIRD_PARTY_TOKEN claude";  # 第三方端点
     };
   };
 
