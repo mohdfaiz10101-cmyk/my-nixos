@@ -1,4 +1,0 @@
-# LiteLLM 環境變量
-# 請填入你的智譜 API Key
-ZHIPU_API_KEY=your_zhipu_api_key_here
-REDIS_PASSWORD=litellm-redis-2026

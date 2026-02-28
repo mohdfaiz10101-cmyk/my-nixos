@@ -28,3 +28,4 @@ claude_*.py
 
 # Git 凭证
 .git-credentials
+tmp/
