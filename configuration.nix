@@ -176,6 +176,7 @@ in
     vscode-with-extensions
 
     # AI 相关依赖
+    claude-code
     python313
     python313Packages.anthropic
     libnotify

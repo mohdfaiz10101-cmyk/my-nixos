@@ -1,0 +1,42 @@
+services:
+  # Redis 緩存服務（用於 LiteLLM prompt 緩存）
+  redis:
+    image: redis:7-alpine
+    container_name: litellm-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - /mnt/ai/litellm-data/redis:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-litellm-redis-2026}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-litellm-redis-2026}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - /mnt/ai/litellm-data:/data
+    environment:
+      - ANTHROPIC_API_KEY=sk-WRoD7peu0UAVbaEqHi1qN6AV5PmYn6FojDfkrO7TX9dt5SC6
+      - GOOGLE_API_KEY=AIzaSyDcaU7tzVZ6gZiFT4aADxFm_ENW0A251Ac
+      - LITELLM_MASTER_KEY=sk-litellm-charlie-2026
+      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-litellm-redis-2026}
+      - LITELLM_LOG=DEBUG
+      - HTTP_PROXY=http://host.docker.internal:7890
+      - HTTPS_PROXY=http://host.docker.internal:7890
+      - NO_PROXY=127.0.0.0/8,localhost,host.docker.internal,11434,18789
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--host", "0.0.0.0"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
