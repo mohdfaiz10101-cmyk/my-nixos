@@ -125,6 +125,9 @@ in
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
     interactiveShellInit = ''
+      # direnv hook（确保 .envrc 自动加载）
+      eval "$(direnv hook zsh)"
+
       # Auto-sync Letta memory to Claude Code (background, max once/hour)
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
     '';
