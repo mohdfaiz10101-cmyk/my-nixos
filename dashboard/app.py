@@ -65,6 +65,14 @@ COMMANDS = {
         "cmd": "/etc/nixos/scripts/letta-sync.sh",
         "label": "記憶同步", "group": "letta", "icon": "🧠", "danger": False, "long": False,
     },
+    "letta-obsidian": {
+        "cmd": "python3 /etc/nixos/scripts/letta-obsidian-sync.py",
+        "label": "Letta→Obsidian", "group": "letta", "icon": "📝", "danger": False, "long": False,
+    },
+    "memory-manage": {
+        "cmd": "python3 /etc/nixos/scripts/memory-fragment-manager.py",
+        "label": "記憶碎片整理", "group": "letta", "icon": "🗂️", "danger": False, "long": True,
+    },
     "nix-seed": {
         "cmd": "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'",
         "label": "知識注入", "group": "letta", "icon": "💉", "danger": False, "long": True,
@@ -156,6 +164,59 @@ def api_status():
         "disk": disk, "services": services, "containers": containers,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     })
+
+
+@app.route("/api/token-stats")
+def api_token_stats():
+    """获取 Token 使用统计"""
+    stats = {
+        "redis": {"hits": 0, "misses": 0, "hit_rate": 0},
+        "letta": {"agents": 0, "total_memories": 0},
+        "obsidian": {"letta_files": 0, "fragment_files": 0},
+    }
+
+    # Redis 缓存统计
+    try:
+        out, _ = run_cmd("docker exec litellm-redis redis-cli -a litellm-redis-2026 INFO stats 2>/dev/null")
+        for line in out.split("\n"):
+            if "keyspace_hits" in line:
+                stats["redis"]["hits"] = int(line.split(":")[1].strip())
+            elif "keyspace_misses" in line:
+                stats["redis"]["misses"] = int(line.split(":")[1].strip())
+
+        hits = stats["redis"]["hits"]
+        misses = stats["redis"]["misses"]
+        total = hits + misses
+        stats["redis"]["hit_rate"] = round(hits / total * 100, 2) if total > 0 else 0
+    except:
+        pass
+
+    # Letta 记忆统计
+    try:
+        resp = http_requests.get(f"{LETTA_URL}/agents",
+                               headers={"Authorization": f"Bearer {LETTA_TOKEN}"}, timeout=2)
+        if resp.status_code == 200:
+            agents = resp.json().get("agents", [])
+            stats["letta"]["agents"] = len(agents)
+            for agent in agents:
+                resp = http_requests.get(f"{LETTA_URL}/agents/{agent['id']}/archival",
+                                       headers={"Authorization": f"Bearer {LETTA_TOKEN}"}, timeout=2)
+                if resp.status_code == 200:
+                    stats["letta"]["total_memories"] += len(resp.json().get("memories", []))
+    except:
+        pass
+
+    # Obsidian 文件统计
+    try:
+        from pathlib import Path
+        letta_path = Path.home() / "Documents" / "Obsidian" / "Letta-Memory"
+        frag_path = Path.home() / "Documents" / "Obsidian" / "Memory-Fragments"
+        stats["obsidian"]["letta_files"] = len(list(letta_path.glob("*.md"))) if letta_path.exists() else 0
+        stats["obsidian"]["fragment_files"] = len(list(frag_path.glob("*.md"))) if frag_path.exists() else 0
+    except:
+        pass
+
+    return jsonify(stats)
 
 
 @app.route("/api/letta-memory")

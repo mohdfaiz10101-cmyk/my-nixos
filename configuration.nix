@@ -130,6 +130,9 @@ in
 
       # Auto-sync Letta memory to Claude Code (background, max once/hour)
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
+
+      # Auto-sync Letta → Obsidian (background, daily)
+      python3 /etc/nixos/scripts/letta-obsidian-sync.py &>/dev/null &
     '';
     shellAliases = {
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
@@ -146,6 +149,8 @@ in
       nix-chat = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/nixos-chat.py'";
       nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
       letta-sync = "/etc/nixos/scripts/letta-sync.sh";
+      letta-obsidian = "python3 /etc/nixos/scripts/letta-obsidian-sync.py";
+      memory-manage = "python3 /etc/nixos/scripts/memory-fragment-manager.py";
       dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
 
       # Claude Code CLI 交互式选择（默认 LiteLLM）
@@ -187,6 +192,7 @@ in
     claude-code
     python313
     python313Packages.anthropic
+    python313Packages.requests
     libnotify
 
     # 硬體診斷工具
@@ -203,6 +209,14 @@ in
       fcitx5-rime
       qt6Packages.fcitx5-configtool
     ];
+  };
+
+  # fcitx5 環境變量（每窗口記住狀態）
+  environment.sessionVariables = {
+    GTK_IM_MODULE = "fcitx";
+    QT_IM_MODULE = "fcitx";
+    XMODIFIERS = "@im=fcitx";
+    INPUT_METHOD = "fcitx";
   };
 
   # Nix 实验特性

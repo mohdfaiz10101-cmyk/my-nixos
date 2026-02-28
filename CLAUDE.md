@@ -191,6 +191,38 @@
 - nixos-rebuild switch 成功（OLLAMA_KEEP_ALIVE + 防火牆 7890）
 - 待驗證：Continue Ollama provider 是否正確處理 thinking mode
 
+## 省Token優化方案（2026-02-28）
+- **Prompt Caching**：已啟用 `promptCaching` 和 `cacheSystemPrompt`
+- **智譜 GLM**：已配置 GLM-4.7、GLM-4.5-air、GLM-4.5-x
+  - API Key: `sk-3knUH8p2ErRr7j6Lgg7soCmsUTolna0eSb2Qq2qGwVDmL2pq`
+  - 優勢：128K 上下文自動緩存，系統 Prompt 100% 命中
+  - 成本：比 Claude 便宜 90%
+- **Redis 緩存**：LiteLLM 已啟用 Redis 緩存（port 6380）
+  - 緩存命中率：通過 Dashboard `/api/token-stats` 查看
+- **預估節省**：50-90% token消耗
+
+## Obsidian 記憶管理（2026-02-28）
+- **Letta → Obsidian 同步**：`letta-obsidian` 腳本
+  - 導出 core memory + archival memory
+  - YAML frontmatter（agent、timestamp、tags）
+  - 同步日誌記錄
+- **記憶碎片管理系統**：`memory-manage` 腳本
+  - 從 Claude history + Letta 收集碎片
+  - 自動打標籤（規則引擎，不耗 token）
+  - 重要性評分（0-10）
+  - 30 天未訪問自動歸檔
+  - 按標籤導出到 Obsidian
+- **Obsidian Vault**：`~/Documents/Obsidian/`
+  - `Letta-Memory/` - Letta 記憶（按 agent 分類）
+  - `Memory-Fragments/` - 記憶碎片（按標籤分類）
+  - `INDEX.md` - 索引文件
+- **zsh 後台同步**：每次開終端自動觸發
+
+## 輸入法配置（2026-02-28）
+- fcitx5 每窗口記憶狀態
+- 環境變量：`GTK_IM_MODULE`、`QT_IM_MODULE`、`XMODIFIERS`
+- 默認簡體中文，代碼框保持英文
+
 ## Letta 記憶整合（2026-02-27 Session 8）
 - 修復 archival memory seeding：embedding 從 letta-free（404）改為 Ollama nomic-embed-text
   - 關鍵：`embedding_endpoint_type` 必須用 `openai`，endpoint 帶 `/v1` 後綴
