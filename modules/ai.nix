@@ -79,6 +79,7 @@
   systemd.services.letta-sync-obsidian = {
     description = "Sync Letta memory to Obsidian";
     after = [ "network.target" ];
+    path = [ pkgs.bash pkgs.curl pkgs.jq ];
     serviceConfig = {
       Type = "oneshot";
       User = "charlie";
