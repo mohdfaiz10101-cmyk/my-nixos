@@ -75,5 +75,28 @@
     };
   };
 
+  # --- 4. Letta + Obsidian 自動同步 ---
+  systemd.services.letta-sync-obsidian = {
+    description = "Sync Letta memory to Obsidian";
+    after = [ "network.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "charlie";
+      ExecStart = "/run/current-system/sw/bin/bash /mnt/ai/ai-cluster/1688-system/letta-obsidian-simple.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.letta-sync-obsidian = {
+    description = "Run Letta sync every hour";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      OnUnitActiveSec = "1h";
+      AccuracySec = "1min";
+    };
+  };
+
   environment.systemPackages = with pkgs; [ ollama ];
 }

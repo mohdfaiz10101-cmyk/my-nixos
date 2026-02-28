@@ -261,3 +261,33 @@
 - 使用：
   - 訪問：`dashboard` alias 或 http://127.0.0.1:9099
   - CLI 流式輸出帶進度條（長命令自動啟用）
+
+## 1688 智能採購系統（2026-02-28 部署）
+- 目錄：`/mnt/ai/ai-cluster/1688-system/`
+- **架構**：
+  - FastAPI 後端（port 5000）：商品處理、去重、Letta 調用
+  - Chroma（port 8000）：向量化存儲、商品去重
+  - Letta Agent：智能篩選（記憶偏好、供應商評價）
+  - Telegram Bot：手機推送篩選結果
+  - 油猴腳本：瀏覽器端抓取商品
+- **使用流程**：
+  1. 安裝油猴腳本 `userscript/1688-assistant.user.js`
+  2. 瀏覽 1688.com，點擊「提交篩選」按鈕
+  3. 後端自動去重 + Letta 篩選
+  4. 符合條件的商品推送至 Telegram
+- **配置**：
+  - Telegram Bot Token：`/mnt/ai/ai-cluster/1688-system/.env`
+  - Letta Agent 創建：`backend/create_letta_agent.py`
+- **踩坑**：
+  - LiteLLM `host.docker.internal` 解析到錯誤網關
+  - 解法：改用 `172.19.0.1`（litellm_default 網關）
+  - Gemini API 免費額度已用完（429 Rate Limit）
+
+### 2026-02-28 Session 9
+- 修復 LiteLLM 網絡連接：`host.docker.internal` → `172.19.0.1`
+- 部署 1688 智能採購系統：
+  - FastAPI 後端 + Chroma 去重
+  - 油猴腳本（瀏覽器抓取）
+  - Telegram Bot（手機推送）
+  - Letta Agent 配置
+- 修復 Obsidian 字體訪問：flatpak override --filesystem=host:ro
