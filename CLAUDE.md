@@ -66,6 +66,14 @@
 - CONTEXT.md 是跨 AI 共享的上下文檔案（Gemini、Claude 等共用）
 - 錯誤與踩坑也要記錄到 CLAUDE.md，避免跨 session 重複犯錯
 
+## cc-switch 配置（2026-02-28）
+- cc-switch 數據庫：`~/.cc-switch/cc-switch.db`
+- JetBrains 插件（Claude Code GUI by codemossai）從此數據庫讀取 provider 配置
+- 導入腳本：`/tmp/import-cc-switch.py`（從 `~/.claude/settings.json` 導入）
+- Provider ID：`b6b4d75b-5f43-45ac-8b3f-a6c872a6aa52`
+- 數據庫 schema：providers 表包含 id, app_type, name, settings_config, is_current 等欄位
+- 插件讀取邏輯：`~/.local/share/JetBrains/IntelliJIdea2025.3/idea-claude-code-gui/ai-bridge/read-cc-switch-db.js`
+
 ## 操作日誌
 ### 2026-02-25 Session 1
 - 診斷 GRUB 黑屏根因：EFI 分區 95% 滿
