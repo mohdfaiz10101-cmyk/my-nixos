@@ -192,32 +192,40 @@
 - nixos-rebuild switch 成功（OLLAMA_KEEP_ALIVE + 防火牆 7890）
 - 待驗證：Continue Ollama provider 是否正確處理 thinking mode
 
-## 省Token優化方案（2026-02-28）
+## 省Token優化方案（2026-02-28 更新）
 - **Prompt Caching**：已啟用 `promptCaching` 和 `cacheSystemPrompt`
 - **智譜 GLM**：已配置 GLM-4.7、GLM-4.5-air、GLM-4.5-x
-  - API Key: `sk-3knUH8p2ErRr7j6Lgg7soCmsUTolna0eSb2Qq2qGwVDmL2pq`
+  - 路由：通過 LiteLLM（cloud/glm-4, cloud/glm-4-flash, cloud/glm-4-plus）
   - 優勢：128K 上下文自動緩存，系統 Prompt 100% 命中
   - 成本：比 Claude 便宜 90%
 - **Redis 緩存**：LiteLLM 已啟用 Redis 緩存（port 6380）
-  - 緩存命中率：通過 Dashboard `/api/token-stats` 查看
+  - 緩存命中率：通過 Dashboard 「省 Token 優化狀態」面板查看
+- **Continue 配置**：已加入智譜 GLM 模型選項
+  - GLM-4.7 (省Token)：128K 上下文，適合長對話
+  - GLM-4.5 Air (省Token)：更快響應，適合簡單任務
 - **預估節省**：50-90% token消耗
 
-## Obsidian 記憶管理（2026-02-28）
+## Obsidian 記憶管理（2026-02-28 更新）
 - **Letta → Obsidian 同步**：`letta-obsidian` 腳本
   - 導出 core memory + archival memory
   - YAML frontmatter（agent、timestamp、tags）
-  - 同步日誌記錄
+  - 同步日誌記錄（可往上翻查版本歷史）
 - **記憶碎片管理系統**：`memory-manage` 腳本
   - 從 Claude history + Letta 收集碎片
   - 自動打標籤（規則引擎，不耗 token）
   - 重要性評分（0-10）
   - 30 天未訪問自動歸檔
   - 按標籤導出到 Obsidian
+  - 多級標籤：NixOS, Docker, AI, Letta, Git, 問題, 修復, 配置
 - **Obsidian Vault**：`~/Documents/Obsidian/`
   - `Letta-Memory/` - Letta 記憶（按 agent 分類）
   - `Memory-Fragments/` - 記憶碎片（按標籤分類）
   - `INDEX.md` - 索引文件
+- **安裝方式**：`flatpak install flathub md.obsidian.Obsidian`
 - **zsh 後台同步**：每次開終端自動觸發
+- **Dashboard 整合**：
+  - 一鍵打開 Letta 記憶 / 記憶碎片（obsidian:// 協議）
+  - 顯示記憶碎片數量統計
 
 ## 輸入法配置（2026-02-28）
 - fcitx5 每窗口記憶狀態
@@ -236,71 +244,20 @@
 - 踩坑：Letta `ollama` endpoint type 用原生 API，不走 OpenAI 兼容端點，導致 404
   - 解法：用 `openai` type + `http://host.docker.internal:11434/v1`
 
-## NixOS Dashboard（2026-02-27 Session 9）
-- 新增統一 Web 控制台：http://127.0.0.1:9099
-- 功能：
+## NixOS Dashboard（2026-02-28 更新）
+- 統一 Web 控制台：http://127.0.0.1:9099
+- **功能面板**：
   - 快捷操作按鈕（系統/AI/代理/Letta 四類命令）
   - 系統狀態監控（磁盤、服務、容器）
+  - **省 Token 優化狀態**：Redis 緩存命中率、記憶碎片統計
+  - **待辦清單**：LocalStorage 持久化
   - Letta 對話面板（三個 agent 切換）
   - 命令輸出終端（SSE 流式輸出）
-  - 服務鏈接（Dify/n8n/Chroma/LiteLLM/Letta/mihomo）
-  - 設為 Recovery 按鈕（釘死當前 generation 為 GC root）
+  - **Obsidian 快捷入口**：一鍵打開 Letta 記憶 / 記憶碎片
 - 技術棧：
-  - 後端：Flask + Python 3.13（pythonEnv with packages）
-  - 前端：Vanilla JS + Catppuccin Mocha 暗色主題
-  - 部署：systemd service (nixos-dashboard.service)
-  - 安全：命令白名單 + localhost only + rate limiting
-- 文件結構：
-  - `/etc/nixos/dashboard/app.py` — Flask 後端
-  - `/etc/nixos/dashboard/templates/index.html` — 單頁前端
-  - `/etc/nixos/scripts/dashboard.sh` — nix-shell wrapper
-- 部署記錄：
-  - Generation 102 (2026-02-27 18:09:59)
-  - 踩坑：systemd 環境缺 NIX_PATH，改用 pythonEnv.withPackages 解決
-  - 服務狀態：active (running)，綁定 127.0.0.1:9099
-- Dify OpenAPI 插件配置：Bearer Token 填 `letta-charlie-2026`
-  - `modules/ai.nix` — systemd service 配置
-- 新增 alias：`dashboard`（打開瀏覽器）
-- 防火牆開放 9099 端口
-  - 服務鏈接快捷入口
-- 技術棧：Flask + vanilla HTML/CSS/JS，Catppuccin Mocha 暗色主題
-- 部署：systemd service（nixos-dashboard.service），nix-shell wrapper
-- 新增 alias：`dashboard`（打開瀏覽器）
-- 文件：
-  - `/etc/nixos/dashboard/app.py`：Flask 後端，命令白名單 + 狀態 API + chat API
-  - `/etc/nixos/dashboard/templates/index.html`：單頁面前端
-  - `/etc/nixos/scripts/dashboard.sh`：nix-shell wrapper
-- Dify OpenAPI 插件配置：Bearer Token 填 `letta-charlie-2026`
-
-## NixOS Dashboard（2026-02-27 Session 9）
-- 新增統一 Web 控制台：http://127.0.0.1:9099
-- 功能：
-  - 快捷操作按鈕（系統/AI/代理/Letta 四類命令）
-  - 系統狀態監控（磁盤、服務、容器）
-  - Letta 對話面板（三個 agent 切換，直接在 Web 聊天）
-  - 命令輸出終端（SSE 流式輸出）
-  - 知識蒸餾流程說明（Gemini 清洗工作流程文檔）
-- 技術棧：
-  - 後端：Flask + Python 3.13（nix-shell wrapper）
+  - 後端：Flask + Python 3.13
   - 前端：單頁 HTML + Vanilla JS（Catppuccin Mocha 暗色主題）
   - 部署：systemd 服務 `nixos-dashboard.service`
-  - 安全：命令白名單（不接受任何用戶輸入），危險操作需確認
-- 文件結構：
-  - `/etc/nixos/dashboard/app.py` - Flask 後端
-  - `/etc/nixos/dashboard/templates/index.html` - 前端
-  - `/etc/nixos/scripts/dashboard.sh` - nix-shell wrapper
-  - `configuration.nix` - systemd 服務定義 + `dashboard` alias
 - 使用：
-  - 啟動：`sudo systemctl start nixos-dashboard`（或 `ns` 後自動啟動）
-  - 訪問：`dashboard` alias 或直接打開 http://127.0.0.1:9099
-  - 停止：`sudo systemctl stop nixos-dashboard`
-- Dify OpenAPI 整合：
-  - 新增 `/mnt/ai/ai-cluster/letta/openapi-dify.yaml` - Letta API spec for Dify
-  - 6 個端點：listAgents, sendMessage, getCoreMemory, updateCoreMemory, getArchivalMemory, searchArchivalMemory
-  - 認證：Bearer Token `letta-charlie-2026`
-  - Base URL：`http://host.docker.internal:8283/v1`
-- 知識蒸餾工作流程（2026-02-27 更新）：
-  - 準備：導出 Gemini/Claude 對話 JSON → 放入 `/mnt/ai/conversations/`
-  - 執行：點擊「知識蒸餾」按鈕，DeepSeek-R1 遞歸總結
-  - 完成：知識寫入 Chroma（覆蓋模式），Letta agents 可檢索
-  - 注意：蒸餾會覆蓋 Chroma 現有數據，執行前需備份
+  - 訪問：`dashboard` alias 或 http://127.0.0.1:9099
+  - CLI 流式輸出帶進度條（長命令自動啟用）
