@@ -168,11 +168,12 @@ def api_status():
 
 @app.route("/api/token-stats")
 def api_token_stats():
-    """获取 Token 使用统计"""
+    """获取 Token 使用统计与省 Token 优化状态"""
     stats = {
         "redis": {"hits": 0, "misses": 0, "hit_rate": 0},
         "letta": {"agents": 0, "total_memories": 0},
-        "obsidian": {"letta_files": 0, "fragment_files": 0},
+        "obsidian": {"letta_files": 0, "fragment_files": 0, "total_fragments": 0},
+        "models": {"local": ["qwen3:8b", "deepseek-r1:14b"], "cloud": ["glm-4.7", "gemini-flash", "claude-opus"]},
     }
 
     # Redis 缓存统计
@@ -212,11 +213,45 @@ def api_token_stats():
         letta_path = Path.home() / "Documents" / "Obsidian" / "Letta-Memory"
         frag_path = Path.home() / "Documents" / "Obsidian" / "Memory-Fragments"
         stats["obsidian"]["letta_files"] = len(list(letta_path.glob("*.md"))) if letta_path.exists() else 0
-        stats["obsidian"]["fragment_files"] = len(list(frag_path.glob("*.md"))) if frag_path.exists() else 0
+        if frag_path.exists():
+            md_files = list(frag_path.glob("*.md"))
+            stats["obsidian"]["fragment_files"] = len(md_files)
+            # 统计碎片数量
+            for f in md_files:
+                if f.name != "INDEX.md":
+                    content = f.read_text()
+                    stats["obsidian"]["total_fragments"] += content.count("## [")
     except:
         pass
 
     return jsonify(stats)
+
+
+@app.route("/api/obsidian-stats")
+def api_obsidian_stats():
+    """获取 Obsidian 记忆碎片详细统计"""
+    from pathlib import Path
+    result = {"categories": [], "total_fragments": 0}
+    try:
+        frag_path = Path.home() / "Documents" / "Obsidian" / "Memory-Fragments"
+        index_file = frag_path / "INDEX.md"
+        if index_file.exists():
+            content = index_file.read_text()
+            # 解析统计信息
+            import re
+            match = re.search(r'\*\*(\d+)\*\*.*?碎片.*?\*\*(\d+)\*\*.*?标签', content)
+            if match:
+                result["total_fragments"] = int(match.group(1))
+                total_tags = int(match.group(2))
+            # 解析分类
+            for line in content.split("\n"):
+                if "- [[" in line:
+                    match = re.search(r'\[\[([^\]]+)\)\]\s*\((\d+)\s*个\)', line)
+                    if match:
+                        result["categories"].append({"name": match.group(1), "count": int(match.group(2))})
+    except:
+        pass
+    return jsonify(result)
 
 
 @app.route("/api/letta-memory")

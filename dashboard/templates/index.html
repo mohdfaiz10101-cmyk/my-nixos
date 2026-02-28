@@ -166,6 +166,25 @@ h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
 </div>
 
 <div class="section">
+  <div class="section-title">省 Token 優化狀態</div>
+  <div class="status-grid">
+    <div>
+      <h3 style="font-size:12px;color:var(--subtext);margin-bottom:8px;">緩存命中率</h3>
+      <div id="cache-stats"></div>
+    </div>
+    <div>
+      <h3 style="font-size:12px;color:var(--subtext);margin-bottom:8px;">記憶碎片</h3>
+      <div id="memory-stats"></div>
+    </div>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="obsidian://open?vault=Obsidian&file=Letta-Memory%2FINDEX.md" class="btn" style="border-left:3px solid var(--mauve);">📝 Letta 記憶 ↗</a>
+    <a href="obsidian://open?vault=Obsidian&file=Memory-Fragments%2FINDEX.md" class="btn" style="border-left:3px solid var(--mauve);">🗂️ 記憶碎片 ↗</a>
+    <button class="btn" style="border-left:3px solid var(--teal);" onclick="runCmd('memory-manage', true, false)">🔄 重新整理</button>
+  </div>
+</div>
+
+<div class="section">
   <div class="section-title">💬 Letta 對話</div>
   <div class="chat-panel">
     <div class="chat-header">
@@ -197,6 +216,7 @@ h1 { font-size: 18px; color: var(--blue); margin-bottom: 4px; }
 
 <script>
 let statusData = null;
+let tokenStats = null;
 let currentAgent = 'nixos-sysadmin';
 
 async function refreshStatus() {
@@ -207,6 +227,33 @@ async function refreshStatus() {
   } catch (e) {
     console.error('Status fetch failed:', e);
   }
+  try {
+    const resp = await fetch('/api/token-stats');
+    tokenStats = await resp.json();
+    renderTokenStats();
+  } catch (e) {
+    console.error('Token stats fetch failed:', e);
+  }
+}
+
+function renderTokenStats() {
+  if (!tokenStats) return;
+  const cacheRate = tokenStats.redis.hit_rate;
+  const cacheCls = cacheRate > 50 ? 'var(--green)' : cacheRate > 20 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('cache-stats').innerHTML = `
+    <div style="font-size:24px;font-weight:bold;color:${cacheCls};">${cacheRate}%</div>
+    <div style="font-size:11px;color:var(--dim);">Redis 緩存命中</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:4px;">
+      命中: ${tokenStats.redis.hits} | 未中: ${tokenStats.redis.misses}
+    </div>
+  `;
+  document.getElementById('memory-stats').innerHTML = `
+    <div style="font-size:24px;font-weight:bold;color:var(--mauve);">${tokenStats.obsidian.total_fragments}</div>
+    <div style="font-size:11px;color:var(--dim);">記憶碎片</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:4px;">
+      Letta: ${tokenStats.letta.total_memories} | Agent: ${tokenStats.letta.agents}
+    </div>
+  `;
 }
 
 function renderStatus() {
