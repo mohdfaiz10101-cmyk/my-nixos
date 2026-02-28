@@ -99,5 +99,6 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [ ollama ];
+  environment.systemPackages = with pkgs; [ ollama ]
+    ++ [ pkgs.noto-fonts-cjk-serif pkgs.noto-fonts-cjk-sans pkgs.noto-fonts-emoji ];
 }
