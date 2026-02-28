@@ -77,6 +77,22 @@ COMMANDS = {
         "cmd": "current_gen=$(sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | grep current | awk '{print $1}') && sudo ln -sf /nix/var/nix/profiles/system-${current_gen}-link /nix/var/nix/gcroots/pinned-recovery-$(date +%Y%m%d-%H%M%S) && echo \"已釘死 Generation ${current_gen} 為 Recovery 版本\"",
         "label": "設為 Recovery", "group": "system", "icon": "📌", "danger": False, "long": False,
     },
+    "1688-install-userscript": {
+        "cmd": "cat /mnt/ai/ai-cluster/1688-system/userscript/1688-assistant.user.js",
+        "label": "安裝油猴腳本", "group": "1688", "icon": "📜", "danger": False, "long": False,
+    },
+    "1688-sync-telegram": {
+        "cmd": "curl -s -x http://127.0.0.1:7890 'https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage' -d 'chat_id=${TELEGRAM_CHAT_ID}' -d 'text=🔄 1688 系統同步測試' -d 'parse_mode=HTML' 2>/dev/null && echo '✅ Telegram 推送成功'",
+        "label": "同步到 Telegram", "group": "1688", "icon": "📱", "danger": False, "long": False,
+    },
+    "letta-obsidian": {
+        "cmd": "python3 /etc/nixos/scripts/letta-obsidian-sync.py 2>&1 || /mnt/ai/ai-cluster/1688-system/letta-obsidian-simple.sh 2>&1",
+        "label": "Letta→Obsidian", "group": "letta", "icon": "📓", "danger": False, "long": False,
+    },
+    "memory-manage": {
+        "cmd": "python3 /etc/nixos/scripts/memory-fragment-manager.py 2>&1",
+        "label": "記憶碎片管理", "group": "letta", "icon": "🧩", "danger": False, "long": False,
+    },
 }
 
 # Rate limiting
@@ -334,6 +350,25 @@ def api_chat():
         return jsonify({"ok": False, "error": "Letta 回應超時"}), 504
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/userscript")
+def api_userscript():
+    """提供油猴脚本下载"""
+    script_path = "/mnt/ai/ai-cluster/1688-system/userscript/1688-assistant.user.js"
+    try:
+        with open(script_path) as f:
+            content = f.read()
+        return Response(
+            content,
+            mimetype="application/javascript",
+            headers={
+                "Content-Disposition": "inline; filename=1688-assistant.user.js",
+                "Content-Type": "application/javascript; charset=utf-8",
+            },
+        )
+    except FileNotFoundError:
+        return jsonify({"error": "脚本文件不存在"}), 404
 
 
 @app.route("/procurement")

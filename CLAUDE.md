@@ -291,3 +291,26 @@
   - Telegram Bot（手機推送）
   - Letta Agent 配置
 - 修復 Obsidian 字體訪問：flatpak override --filesystem=host:ro
+
+### 2026-02-28 Session 10
+- 部署 1688 后端容器（:5000）+ 创建 Letta purchasing-screener Agent
+- Telegram Bot 配置完成（@charlie_1688_bot, Chat ID 5036541266）
+- 部署 Mem0 内容过滤器（:5001）+ Firefox 扩展
+- 新增窗口假死检测器（freeze-detector.sh + systemd user service）
+- SETUP.md 补充手机端 Git 操作指南
+
+## Flatpak 字体踩坑（2026-02-28，重要教训）
+### 问题链
+1. Obsidian（flatpak）看不到中文 → 因为 flatpak sandbox 内 fontconfig 不扫描 NixOS 字体路径
+2. 解法：复制 CJK 字体到 `~/.local/share/fonts/`（flatpak 会扫描 `/run/host/user-fonts/`）
+3. **副作用**：GNOME 系统字体设为 `Noto Sans`，但系统只有 CJK 变体（`Noto Sans CJK JP`），
+   fontconfig 把西文也匹配到 CJK VF 字体 → 文件管理器/系统 UI 文字乱码/看不见
+4. 修复：安装基础 `noto-fonts` 包（包含 `Noto Sans` 非 CJK 版本）
+
+### 防护规则（所有 flatpak 应用适用）
+- NixOS 字体在 `/run/current-system/sw/share/fonts/`，flatpak 看不到
+- 需要复制到 `~/.local/share/fonts/`（不能用 symlink，sandbox 不跟随）
+- **复制 CJK 字体前必须确认基础字体已安装**（`noto-fonts`、`dejavu_fonts` 等）
+- 系统包必须同时包含：`noto-fonts` + `noto-fonts-cjk-*`（缺任何一个都会出问题）
+- 复制字体后必须验证：`fc-match "Noto Sans"` 应返回非 CJK 版本
+- 如果 GNOME 字体设为 X，必须确保系统有精确的 X 字体包
