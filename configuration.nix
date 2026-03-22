@@ -152,6 +152,10 @@ in
     '';
     shellAliases = {
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
+      nixos-test = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";
+      nixos-confirm = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh confirm";
+      nixos-rollback = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh rollback";
+      nixos-status = "bash /etc/nixos/scripts/nixos-safe-upgrade.sh status";
       nc = "sudo nix-collect-garbage -d";
       ai-log = "journalctl -u ollama.service -u openclaw-gateway.service -f";
       ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && cd /mnt/ai/ai-cluster/letta && docker compose -p letta up -d && echo 'AI 集群全部啟動'";
