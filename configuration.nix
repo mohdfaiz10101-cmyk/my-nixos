@@ -39,10 +39,11 @@ in
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # --- 桌面環境：GNOME + GDM ---
+  # --- 桌面環境：KDE Plasma + SDDM ---
   services.xserver.enable = true;
-  services.displayManager.gdm.enable = true;
-  services.desktopManager.gnome.enable = true;
+  services.displayManager.sddm.enable = true;
+  services.displayManager.sddm.wayland.enable = true;
+  services.desktopManager.plasma6.enable = true;
 
   # --- 鼠標主題：Catppuccin Mocha Dark ---
   environment.variables.XCURSOR_THEME = "catppuccin-mocha-dark-cursors";
@@ -104,6 +105,10 @@ in
     enable = true;
     daemon.settings = {
       data-root = "/mnt/ai/docker";
+      registry-mirrors = [
+        "https://docker.1ms.run"
+        "https://docker.xuanyuan.me"
+      ];
       proxies = {
         http-proxy = "http://127.0.0.1:7890";
         https-proxy = "http://127.0.0.1:7890";
@@ -225,6 +230,9 @@ in
     floorp-bin
     google-chrome
 
+    # 通讯
+    telegram-desktop
+
     # 手机投屏与工具
     scrcpy
     android-tools
@@ -263,12 +271,7 @@ in
     };
   };
 
-  # 禁用 GNOME 自带的 ibus，让 fcitx5 接管
-  services.xserver.desktopManager.gnome.extraGSettingsOverrides = ''
-    [org.gnome.settings-daemon.plugins.keyboard]
-    active=false
-  '';
-  environment.gnome.excludePackages = [ pkgs.ibus ];
+  # KDE 不需要禁用 ibus，fcitx5 直接接管
 
   # fcitx5 環境變量（每窗口記住狀態）
   environment.sessionVariables = {
@@ -276,6 +279,10 @@ in
     QT_IM_MODULE = "fcitx";
     XMODIFIERS = "@im=fcitx";
     INPUT_METHOD = "fcitx";
+    # 让 Firefox/Floorp 等浏览器自动使用系统代理
+    http_proxy = "http://127.0.0.1:7890";
+    https_proxy = "http://127.0.0.1:7890";
+    no_proxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local,11434,18789";
   };
 
   # --- 7. 窗口假死检测 ---
