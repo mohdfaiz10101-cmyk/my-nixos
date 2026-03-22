@@ -29,3 +29,9 @@ claude_*.py
 # Git 凭证
 .git-credentials
 tmp/
+
+# Node modules（不应该被跟踪）
+node_modules/
+
+# 杂项
+1

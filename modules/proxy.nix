@@ -3,6 +3,35 @@
 # 節點管理用 metacubexd Web UI: http://127.0.0.1:9090/ui
 { config, pkgs, lib, ... }:
 let
+  # xray 配置（vless+ws+tls 新加坡/美國節點，監聽 7890）
+  xrayConfig = pkgs.writeText "xray-config.json" (builtins.toJSON {
+    inbounds = [{
+      port = 7890;
+      protocol = "http";
+      listen = "127.0.0.1";
+    }];
+    outbounds = [{
+      protocol = "vless";
+      settings.vnext = [{
+        address = "cfyes.lxy1015.top";
+        port = 443;
+        users = [{
+          id = "f99d11dd-5f7c-49a3-8ab7-80272d9b887e";
+          encryption = "none";
+        }];
+      }];
+      streamSettings = {
+        network = "ws";
+        security = "tls";
+        tlsSettings.serverName = "lx-us1.lxy1015.top";
+        wsSettings = {
+          path = "/liangxin/us";
+          headers.Host = "lx-us1.lxy1015.top";
+        };
+      };
+    }];
+  });
+
   # 訂閱下載腳本：自動追加 &flag=meta 取得 mihomo 格式
   proxySub = pkgs.writeShellScriptBin "proxy-sub" ''
     set -euo pipefail
@@ -51,9 +80,10 @@ let
   '';
 in
 {
-  # --- mihomo 系統代理（開機自啟，無 TUN）---
+  # --- mihomo 備用（目前停用，節點不可用）---
+  # 若需重新啟用：改為 enable = true 並停用 xray
   services.mihomo = {
-    enable = true;
+    enable = false;
     configFile = "/etc/mihomo/config.yaml";
     webui = pkgs.metacubexd;
     tunMode = false;
@@ -66,7 +96,22 @@ in
 
   environment.systemPackages = [
     proxySub
+    pkgs.xray
   ];
+
+  # --- xray vless+ws+tls 代理（開機自啟，監聽 7890）---
+  systemd.services.xray = {
+    description = "Xray VLESS Proxy";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.xray}/bin/xray run -c ${xrayConfig}";
+      Restart = "on-failure";
+      RestartSec = 5;
+      LimitNOFILE = 65536;
+    };
+  };
 
   # 開放 7890 給 Docker 容器訪問代理（allow-lan 需配合防火牆）
   networking.firewall.allowedTCPPorts = [ 7890 ];
