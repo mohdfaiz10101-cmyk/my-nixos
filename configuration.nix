@@ -358,7 +358,29 @@ in
     };
   };
 
-  # --- 10. Floorp 书签自动备份（每天 + git 追踪）---
+  # --- 10. Claude Code 对话自动同步到 Obsidian ---
+  systemd.services.claude-to-obsidian = {
+    description = "Sync Claude Code conversations to Obsidian";
+    path = [ pkgs.bash pkgs.python313 pkgs.coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/claude-to-obsidian.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.claude-to-obsidian = {
+    description = "Sync Claude sessions to Obsidian every 6 hours";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "10min";
+      OnUnitActiveSec = "6h";
+      Persistent = true;
+    };
+  };
+
+  # --- 11. Floorp 书签自动备份（每天 + git 追踪）---
   systemd.services.floorp-bookmark-backup = {
     description = "Backup Floorp bookmarks to git";
     path = [ pkgs.bash pkgs.coreutils pkgs.sqlite ];
