@@ -10,6 +10,8 @@ in
     ./modules/storage.nix
     ./modules/ai.nix
     ./modules/proxy.nix
+    ./modules/essentials.nix
+    ./modules/git.nix
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---

@@ -24,18 +24,6 @@
       options = [ "fmask=0022" "dmask=0022" ];
     };
 
-  fileSystems."/boot" =
-    { device = "/boot/efi";
-      fsType = "none";
-      options = [ "bind" ];
-    };
-
-  fileSystems."/boot" =
-    { device = "/boot/efi";
-      fsType = "none";
-      options = [ "bind" ];
-    };
-
   swapDevices = [ ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
