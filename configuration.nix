@@ -136,6 +136,9 @@ in
       # Auto-sync Letta memory to Claude Code (background, max once/hour)
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
 
+      # Auto-sync Claude credentials from root to charlie (background)
+      /etc/nixos/scripts/claude-sync.sh &>/dev/null &
+
       # fcitx5 输入法：默认简体，每窗口独立状态
       export GTK_IM_MODULE=fcitx
       export QT_IM_MODULE=fcitx

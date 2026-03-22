@@ -6,7 +6,8 @@ let
   # xray 配置（vless+ws+tls 新加坡/美國節點，監聽 7890）
   xrayConfig = pkgs.writeText "xray-config.json" (builtins.toJSON {
     log = {
-      loglevel = "error";  # 只記錄嚴重錯誤，忽略正常的 broken pipe 警告
+      loglevel = "none";  # 完全禁用日誌
+      access = "none";    # 禁用訪問日誌（不記錄每個連接）
     };
     inbounds = [
       {
