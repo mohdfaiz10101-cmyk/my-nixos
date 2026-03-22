@@ -327,6 +327,28 @@ in
     };
   };
 
+  # --- 9. Floorp 书签自动备份（每天 + git 追踪）---
+  systemd.services.floorp-bookmark-backup = {
+    description = "Backup Floorp bookmarks to git";
+    path = [ pkgs.bash pkgs.coreutils pkgs.sqlite ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/floorp-bookmark-backup.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.floorp-bookmark-backup = {
+    description = "Daily Floorp bookmark backup";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "10min";
+    };
+  };
+
   # Nix 实验特性
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # 系统版本锁定
