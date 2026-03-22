@@ -156,8 +156,8 @@ in
     '';
     shellAliases = {
       ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
-      nixos-test = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";
-      nixos-confirm = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh confirm";
+      nixos-test = "sudo bash /etc/nixos/scripts/nixos-test-notify.sh pre-test && sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";
+      nixos-confirm = "bash /etc/nixos/scripts/nixos-test-notify.sh notify";
       nixos-rollback = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh rollback";
       nixos-status = "bash /etc/nixos/scripts/nixos-safe-upgrade.sh status";
       nc = "sudo bash /etc/nixos/scripts/pin-stable-generation.sh restore 2>/dev/null; sudo nix-collect-garbage -d; sudo bash /etc/nixos/scripts/pin-stable-generation.sh restore 2>/dev/null";
@@ -248,6 +248,7 @@ in
     flclash
 
     # 系统工具
+    zenity
     fastfetch
     htop
     vim
@@ -358,7 +359,29 @@ in
     };
   };
 
-  # --- 10. Claude Code 对话自动同步到 Obsidian ---
+  # --- 10. 测试模式每日确认通知 ---
+  systemd.user.services.nixos-test-notify = {
+    description = "NixOS test mode confirmation reminder";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/nixos-test-notify.sh notify";
+    };
+    environment = {
+      DISPLAY = ":0";
+      WAYLAND_DISPLAY = "wayland-0";
+    };
+  };
+
+  systemd.user.timers.nixos-test-notify = {
+    description = "Daily NixOS test confirmation popup";
+    wantedBy = [ "graphical-session.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 10:00:00";
+      Persistent = true;
+    };
+  };
+
+  # --- 11. Claude Code 对话自动同步到 Obsidian ---
   systemd.services.claude-to-obsidian = {
     description = "Sync Claude Code conversations to Obsidian";
     path = [ pkgs.bash pkgs.python313 pkgs.coreutils ];
