@@ -61,6 +61,7 @@ in
   # --- 2. 引導與磁盤：雙系統與防掉盤機制 ---
   boot.loader = {
     efi.canTouchEfiVariables = false;
+    efi.efiSysMountPoint = "/boot/efi";
     systemd-boot.enable = false;
     grub = {
       enable = true;
@@ -151,9 +152,9 @@ in
       ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && cd /mnt/ai/ai-cluster/letta && docker compose -p letta up -d && echo 'AI 集群全部啟動'";
       ai-ps = "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'";
       distill = "cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build";
-      proxy-status = "systemctl status mihomo";
-      proxy-restart = "sudo systemctl restart mihomo";
-      proxy-log = "journalctl -u mihomo -f";
+      proxy-status = "systemctl status xray";
+      proxy-restart = "sudo systemctl restart xray";
+      proxy-log = "journalctl -u xray -f";
       proxy-ui = "echo 'Web UI: http://127.0.0.1:9090/ui'";
       nix-recover = "sudo /etc/nixos/scripts/recover-from-git.sh";
       full-restore = "sudo /etc/nixos/scripts/full-restore.sh";
