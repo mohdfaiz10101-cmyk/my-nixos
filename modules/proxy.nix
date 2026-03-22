@@ -5,11 +5,22 @@
 let
   # xray 配置（vless+ws+tls 新加坡/美國節點，監聽 7890）
   xrayConfig = pkgs.writeText "xray-config.json" (builtins.toJSON {
-    inbounds = [{
-      port = 7890;
-      protocol = "http";
-      listen = "127.0.0.1";
-    }];
+    log = {
+      loglevel = "error";  # 只記錄嚴重錯誤，忽略正常的 broken pipe 警告
+    };
+    inbounds = [
+      {
+        port = 7890;
+        protocol = "http";
+        listen = "127.0.0.1";
+      }
+      {
+        port = 7891;
+        protocol = "socks";
+        listen = "127.0.0.1";
+        settings.udp = true;
+      }
+    ];
     outbounds = [{
       protocol = "vless";
       settings.vnext = [{
@@ -110,6 +121,8 @@ in
       Restart = "on-failure";
       RestartSec = 5;
       LimitNOFILE = 65536;
+      StandardOutput = "null";  # 完全禁用標準輸出
+      StandardError = "null";   # 完全禁用錯誤輸出（包括 connection 日誌）
     };
   };
 

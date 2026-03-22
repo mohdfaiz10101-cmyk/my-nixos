@@ -12,6 +12,9 @@ in
     ./modules/proxy.nix
     ./modules/essentials.nix
     ./modules/git.nix
+    ./modules/community.nix
+    ./modules/productivity.nix
+    ./scripts.nix
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---
@@ -150,6 +153,8 @@ in
       proxy-log = "journalctl -u mihomo -f";
       proxy-ui = "echo 'Web UI: http://127.0.0.1:9090/ui'";
       nix-recover = "sudo /etc/nixos/scripts/recover-from-git.sh";
+      full-restore = "sudo /etc/nixos/scripts/full-restore.sh";
+      home-backup = "sudo /etc/nixos/scripts/home-backup.sh";
       nix-chat = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/nixos-chat.py'";
       nix-seed = "nix-shell -p python313Packages.requests --run 'python3 /mnt/ai/ai-cluster/letta/seed-knowledge.py'";
       letta-sync = "/etc/nixos/scripts/letta-sync.sh";
@@ -171,6 +176,16 @@ in
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+  };
+
+  # Tmux 配置
+  programs.tmux = {
+    enable = true;
+    extraConfig = ''
+      set -g status-left "#{?client_prefix,#[bg=red] WAIT ,#[bg=green] TMUX } "
+      set -g mouse on
+      set -g status-interval 1
+    '';
   };
 
   # nix-ld：讓 JetBrains 插件等預編譯 binary 能在 NixOS 上運行
@@ -202,6 +217,28 @@ in
     python313Packages.requests
     libnotify
 
+    # 浏览器
+    floorp-bin
+    google-chrome
+
+    # 手机投屏与工具
+    scrcpy
+    android-tools
+    flclash
+
+    # 系统工具
+    fastfetch
+    htop
+    vim
+    wget
+    curl
+    rclone
+    input-remapper
+    numlockx
+
+    # 终端
+    kitty
+
     # 硬體診斷工具
     pciutils
     usbutils
@@ -211,12 +248,23 @@ in
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
-    fcitx5.addons = with pkgs; [
-      qt6Packages.fcitx5-chinese-addons
-      fcitx5-rime
-      qt6Packages.fcitx5-configtool
-    ];
+    fcitx5 = {
+      waylandFrontend = true;
+      addons = with pkgs; [
+        qt6Packages.fcitx5-chinese-addons
+        fcitx5-rime
+        fcitx5-gtk
+        qt6Packages.fcitx5-configtool
+      ];
+    };
   };
+
+  # 禁用 GNOME 自带的 ibus，让 fcitx5 接管
+  services.xserver.desktopManager.gnome.extraGSettingsOverrides = ''
+    [org.gnome.settings-daemon.plugins.keyboard]
+    active=false
+  '';
+  environment.gnome.excludePackages = [ pkgs.ibus ];
 
   # fcitx5 環境變量（每窗口記住狀態）
   environment.sessionVariables = {
@@ -240,6 +288,31 @@ in
       DISPLAY = ":0";
       WAYLAND_DISPLAY = "wayland-0";
       DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/1000/bus";
+    };
+  };
+
+  # --- 8. 自动备份用户数据（每天一次，防重装丢失）---
+  systemd.services.home-backup = {
+    description = "Backup home data to /mnt/data";
+    after = [ "mnt-data.mount" ];
+    requires = [ "mnt-data.mount" ];
+    path = [ pkgs.rsync pkgs.coreutils pkgs.util-linux ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/home-backup.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+    environment.HOME = "/root";
+  };
+
+  systemd.timers.home-backup = {
+    description = "Daily home backup timer";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "30min";
     };
   };
 

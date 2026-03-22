@@ -1,6 +1,6 @@
 # NixOS 系統上下文 — Charlie's Snowflake
 # 此檔案供所有 AI 助手共用（Claude、Gemini 等），請勿刪除
-# 最後更新：2026-02-26
+# 最後更新：2026-03-22
 
 ## 系統架構
 - OS: NixOS (Flake 架構)，入口 `flake.nix`，輸出端點 `charlie`
@@ -8,13 +8,14 @@
 - 桌面: GNOME + GDM（從 Plasma 6 / SDDM 遷移而來）
 - GPU: NVIDIA RTX 3060 Ti（GA104，閉源驅動，CUDA 加速）
 - CPU: Intel（啟用 KVM 虛擬化）
-- 網路: NetworkManager + 代理 127.0.0.1:7890
-- 輸入法: Fcitx5 + Rime + Chinese Addons (Qt6)
+- 網路: NetworkManager + xray 代理 127.0.0.1:7890（HTTP）+ 7891（SOCKS5）
+- 輸入法: Fcitx5 + Rime + Chinese Addons (Qt6) + Wayland Frontend
+- 終端: Kitty
 
 ## 分區佈局
 | 分區 | UUID | 類型 | 掛載點 | 備註 |
 |------|------|------|--------|------|
-| nvme0n1p9 | b7615046-fc37-443c-a249-4caca7ed6edd | ext4 | / | 根分區 89G |
+| nvme0n1p9 | 2d8662db-7f69-49a6-b396-ef96dc3e0b23 | ext4 | / | 根分區 89G（重裝後新 UUID）|
 | nvme0n1p2 | FA67-631E | vfat | /boot | EFI 252MB（共用） |
 | sdb1 | B2BCF4DBBCF49B55 | ntfs | /mnt/storage_1.8t | 外接 2T 硬碟 |
 | (sda4等) | DE22F5F022F5CD91 | ntfs | /mnt/data | 4T 資料碟 |
@@ -53,7 +54,11 @@
 └── CONTEXT.md               # 本檔案（跨 AI 共用）
 ```
 
-**注意**：標記 `[舊]` 的檔案是重構前的遺留模組，目前 `configuration.nix` 的 imports 只引用 `hardware-configuration.nix`、`modules/storage.nix`、`modules/ai.nix`。其餘舊模組的功能已整合進主配置或不再使用。
+**注意**：標記 `[舊]` 的檔案是重構前的遺留模組。目前 `configuration.nix` 的 imports 引用：
+- `hardware-configuration.nix`、`modules/storage.nix`、`modules/ai.nix`、`modules/proxy.nix`
+- `modules/essentials.nix`、`modules/git.nix`、`modules/community.nix`、`modules/productivity.nix`
+- `scripts.nix`
+其餘舊模組（`packages.nix`、`proxy.nix`根目錄版、`user/charlie.nix`）的功能已整合進主配置或不再使用。
 
 ## configuration.nix 構建邏輯
 1. **硬體與驅動**：allowUnfree + enableAllFirmware + Intel/AMD microcode + NVIDIA 閉源驅動
@@ -93,13 +98,17 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - 包定義使用 `builtins.hasAttr` 容錯檢查（見 productivity.nix）
 - `/nix/store` 唯讀，不能在裡面跑 `npm install`
 
-## 代理與網路
-- mihomo 系統代理，port 7890，HTTP/SOCKS5 手動模式（無 TUN）
-- metacubexd Web UI：http://127.0.0.1:9090/ui（節點管理）
+## 代理與網路（2026-03-22 更新）
+- **xray**：系統級代理，vless+ws+tls，開機自啟
+  - HTTP 代理：port 7890
+  - SOCKS5 代理：port 7891
+  - 出口節點：美國（cfyes.lxy1015.top → lx-us1.lxy1015.top）
+  - 配置以 `builtins.toJSON` 內聯於 `modules/proxy.nix`（純 Nix，不依賴外部文件）
 - networking.proxy 系統環境變數（git/curl 自動走代理）
-- 訂閱更新：`sudo proxy-sub <URL>`（自動追加 &flag=meta）
-- Firefox 需手動設定代理或用 FoxyProxy
-- 已移除：clash-verge-rev、TUN 模式、dae、proxy-watchdog
+- GNOME 系統代理：manual 模式指向 127.0.0.1:7890
+- Firefox：已配 user.js 使用 HTTP 代理
+- **已停用**：mihomo（訂閱節點香港被 Anthropic 封鎖）
+- **已移除**：clash-verge-rev、TUN 模式、dae、proxy-watchdog
 
 ## Essence 同步協議
 - `up` alias：git pull → commit → push → rclone sync 到 Google Drive
@@ -135,3 +144,16 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - 移除 clash-verge-rev、關閉 TUN 模式，改為手動代理 port 7890
 - chown /etc/nixos 給 charlie（JetBrains 可直接編輯）
 - nixos-rebuild switch 成功
+
+### 2026-03-22 系統重裝後恢復
+- NixOS 完全重裝（/nix 遷移失敗 → initrd UUID 錯誤 → 全盤重裝）
+- 根分區 UUID 變更：b7615046... → 2d8662db...
+- 代理從 mihomo 切換到 xray（vless+ws+tls）
+- 恢復所有模組 imports（community, productivity, scripts, essentials, git）
+- 修復 NTFS dirty volume 掛載（加 force 選項）
+- Docker AI 集群全部恢復（Dify, n8n, Chroma, LiteLLM, Letta）
+- Ollama 模型重新下載（qwen3:8b, deepseek-r1:14b）
+- 新增自動備份（systemd timer 每日備份到 /mnt/data/home-backup/）
+- 新增一鍵恢復腳本（full-restore.sh）
+- fcitx5 修復：禁用 GNOME ibus 覆蓋、啟用 waylandFrontend
+- Firefox 代理修復：user.js 配置 HTTP 代理（避免 SOCKS 協議不匹配）

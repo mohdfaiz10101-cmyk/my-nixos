@@ -9,7 +9,7 @@
 - 無 WiFi 硬體（桌機 Intel H510），僅 USB 有線網路
 
 ## 關鍵分區 UUID
-- 根分區 `/`：`b7615046-fc37-443c-a249-4caca7ed6edd`（ext4，nvme0n1p9）
+- 根分區 `/`：`2d8662db-7f69-49a6-b396-ef96dc3e0b23`（ext4，nvme0n1p9）
 - EFI `/boot`：`FA67-631E`（vfat，nvme0n1p2）
 
 ## 已知問題與修復歷史
@@ -39,23 +39,20 @@
 ## 配置結構
 - `configuration.nix`：主配置（引導、桌面、網路、用戶、套件）
 - `hardware-configuration.nix`：硬體偵測（UUID、kernel modules）
-- `modules/proxy.nix`：代理方案（mihomo HTTP/SOCKS5 代理，無 TUN）
+- `modules/proxy.nix`：代理方案（xray vless+ws+tls，HTTP 7890 + SOCKS5 7891）
 - `modules/ai.nix`：AI 相關服務（Ollama、OpenClaw、Letta）
 - `modules/storage.nix`：儲存掛載
 - `modules/productivity.nix`：生產力工具
 
-## 代理架構（2026-02-27 更新）
-- mihomo：系統級代理，開機自啟，port 7890，手動代理模式（無 TUN）
-- allow-lan: true（Docker 容器需要通過代理訪問外部 API）
-- 防火牆已開放 7890（Docker 網段訪問用）
-- proxy-sub 腳本自動注入 `allow-lan: true`（訂閱配置預設 false）
-- metacubexd：Web UI 面板，http://127.0.0.1:9090/ui（節點切換用）
+## 代理架構（2026-03-22 更新）
+- xray：系統級代理，開機自啟，port 7890（HTTP）+ 7891（SOCKS5）
+- 協議：vless+ws+tls，出口節點在美國/新加坡
+- 配置寫入 modules/proxy.nix（Nix 內聯，不依賴外部文件）
+- mihomo：已停用（訂閱節點全是香港，被 Anthropic 封鎖）
 - networking.proxy：系統環境變數，git/curl 等自動走代理
-- 訂閱更新：`sudo proxy-sub <URL>`（自動追加 &flag=meta）
-- 訂閱格式：需 `&flag=meta` 參數取得 mihomo YAML 格式
-- 已移除：clash-verge-rev（與 mihomo TUN 衝突，且無獨立訂閱）
-- 已移除：TUN 模式（避免劫持全部流量導致斷網）
-- Firefox 需手動設定代理 127.0.0.1:7890 或用 FoxyProxy 擴展
+- GNOME 系統代理：已設定 manual 模式指向 127.0.0.1:7890
+- Firefox：已配 user.js 使用 HTTP 代理（非 SOCKS）
+- 已移除：clash-verge-rev、TUN 模式、proxy-watchdog、dae
 
 ## specialisation
 - `F3 - Recovery Stable Mode`：開機選單救援選項，強制啟用 NetworkManager + allowUnfree
@@ -314,3 +311,34 @@
 - 系统包必须同时包含：`noto-fonts` + `noto-fonts-cjk-*`（缺任何一个都会出问题）
 - 复制字体后必须验证：`fc-match "Noto Sans"` 应返回非 CJK 版本
 - 如果 GNOME 字体设为 X，必须确保系统有精确的 X 字体包
+
+### 2026-03-22 系統重裝後全面恢復
+- **系統重裝原因**：/nix 遷移失敗 → initrd UUID 引導失敗 → mihomo 訂閱到期 → 全盤重裝
+- **根分區 UUID 變更**：b7615046... → 2d8662db-7f69-49a6-b396-ef96dc3e0b23（新裝）
+- **代理遷移**：mihomo → xray（vless+ws+tls，美國節點）
+  - mihomo 停用原因：訂閱節點全是香港，被 Anthropic API 封鎖
+  - xray 配置以 builtins.toJSON 內聯（Flake 純求值模式不支持 readFile 外部路徑）
+- **修復項目**：
+  - 恢復所有 modules imports（proxy, essentials, git, community, productivity, scripts）
+  - NTFS dirty volume：storage.nix 加 force 選項
+  - fcitx5：禁用 GNOME ibus 覆蓋 + waylandFrontend + fcitx5-gtk
+  - Firefox：user.js 配置 HTTP 代理（SOCKS 協議不匹配導致超時）
+  - GNOME 系統代理：gsettings manual 模式 127.0.0.1:7890
+  - 字體：複製 Noto Sans + CJK 到 ~/.local/share/fonts/（flatpak 用）
+- **恢復服務**：
+  - Docker AI 集群：Dify, n8n, Chroma, LiteLLM, Letta, AutoGen
+  - Ollama 模型：qwen3:8b, deepseek-r1:14b
+  - Obsidian（flatpak）
+  - JetBrains IDEA 數據從 /mnt/data/config/ 恢復
+- **新增功能**：
+  - 每日自動備份（systemd timer → /mnt/data/home-backup/）
+  - 一鍵恢復腳本（full-restore.sh）
+  - Tmux 配置
+  - Kitty 終端
+- **待完成**：
+  - GitHub SSH 推送（SSH key 已生成，需添加到 GitHub）
+- **踩坑記錄**：
+  - Nix Flake 純求值模式：builtins.readFile 不能讀 /etc 路徑，必須用 builtins.toJSON 或 pkgs.writeText
+  - node_modules 被 git 追蹤（1750 文件）→ 加 .gitignore + git rm --cached
+  - GNOME 覆蓋 IM 環境變數為 ibus → extraGSettingsOverrides + excludePackages
+  - Docker image conflict → docker compose down + 刪 image + 重建

@@ -3,7 +3,7 @@
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/C672D33272D32649";
     fsType = "ntfs3";
-    options = [ "nofail" "x-systemd.device-timeout=5s" "uid=1000" ];
+    options = [ "nofail" "force" "x-systemd.device-timeout=5s" "uid=1000" ];
   };
 
   # AI 數據 loopback 映像 (ext4 on NTFS)
