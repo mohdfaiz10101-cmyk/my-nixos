@@ -31,7 +31,7 @@ if [ "$efi_usage" -gt 80 ]; then
   log "⚠️ EFI 分区 ${efi_usage}% > 80%！configurationLimit=3 应该能控制"
 fi
 
-# === 2. 每日配置备份（保留 3 天）===
+# === 2. 每日配置备份（保留 3 天，双备份）===
 today=$(date '+%Y-%m-%d')
 backup_file="$BACKUP_DIR/nixos-config-${today}.tar.gz"
 
@@ -42,10 +42,25 @@ if [ ! -f "$backup_file" ]; then
     --exclude=.git \
     -C /etc nixos 2>/dev/null || true
   log "✓ 配置已备份到 $backup_file"
+
+  # 双备份到 1.8T 外置硬盘（如果挂载了）
+  if mountpoint -q /mnt/storage_1.8t 2>/dev/null; then
+    mkdir -p /mnt/storage_1.8t/nixos-backups 2>/dev/null || true
+    cp "$backup_file" /mnt/storage_1.8t/nixos-backups/ 2>/dev/null || true
+    log "✓ 双备份到 /mnt/storage_1.8t/nixos-backups/"
+  fi
+
+  # 网盘备份（rclone，如果配置了）
+  if command -v rclone &>/dev/null && rclone listremotes 2>/dev/null | grep -q .; then
+    remote=$(rclone listremotes 2>/dev/null | head -1)
+    rclone copy "$backup_file" "${remote}nixos-backups/" 2>/dev/null || true
+    log "✓ 网盘备份到 ${remote}nixos-backups/"
+  fi
 fi
 
 # 清理 3 天前的备份
 find "$BACKUP_DIR" -name "nixos-config-*.tar.gz" -mtime +3 -delete 2>/dev/null || true
+find /mnt/storage_1.8t/nixos-backups -name "nixos-config-*.tar.gz" -mtime +3 -delete 2>/dev/null || true
 log "备份保留: $(ls "$BACKUP_DIR"/nixos-config-*.tar.gz 2>/dev/null | wc -l) 份"
 
 # === 3. 稳定版 GC root 检查 ===
