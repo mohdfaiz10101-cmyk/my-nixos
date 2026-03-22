@@ -84,12 +84,16 @@ in
     };
   };
 
-  # --- F3 救援模式 ---
-  specialisation."F3 - Recovery Stable Mode".configuration = { config, pkgs, lib, ... }: {
+  # --- F3 救援模式（最小化，只保留网络 + Claude + git）---
+  specialisation."F3 - Recovery".configuration = { config, pkgs, lib, ... }: {
     networking.networkmanager.enable = lib.mkForce true;
     nixpkgs.config.allowUnfree = lib.mkForce true;
     hardware.enableAllFirmware = lib.mkForce true;
-    system.nixos.tags = [ "recovery-stable" ];
+    system.nixos.tags = [ "recovery" ];
+    # 救援模式禁用非必要服务，防止干扰
+    virtualisation.docker.enable = lib.mkForce false;
+    services.ollama.enable = lib.mkForce false;
+    virtualisation.libvirtd.enable = lib.mkForce false;
   };
 
   # 磁盤自動掛載
@@ -156,7 +160,8 @@ in
       nixos-confirm = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh confirm";
       nixos-rollback = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh rollback";
       nixos-status = "bash /etc/nixos/scripts/nixos-safe-upgrade.sh status";
-      nc = "sudo nix-collect-garbage -d";
+      nc = "sudo bash /etc/nixos/scripts/pin-stable-generation.sh restore 2>/dev/null; sudo nix-collect-garbage -d; sudo bash /etc/nixos/scripts/pin-stable-generation.sh restore 2>/dev/null";
+      pin-stable = "sudo bash /etc/nixos/scripts/pin-stable-generation.sh pin";
       ai-log = "journalctl -u ollama.service -u openclaw-gateway.service -f";
       ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && cd /mnt/ai/ai-cluster/letta && docker compose -p letta up -d && echo 'AI 集群全部啟動'";
       ai-ps = "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'";
@@ -331,7 +336,29 @@ in
     };
   };
 
-  # --- 9. Floorp 书签自动备份（每天 + git 追踪）---
+  # --- 9. 系统健康监控（磁盘 + 备份 + 测试状态）---
+  systemd.services.system-health-monitor = {
+    description = "NixOS system health monitor";
+    path = [ pkgs.bash pkgs.coreutils pkgs.gnutar pkgs.gzip pkgs.nix pkgs.findutils pkgs.libnotify ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/system-health-monitor.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.system-health-monitor = {
+    description = "Daily system health check";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      OnCalendar = "daily";
+      Persistent = true;
+    };
+  };
+
+  # --- 10. Floorp 书签自动备份（每天 + git 追踪）---
   systemd.services.floorp-bookmark-backup = {
     description = "Backup Floorp bookmarks to git";
     path = [ pkgs.bash pkgs.coreutils pkgs.sqlite ];

@@ -83,7 +83,7 @@
     serviceConfig = {
       Type = "oneshot";
       User = "charlie";
-      ExecStart = "/run/current-system/sw/bin/bash /mnt/ai/ai-cluster/1688-system/letta-obsidian-simple.sh";
+      ExecStart = "/run/current-system/sw/bin/bash -c 'cd /etc/nixos && nix-shell -p python313Packages.requests --run \"python3 /etc/nixos/scripts/letta-obsidian-sync.py\"'";
       StandardOutput = "journal";
       StandardError = "journal";
     };
