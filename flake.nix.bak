@@ -7,15 +7,9 @@
     openclaw.url = "github:openclaw/nix-openclaw";
     # COSMIC 桌面环境
     nixos-cosmic.url = "github:lilyinstarlight/nixos-cosmic";
-    # nix-index 预构建数据库（秒级包搜索）
-    nix-index-database.url = "github:nix-community/nix-index-database";
-    nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
-    # Zen Browser（Firefox 内核 AI 浏览器）
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    zen-browser.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, openclaw, nixos-cosmic, nix-index-database, ... }@inputs: {
+  outputs = { self, nixpkgs, openclaw, nixos-cosmic, ... }@inputs: {
     nixosConfigurations.charlie = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; }; # 確保傳遞 inputs 給 configuration.nix
@@ -28,8 +22,6 @@
           };
         }
         nixos-cosmic.nixosModules.default
-        nix-index-database.nixosModules.nix-index
-        { programs.nix-index-database.comma.enable = true; }
       ];
     };
   };

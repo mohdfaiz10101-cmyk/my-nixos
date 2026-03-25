@@ -6,6 +6,13 @@
     options = [ "nofail" "force" "x-systemd.device-timeout=5s" "uid=1000" ];
   };
 
+  # Windows C: 盘 (只读挂载，供 KDE 搜索)
+  fileSystems."/mnt/win_c" = {
+    device = "/dev/disk/by-uuid/0E8D03FB0E8D03FB";
+    fsType = "ntfs3";
+    options = [ "nofail" "ro" "uid=1000" "iocharset=utf8" "x-systemd.device-timeout=5s" ];
+  };
+
   # AI 數據 loopback 映像 (ext4 on NTFS)
   fileSystems."/mnt/ai" = {
     device = "/mnt/data/ai-data.img";

@@ -107,8 +107,8 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - networking.proxy 系統環境變數（git/curl 自動走代理）
 - GNOME 系統代理：manual 模式指向 127.0.0.1:7890
 - Firefox：已配 user.js 使用 HTTP 代理
-- **已停用**：mihomo（訂閱節點香港被 Anthropic 封鎖）
-- **已移除**：clash-verge-rev、TUN 模式、dae、proxy-watchdog
+- **已移除**：clash-verge-rev、TUN 模式、dae
+- **2026-03-23 更新**：mihomo 和 proxy-watchdog 已重新启用为 3-Tier Failover 备份方案
 
 ## Essence 同步協議
 - `up` alias：git pull → commit → push → rclone sync 到 Google Drive
@@ -157,3 +157,14 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - 新增一鍵恢復腳本（full-restore.sh）
 - fcitx5 修復：禁用 GNOME ibus 覆蓋、啟用 waylandFrontend
 - Firefox 代理修復：user.js 配置 HTTP 代理（避免 SOCKS 協議不匹配）
+
+### 2026-03-23 代理架构重建
+- **架构变更**：从单 xray → 3-Tier Failover System
+  - Tier 1: Xray VLESS（主力，开机自启，Restart=always）
+  - Tier 2: Mihomo（备份，使用 GitHub 免费代理）
+  - Tier 3: 紧急刷新（watchdog 自动从 GitHub 拉取免费代理）
+- **重要**：不再使用 `services.mihomo` NixOS 模块（credentials bug），手动定义 systemd service
+- **Watchdog**：每 30 秒健康检查 + 自动切换 tier
+- **免费代理池**：每 6 小时自动从 GitHub 刷新（peasoft/NoMoreWalls 等）
+- **端口**：HTTP 7890 / SOCKS5 7891（互斥运行，同一时间只有一个服务监听）
+- **命令**：`proxy-status` / `proxy-free-fetch` / `proxy-sub <URL>`

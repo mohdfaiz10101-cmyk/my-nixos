@@ -15,8 +15,6 @@ in
     ./modules/community.nix
     ./modules/productivity.nix
     ./scripts.nix
-    ./modules/disk-pool.nix
-    ./modules/auto-services.nix
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---
@@ -25,13 +23,6 @@ in
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   hardware.usb-modeswitch.enable = true;
-
-  # --- zram 壓縮 Swap（內存不足 16G 時的安全網）---
-  zramSwap = {
-    enable = true;
-    algorithm = "zstd";       # 最佳壓縮率/速度平衡
-    memoryPercent = 100;      # 用 100% RAM 做 zram（壓縮後等效 ~32-48GB swap）
-  };
 
   # --- Realtek RTL8710BU WiFi 網卡：自動從 DISK 模式切換到 WiFi 模式 ---
   services.udev.extraRules = ''
@@ -48,27 +39,11 @@ in
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # --- Sunshine 远程串流服务器（Moonlight 客户端连接）---
-  services.sunshine = {
-    enable = true;
-    autoStart = true;       # 登录图形会话后自动启动
-    capSysAdmin = true;     # KDE Wayland 必须，用于 DRM/KMS 屏幕捕获
-    openFirewall = true;    # 自动开放 47984-48010 等端口
-  };
-
-  # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
+  # --- 桌面環境：KDE Plasma + SDDM ---
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
-  services.displayManager.sddm.settings.General.Numlock = "on";
-  services.displayManager.defaultSession = "plasma";
-  services.displayManager.autoLogin = {
-    enable = true;
-    user = "charlie";
-  };
   services.desktopManager.plasma6.enable = true;
-  # services.desktopManager.cosmic.enable = true; # 上游 cosmic-edit 哈希不匹配，等修复
-  # services.displayManager.cosmic-greeter.enable = false;
 
   # --- 鼠標主題：Catppuccin Mocha Dark ---
   environment.variables.XCURSOR_THEME = "catppuccin-mocha-dark-cursors";
@@ -96,8 +71,6 @@ in
       efiSupport = true;
       efiInstallAsRemovable = true;
       configurationLimit = 3;
-      theme = pkgs.sleek-grub-theme;
-      gfxmodeEfi = "1920x1080";
       extraEntries = lib.mkOrder 0 ''
         menuentry "Windows 11 (Physical NVMe Fix)" {
           insmod part_gpt
@@ -152,7 +125,6 @@ in
 
   # --- 4. 用戶環境與終端 ---
   users.users.charlie = {
-    hashedPassword = "$y$j9T$dQVrueHAipmLfNdbhfOP.0$uPAMY96g28GVwgQLsUOcEPUzCBJWlakEhvcSVUhVge7";
     isNormalUser = true;
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "docker" "input" "uinput" ];
     shell = pkgs.zsh;
@@ -168,9 +140,6 @@ in
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
     interactiveShellInit = ''
-      # 用户本地工具 PATH
-      export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
-
       # direnv hook（确保 .envrc 自动加载）
       eval "$(direnv hook zsh)"
 
@@ -186,7 +155,7 @@ in
       export XMODIFIERS=@im=fcitx
     '';
     shellAliases = {
-      ns = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";
+      ns = "sudo nixos-rebuild build --flake /etc/nixos#charlie && sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader";
       nixos-test = "sudo bash /etc/nixos/scripts/nixos-test-notify.sh pre-test && sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";
       nixos-confirm = "bash /etc/nixos/scripts/nixos-test-notify.sh notify";
       nixos-rollback = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh rollback";
@@ -197,9 +166,9 @@ in
       ai-up = "cd /mnt/ai/ai-cluster/dify/docker && docker compose up -d && cd /mnt/ai/ai-cluster/n8n && docker compose -p n8n2 up -d && cd /mnt/ai/ai-cluster/chroma && docker compose -p chroma2 up -d && cd /mnt/ai/ai-cluster/autogen && docker compose -p autogen up -d && cd /mnt/ai/ai-cluster/litellm && docker compose -p litellm up -d && cd /mnt/ai/ai-cluster/letta && docker compose -p letta up -d && echo 'AI 集群全部啟動'";
       ai-ps = "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'";
       distill = "cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up --build";
-      proxy-status = "cat /run/proxy-watchdog-state 2>/dev/null; systemctl status mihomo xray --no-pager | head -20";
-      proxy-restart = "sudo systemctl restart mihomo && echo mihomo > /run/proxy-watchdog-state";
-      proxy-log = "journalctl -u mihomo -u xray -u proxy-watchdog -f";
+      proxy-status = "systemctl status xray";
+      proxy-restart = "sudo systemctl restart xray";
+      proxy-log = "journalctl -u xray -f";
       proxy-ui = "echo 'Web UI: http://127.0.0.1:9090/ui'";
       nix-recover = "sudo /etc/nixos/scripts/recover-from-git.sh";
       full-restore = "sudo /etc/nixos/scripts/full-restore.sh";
@@ -234,13 +203,6 @@ in
       set -g status-left "#{?client_prefix,#[bg=red] WAIT ,#[bg=green] TMUX } "
       set -g mouse on
       set -g status-interval 1
-
-      # 一键开启/关闭同步输入（广播到所有面板）
-      bind S setw synchronize-panes \; display "同步输入: #{?pane_synchronized,ON,OFF}"
-
-      # 快速分屏
-      bind | split-window -h
-      bind - split-window -v
     '';
   };
 
@@ -274,7 +236,6 @@ in
     libnotify
 
     # 浏览器
-    inputs.zen-browser.packages.x86_64-linux.default
     floorp-bin
     google-chrome
 
@@ -287,10 +248,6 @@ in
     flclash
 
     # 系统工具
-    wl-clipboard
-    translate-shell
-    (tesseract5.override { enableLanguages = [ "eng" "chi_sim" "chi_tra" "jpn" "kor" ]; })
-    imagemagick
     zenity
     fastfetch
     htop
@@ -300,52 +257,13 @@ in
     rclone
     input-remapper
     numlockx
-    inotify-tools  # 文件监控（claude-watch 脚本需要）
 
     # 终端
-    warp-terminal
     kitty
 
     # 硬體診斷工具
     pciutils
     usbutils
-
-    # KDE 圆角主题套件
-    catppuccin-kde
-    catppuccin-kvantum
-    catppuccin-gtk
-    kdePackages.qtstyleplugin-kvantum
-    tela-icon-theme
-    tela-circle-icon-theme
-    papirus-icon-theme
-    keepassxc
-
-    # 办公套件
-    libreoffice-qt6-fresh
-    
-    # 文档处理工具链
-    pandoc
-    hunspell
-    hunspellDicts.en_US
-    sqlcipher
-    
-    # LaTeX 中文 PDF（pandoc → pdf 输出）
-    (texlive.combine {
-      inherit (texlive)
-        scheme-small
-        collection-langchinese
-        collection-fontsrecommended
-        fancyhdr titlesec geometry enumitem
-        xcolor hyperref bookmark;
-    })
-
-    # Spectacle OCR 翻译支持
-    (kdePackages.spectacle.override {
-      tesseractLanguages = [ "eng" "chi_sim" "chi_tra" "jpn" "kor" ];
-    })
-    # 应用商店
-    kdePackages.discover
-    packagekit
   ];
 
   # --- 6. 輸入法與區域設定 ---
@@ -369,9 +287,8 @@ in
   environment.sessionVariables = {
     GTK_IM_MODULE = "fcitx";
     QT_IM_MODULE = "fcitx";
-    # XMODIFIERS 在 zsh 中设置，避免 PAM 误解析为可展开变量
+    XMODIFIERS = "@im=fcitx";
     INPUT_METHOD = "fcitx";
-    GLFW_IM_MODULE = "ibus";  # Kitty 等 GLFW 应用需要此变量才能用 fcitx5
     # 让 Firefox/Floorp 等浏览器自动使用系统代理
     http_proxy = "http://127.0.0.1:7890";
     https_proxy = "http://127.0.0.1:7890";
@@ -508,38 +425,8 @@ in
     };
   };
 
-  # --- SSH 服务（Vast.ai GPU 出租必需）---
-  services.openssh = {
-    enable = true;
-    settings = {
-      PermitRootLogin = "no";
-      PasswordAuthentication = true;
-      X11Forwarding = false;
-    };
-    ports = [ 22 ];
-  };
-
-  networking.firewall.allowedTCPPorts = [ 22 ];
   # Nix 实验特性
-  # Nix 设置
-  nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
-    # 并行构建加速（12核 CPU）
-    max-jobs = "auto";
-    cores = 0;
-    auto-optimise-store = true;
-    # 国内镜像 + 代理加速下载
-    substituters = lib.mkForce [
-      "https://mirrors.ustc.edu.cn/nix-channels/store"
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
-      "https://cache.nixos.org"
-      "https://cosmic.cachix.org"
-    ];
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "cosmic.cachix.org-1:Dya9IyXD4HwqkHRG02q1PEnwEKfPByjV+G3eTEfkwEo="
-    ];
-  };
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # 系统版本锁定
   system.stateVersion = "24.11";
 }

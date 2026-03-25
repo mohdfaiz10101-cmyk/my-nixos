@@ -8,7 +8,7 @@
 ## 🔴 当前紧急问题 (Current Critical Issues)
 
 ### 1. Docker 代理配置错误
-- **问题**: configuration.nix:107-108 中 Docker daemon 代理端口配置为 7890，但 xray 实际运行在 7891
+- **问题**: configuration.nix:107-108 中 Docker daemon 代理端口 7890 ✅ 已与 xray 统一（2026-03-23 确认正确）
 - **影响**: LiteLLM 等容器无法访问外部网络（GitHub API 等）
 - **修复方案**:
   ```nix
@@ -55,8 +55,8 @@
 - configuration.nix 中 Docker 代理配置错误
 - 多处配置不一致（mihomo 残留）
 **建议**:
-- 统一所有代理配置为 127.0.0.1:7891
-- 移除 mihomo 相关遗留配置
+- 统一所有代理配置为 127.0.0.1:7890（已完成）
+- mihomo 已作为 Tier 2 备份重新启用（2026-03-23）
 - 在 CONTEXT.md 中明确标注代理架构
 
 ### 2. Claude Code 端点管理
@@ -99,7 +99,7 @@
 ### 中优先级
 - [ ] fcitx5 改用 GNOME session startup
 - [ ] 创建系统盘自动扩容脚本（boot 后执行）
-- [ ] 统一清理 mihomo 残留配置
+- [ ] mihomo 已重新启用为 3-Tier 代理备份（不再需要清理）
 
 ### 低优先级
 - [ ] 优化 freeze-detector.sh 性能

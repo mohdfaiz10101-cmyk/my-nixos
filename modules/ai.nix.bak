@@ -12,7 +12,7 @@
   };
 
   # 開放防火牆端口
-  networking.firewall.allowedTCPPorts = [ 11434 18789 8283 3000 5678 8000 7890 9099 9000 7681 ];
+  networking.firewall.allowedTCPPorts = [ 11434 18789 8283 3000 5678 8000 7890 9099 ];
 
   # --- 2. OpenClaw 閘道器配置 ---
   imports = [ 
@@ -20,7 +20,7 @@
   ];
 
   services.openclaw-gateway = {
-    enable = false;
+    enable = true;
     port = 18789;
     package = inputs.openclaw.packages.${pkgs.system}.default;
   };
@@ -51,7 +51,7 @@
         chown -R root:root /var/lib/openclaw
       '');
       ExecStart = lib.mkForce "${inputs.openclaw.packages.${pkgs.system}.default}/bin/openclaw gateway --port 18789 --allow-unconfigured";
-      Restart = lib.mkForce "no";
+      Restart = lib.mkForce "always";
       StateDirectory = lib.mkForce "openclaw";
       WorkingDirectory = lib.mkForce "/var/lib/openclaw";
     };

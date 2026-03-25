@@ -65,8 +65,11 @@
     pkgs.pulseaudio       # parecord 录音工具
   ];
 
-  # 注释：POOL 盘的挂载和合并由 disk-pool.service 统一管理，不在这里配置
-  # fileSystems."/mnt/storage_1.8t" 已移除，让 disk-pool 脚本自动处理
+  fileSystems."/mnt/storage_1.8t" = {
+    device = "/dev/disk/by-uuid/B2BCF4DBBCF49B55";
+    fsType = "ntfs";
+    options = [ "nofail" "uid=1000" "gid=100" "umask=000" "errors=continue" ];
+  };
 
   systemd.services.openclaw-config-fix = {
     description = "AI Essence Service: Auto-config OpenClaw";

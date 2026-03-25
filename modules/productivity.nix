@@ -1,9 +1,12 @@
 { config, pkgs, lib, ... }: {
 
-  # --- 1. 軟體矩陣容錯 ---
-  environment.systemPackages = let
-    pkgNames = [ "utools" "uTools" "utools-bin" ];
-    foundPkg = lib.findFirst (name: builtins.hasAttr name pkgs) null pkgNames;
-  in if foundPkg != null then [ pkgs.${foundPkg} ] else [ pkgs.appimage-run pkgs.wget ];
+  # --- 生產力工具 ---
+  environment.systemPackages = with pkgs; [
+    windsurf        # Windsurf AI IDE
+    whisper-cpp     # 語音轉文字（本地 Whisper）
+    sox             # 音頻錄製/處理
+    appimage-run
+    wget
+  ];
 
 }
