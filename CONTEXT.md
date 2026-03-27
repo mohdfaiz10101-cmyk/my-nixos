@@ -1,11 +1,19 @@
 # NixOS 系統上下文 — Charlie's Snowflake
 # 此檔案供所有 AI 助手共用（Claude、Gemini 等），請勿刪除
-# 最後更新：2026-03-22
+# 最後更新：2026-03-27
 
+
+## AI 記憶系統架構 (2026-03-27 新增)
+**5層防護系統** - 解決換賬號後記憶丟失問題：
+1. SessionStart Hook（~/.claude/hooks/session-init.sh）- 強制加載記憶
+2. Letta 長期記憶（localhost:8283）- 4 Agents + 7層防護
+3. ChromaDB 向量庫（localhost:8000）- 備用（實際用 Ollama 嵌入）
+4. 自動備份（/mnt/pool/backups/memory/）- 每小時備份，保留7天
+5. 文件系統冗余（memory/ + Obsidian + CONTEXT.md）
 ## 系統架構
 - OS: NixOS (Flake 架構)，入口 `flake.nix`，輸出端點 `charlie`
 - 引導: UEFI + GRUB，EFI 掛載 `/boot`（252MB，與 Windows 11 共用同一 NVMe）
-- 桌面: GNOME + GDM（從 Plasma 6 / SDDM 遷移而來）
+- 桌面: KDE Plasma 6 + SDDM（主力），GNOME + GDM（備用）
 - GPU: NVIDIA RTX 3060 Ti（GA104，閉源驅動，CUDA 加速）
 - CPU: Intel（啟用 KVM 虛擬化）
 - 網路: NetworkManager + xray 代理 127.0.0.1:7890（HTTP）+ 7891（SOCKS5）

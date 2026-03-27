@@ -37,3 +37,13 @@
 ### 🗄️ 存儲與數據
 - **現狀**: `/mnt/contract_data` (sdb4) 已掛載。
 - **遺留**: 4T 硬碟 (UUID DE22...) 仍未識別，暫列為物理連線檢查項。
+
+## 🧠 記憶系統架構 (2026-03-27 新增)
+- **5層防護系統**: 解決 AI Agent 換賬號後記憶丟失問題
+  1. **SessionStart Hook** - 每次會話開始強制加載記憶（~/.claude/hooks/session-init.sh）
+  2. **Letta 長期記憶** - 4 個 Agents + 7 層健康防護（每5分鐘檢查）
+  3. **ChromaDB 向量庫** - 雖運行但 Letta 實際使用 Ollama nomic-embed-text
+  4. **自動備份系統** - 每小時備份到 /mnt/pool/backups/memory/（保留7天）
+  5. **文件系統冗余** - memory/ + Obsidian + CONTEXT.md 三重存儲
+- **根本原因**: LLM context window 是臨時的，換 API 賬號 = 新會話 = 丟失所有 context
+- **解決方案**: 多層冗余存儲 + 強制初始化協議

@@ -138,3 +138,15 @@
 **最后更新**: 2026-03-22 18:30
 **维护者**: charlie
 **AI 助手**: Claude Code (Sonnet 4.5)
+
+## [2026-03-27] AI Agent 記憶系統升級
+**問題**: 換 API 賬號後 AI 行為完全改變，記憶丟失
+**根本原因**: LLM context window 是臨時的，換賬號 = 新會話 = 丟失所有 context
+**解決方案**: 
+- SessionStart Hook 強制加載記憶（~/.claude/hooks/session-init.sh）
+- 5層防護：Hook + Letta + ChromaDB + 自動備份 + 文件系統
+- 每小時自動備份到 /mnt/pool/backups/memory/
+**狀態**: ✅ 已完成並測試
+**參考**: 
+- https://www.linkedin.com/posts/jianfeng-xu-6b36172b_why-your-ai-agent-keeps-losing-its-memory-activity-7434174917727940608-qPDy
+- https://plurality.network/blogs/universal-ai-context-to-switch-ai-tools/
