@@ -306,6 +306,11 @@ in
     inotify-tools  # 文件监控（claude-watch 脚本需要）
 
     # 终端
+    # 远程桌面 + 浏览器自动化 + 轻量图片查看器
+    remmina
+    moonlight-qt
+    playwright-mcp
+    imv
     warp-terminal
     kitty
 

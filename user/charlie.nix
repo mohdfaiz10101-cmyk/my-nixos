@@ -16,6 +16,10 @@
       rclone 
       # 遠程桌面
       remmina moonlight-qt
+      # 浏览器自动化
+      playwright-mcp
+      # 轻量图片查看器（替代 Gwenview 秒开）
+      imv
     ];
   };
 
