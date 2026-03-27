@@ -80,6 +80,11 @@ in
   # --- Electron 渲染修復（NVIDIA + Wayland）---
   environment.variables.NIXOS_OZONE_WL = "1";
   environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
+  # 2233.ai 备用中转（官方不通时启用）
+  environment.variables.ANTHROPIC_THIRD_PARTY_URL = "https://aicoding.2233.ai";
+  environment.variables.ANTHROPIC_THIRD_PARTY_MONTHLY = "sk-rT6d987bc7dd58db440d4f9ff95c2201ffa1e5026bfYXydn";  # 包月（默认）
+  environment.variables.ANTHROPIC_THIRD_PARTY_TOKEN = "sk-rT6d987bc7dd58db440d4f9ff95c2201ffa1e5026bfYXydn";  # 默认走包月
+  environment.variables.ANTHROPIC_THIRD_PARTY_PAYGO = "sk-ycea31838a87f9721da59247e2f4ec57b4130526df6TuH20";  # 按流量备用
 
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;

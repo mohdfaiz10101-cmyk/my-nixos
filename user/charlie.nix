@@ -20,6 +20,8 @@
       playwright-mcp
       # 轻量图片查看器（替代 Gwenview 秒开）
       imv
+      # 文件搜索
+      fsearch
     ];
   };
 
