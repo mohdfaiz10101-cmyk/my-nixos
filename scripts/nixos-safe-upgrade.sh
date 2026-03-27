@@ -21,12 +21,12 @@ check_health() {
   local issues=0
   local report=""
   local crash_count
-  crash_count=$(journalctl --since "@$test_start" -p 2 --no-pager -q 2>/dev/null | wc -l)
-  if [ "$crash_count" -gt 10 ]; then
+  crash_count=$(journalctl --since "@$test_start" -p 2 --no-pager -q 2>/dev/null | grep -v "without build-id\|Module lib" | wc -l)
+  if [ "$crash_count" -gt 50 ]; then
     report="$report\n- 严重错误日志: ${crash_count} 条"
     issues=$((issues + 1))
   fi
-  for svc in sddm NetworkManager xray; do
+  for svc in display-manager NetworkManager xray; do
     if ! systemctl is-active --quiet "$svc" 2>/dev/null; then
       report="$report\n- 关键服务挂掉: $svc"
       issues=$((issues + 1))

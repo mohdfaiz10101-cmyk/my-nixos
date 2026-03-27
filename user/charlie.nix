@@ -14,6 +14,8 @@
       wget curl input-remapper numlockx
       # 靈魂同步核心
       rclone 
+      # 遠程桌面
+      remmina moonlight-qt
     ];
   };
 

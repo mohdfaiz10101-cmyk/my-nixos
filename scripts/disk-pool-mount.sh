@@ -15,7 +15,7 @@
 #   - 重装后 rebuild 即恢复
 # ============================================================
 
-set -euo pipefail
+set -uo pipefail
 
 POOL_MOUNT_BASE="/mnt/pool-disks"
 POOL_MERGED="/mnt/pool"
@@ -32,24 +32,34 @@ acquire_lock() {
 
 # 扫描所有 POOL- 标签的分区
 discover_pool_disks() {
-    blkid -o export 2>/dev/null | awk -v RS='\n\n' '/LABEL=POOL-/' | while IFS= read -r block; do
-        local dev label fstype
-        dev=$(echo "$block" | grep '^DEVNAME=' | cut -d= -f2)
-        label=$(echo "$block" | grep '^LABEL=' | cut -d= -f2)
-        fstype=$(echo "$block" | grep '^TYPE=' | cut -d= -f2)
-        [[ -n "$dev" && -n "$label" ]] && echo "$dev|$label|$fstype"
-    done || true
+    blkid -o export 2>/dev/null | awk -v RS='\n\n' '
+        /LABEL=POOL-/ {
+            dev=""; label=""; fstype=""
+            n = split($0, lines, "\n")
+            for (i=1; i<=n; i++) {
+                if (lines[i] ~ /^DEVNAME=/) { split(lines[i], a, "="); dev=a[2] }
+                if (lines[i] ~ /^LABEL=/) { split(lines[i], a, "="); label=a[2] }
+                if (lines[i] ~ /^TYPE=/) { split(lines[i], a, "="); fstype=a[2] }
+            }
+            if (dev != "" && label != "") print dev "|" label "|" fstype
+        }
+    ' 2>/dev/null || true
 }
 
 # 扫描 PARITY 标签的分区
 discover_parity_disks() {
-    blkid -o export 2>/dev/null | awk -v RS='\n\n' '/LABEL=PARITY-/' | while IFS= read -r block; do
-        local dev label fstype
-        dev=$(echo "$block" | grep '^DEVNAME=' | cut -d= -f2)
-        label=$(echo "$block" | grep '^LABEL=' | cut -d= -f2)
-        fstype=$(echo "$block" | grep '^TYPE=' | cut -d= -f2)
-        [[ -n "$dev" && -n "$label" ]] && echo "$dev|$label|$fstype"
-    done || true
+    blkid -o export 2>/dev/null | awk -v RS='\n\n' '
+        /LABEL=PARITY-/ {
+            dev=""; label=""; fstype=""
+            n = split($0, lines, "\n")
+            for (i=1; i<=n; i++) {
+                if (lines[i] ~ /^DEVNAME=/) { split(lines[i], a, "="); dev=a[2] }
+                if (lines[i] ~ /^LABEL=/) { split(lines[i], a, "="); label=a[2] }
+                if (lines[i] ~ /^TYPE=/) { split(lines[i], a, "="); fstype=a[2] }
+            }
+            if (dev != "" && label != "") print dev "|" label "|" fstype
+        }
+    ' 2>/dev/null || true
 }
 
 # 挂载单个盘
@@ -68,7 +78,20 @@ mount_disk() {
     local mount_opts=""
     case "$fstype" in
         ntfs|ntfs3)
-            mount_opts="-t ntfs3 -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022"
+            # 先试 ntfs3 正常挂载，失败则加 force（处理脏卷），最后降级 ntfs-3g
+            if mount -t ntfs3 -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
+                log "已挂载: $label ($dev, ntfs3) → $mountpoint"
+                return 0
+            elif mount -t ntfs3 -o rw,noatime,force,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
+                log "已挂载: $label ($dev, ntfs3+force 脏卷) → $mountpoint"
+                return 0
+            elif ntfs-3g -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
+                log "已挂载: $label ($dev, ntfs-3g 降级) → $mountpoint"
+                return 0
+            else
+                log "挂载失败: $label ($dev, ntfs)"
+                return 1
+            fi
             ;;
         ext4)
             mount_opts="-t ext4 -o rw,noatime"
@@ -84,6 +107,7 @@ mount_disk() {
             ;;
     esac
 
+    # ntfs 已在 case 中处理并 return
     if mount $mount_opts "$dev" "$mountpoint" 2>/dev/null; then
         log "已挂载: $label ($dev, $fstype) → $mountpoint"
         return 0
@@ -268,12 +292,12 @@ case "${1:-status}" in
 
         # 1. 发现并挂载 POOL 盘
         discover_pool_disks | while IFS='|' read -r dev label fstype; do
-            mount_disk "$dev" "$label" "$fstype"
+            mount_disk "$dev" "$label" "$fstype" || true
         done
 
         # 2. 发现并挂载 PARITY 盘
         discover_parity_disks | while IFS='|' read -r dev label fstype; do
-            mount_disk "$dev" "$label" "$fstype"
+            mount_disk "$dev" "$label" "$fstype" || true
         done
 
         # 3. MergerFS 合并

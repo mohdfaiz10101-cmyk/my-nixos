@@ -49,6 +49,9 @@ in
   };
 
   # --- Sunshine 远程串流服务器（Moonlight 客户端连接）---
+  # --- Waydroid Android 容器 ---
+  virtualisation.waydroid.enable = true;
+
   services.sunshine = {
     enable = true;
     autoStart = true;       # 登录图形会话后自动启动
