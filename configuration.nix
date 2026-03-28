@@ -270,6 +270,11 @@ in
     cursor-cli
     code-cursor-fhs
     catppuccin-cursors.mochaDark
+    # Snipaste 风格贴图工具
+    feh          # 轻量级图片查看器（置顶、无边框）
+    xdotool      # X11 窗口操作工具
+    wmctrl       # 窗口管理工具
+
 
     # 核心修复：替换普通 vscode 为带渲染补丁的版本
     vscode-with-extensions
