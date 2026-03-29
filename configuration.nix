@@ -80,11 +80,6 @@ in
   # --- Electron 渲染修復（NVIDIA + Wayland）---
   environment.variables.NIXOS_OZONE_WL = "1";
   environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
-  # 2233.ai 备用中转（官方不通时启用）
-  environment.variables.ANTHROPIC_THIRD_PARTY_URL = "https://aicoding.2233.ai";
-  environment.variables.ANTHROPIC_THIRD_PARTY_MONTHLY = "sk-rT6d987bc7dd58db440d4f9ff95c2201ffa1e5026bfYXydn";  # 包月（默认）
-  environment.variables.ANTHROPIC_THIRD_PARTY_TOKEN = "sk-rT6d987bc7dd58db440d4f9ff95c2201ffa1e5026bfYXydn";  # 默认走包月
-  environment.variables.ANTHROPIC_THIRD_PARTY_PAYGO = "sk-ycea31838a87f9721da59247e2f4ec57b4130526df6TuH20";  # 按流量备用
 
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
@@ -185,10 +180,8 @@ in
       # Auto-sync Letta memory to Claude Code (background, max once/hour)
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
 
-      # Auto-sync Claude credentials from root to charlie (background)
-      /etc/nixos/scripts/claude-sync.sh &>/dev/null &
 
-      # fcitx5 输入法：默认简体，每窗口独立状态
+      # fcitx5 环境变量已提升到 sessionVariables，此处仅作终端覆盖（确保优先级）
       export GTK_IM_MODULE=fcitx
       export QT_IM_MODULE=fcitx
       export XMODIFIERS=@im=fcitx
@@ -225,7 +218,6 @@ in
       # Claude Code CLI 交互式选择（默认 LiteLLM）
       q = "/etc/nixos/scripts/claude-interactive.sh";
       q-lite = "ANTHROPIC_BASE_URL=http://127.0.0.1:4000 ANTHROPIC_API_KEY=sk-litellm-charlie-2026 claude";  # 直接走 LiteLLM
-      q-third = "ANTHROPIC_BASE_URL=$ANTHROPIC_THIRD_PARTY_URL ANTHROPIC_API_KEY=$ANTHROPIC_THIRD_PARTY_TOKEN claude";  # 直接走第三方
     };
   };
 
@@ -387,7 +379,7 @@ in
   environment.sessionVariables = {
     GTK_IM_MODULE = "fcitx";
     QT_IM_MODULE = "fcitx";
-    # XMODIFIERS 在 zsh 中设置，避免 PAM 误解析为可展开变量
+    XMODIFIERS = "@im=fcitx";  # JetBrains 等 GUI 应用需要此变量
     INPUT_METHOD = "fcitx";
     GLFW_IM_MODULE = "ibus";  # Kitty 等 GLFW 应用需要此变量才能用 fcitx5
     # 让 Firefox/Floorp 等浏览器自动使用系统代理
@@ -537,7 +529,7 @@ in
     ports = [ 22 ];
   };
 
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.allowedTCPPorts = [ 22 7681 9090 9098 9875 9876 3002 ];
   # Nix 实验特性
   # Nix 设置
   nix.settings = {
