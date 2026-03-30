@@ -17,6 +17,8 @@ in
     ./scripts.nix
     ./modules/disk-pool.nix
     ./modules/auto-services.nix
+    ./modules/python-env.nix
+    ./modules/user-services.nix
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---
@@ -34,8 +36,11 @@ in
   };
 
   # --- Realtek RTL8710BU WiFi 網卡：自動從 DISK 模式切換到 WiFi 模式 ---
+  # --- Sunshine 虚拟输入设备权限 ---
   services.udev.extraRules = ''
     ATTR{idVendor}=="0bda", ATTR{idProduct}=="1a2b", RUN+="${pkgs.usb-modeswitch}/bin/usb_modeswitch -v 0x0bda -p 0x1a2b -K 1"
+    KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"
+    KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
   # --- NVIDIA RTX 3060 Ti 驅動 ---
@@ -311,6 +316,8 @@ in
     # 远程桌面 + 浏览器自动化 + 轻量图片查看器
     remmina
     moonlight-qt
+    rustdesk-flutter
+    kdePackages.krfb
     playwright-mcp
     imv
     warp-terminal
@@ -382,10 +389,7 @@ in
     XMODIFIERS = "@im=fcitx";  # JetBrains 等 GUI 应用需要此变量
     INPUT_METHOD = "fcitx";
     GLFW_IM_MODULE = "ibus";  # Kitty 等 GLFW 应用需要此变量才能用 fcitx5
-    # 让 Firefox/Floorp 等浏览器自动使用系统代理
-    http_proxy = "http://127.0.0.1:7890";
-    https_proxy = "http://127.0.0.1:7890";
-    no_proxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local,11434,18789";
+    # 代理由 modules/proxy.nix (networking.proxy) 统一管理
   };
 
   # --- 7. 窗口假死检测 ---
@@ -529,7 +533,7 @@ in
     ports = [ 22 ];
   };
 
-  networking.firewall.allowedTCPPorts = [ 22 7681 9090 9098 9875 9876 3002 ];
+  networking.firewall.allowedTCPPorts = [ 22 5900 7681 9090 9098 9875 9876 3002 ];
   # Nix 实验特性
   # Nix 设置
   nix.settings = {

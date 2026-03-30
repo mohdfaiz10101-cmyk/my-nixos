@@ -32,6 +32,9 @@
     enable = true;
     openFirewall = true;
   };
+  # 信任 Tailscale 接口，允许所有 CGNAT (100.64.0.0/10) 流量通过
+  # 修复平板等通过 relay 中继连接的设备 SSH/VNC 超时问题
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
 
   # --- Syncthing 文件同步（全设备）---
   services.syncthing = {
@@ -56,6 +59,7 @@
   in (checkPkg "uTools") ++ (checkPkg "utools") ++ [
     pkgs.appimage-run pkgs.wget pkgs.git pkgs.ntfs3g pkgs.ttyd
     pkgs.tailscale
+    pkgs.sshpass pkgs.jq pkgs.yq-go
     pkgs.ulauncher  # 应用启动器（支持中文拼音搜索）
     # 语音输入工具链
     pkgs.whisper-cpp      # 本地语音识别（支持中文）

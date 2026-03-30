@@ -12,9 +12,11 @@
 # ============================================================
 
 {
-  # 1. Docker AI 集群开机自启
-  systemd.services.ai-cluster = {
-    description = "Start AI Docker Compose services";
+  # 1. Docker AI 集群 — 拆分为 3 个独立服务（可单独管理/重启）
+
+  # 1a. 基础设施层：ChromaDB + LiteLLM
+  systemd.services.ai-infrastructure = {
+    description = "AI Infrastructure (ChromaDB + LiteLLM)";
     after = [ "docker.service" "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
@@ -23,9 +25,82 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/ai-cluster-start.sh";
-      ExecStop = "${pkgs.bash}/bin/bash /etc/nixos/scripts/ai-cluster-stop.sh";
+      TimeoutStartSec = "300";
+      ExecStart = pkgs.writeShellScript "ai-infra-start" ''
+        CLUSTER="/mnt/ai/ai-cluster"
+        for svc in chroma litellm; do
+          [ -f "$CLUSTER/$svc/docker-compose.yml" ] && \
+            (cd "$CLUSTER/$svc" && docker compose up -d) || true
+        done
+      '';
+      ExecStop = pkgs.writeShellScript "ai-infra-stop" ''
+        CLUSTER="/mnt/ai/ai-cluster"
+        for svc in chroma litellm; do
+          [ -f "$CLUSTER/$svc/docker-compose.yml" ] && \
+            (cd "$CLUSTER/$svc" && docker compose down) || true
+        done
+      '';
+    };
+  };
+
+  # 1b. Letta Agent 框架
+  systemd.services.letta-compose = {
+    description = "Letta Agent Framework (Docker)";
+    after = [ "docker.service" "ai-infrastructure.service" ];
+    wants = [ "ai-infrastructure.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = with pkgs; [ docker docker-compose coreutils bash ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      TimeoutStartSec = "180";
+      ExecStart = pkgs.writeShellScript "letta-start" ''
+        CLUSTER="/mnt/ai/ai-cluster"
+        [ -f "$CLUSTER/letta/docker-compose.yml" ] && \
+          (cd "$CLUSTER/letta" && docker compose up -d) || true
+      '';
+      ExecStop = pkgs.writeShellScript "letta-stop" ''
+        cd /mnt/ai/ai-cluster/letta && docker compose down || true
+      '';
+    };
+  };
+
+  # 1c. 应用平台层：Dify + n8n + Open WebUI + 其他
+  systemd.services.ai-apps = {
+    description = "AI Apps (Dify + n8n + Open WebUI + others)";
+    after = [ "docker.service" "letta-compose.service" ];
+    wants = [ "letta-compose.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = with pkgs; [ docker docker-compose coreutils bash ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
       TimeoutStartSec = "600";
+      ExecStart = pkgs.writeShellScript "ai-apps-start" ''
+        CLUSTER="/mnt/ai/ai-cluster"
+        for svc in hyper-os n8n open-webui; do
+          [ -f "$CLUSTER/$svc/docker-compose.yml" ] && \
+            (cd "$CLUSTER/$svc" && docker compose up -d) || true
+        done
+        [ -f "$CLUSTER/dify/docker/docker-compose.yaml" ] && \
+          (cd "$CLUSTER/dify/docker" && docker compose up -d) || true
+        for svc in autogen guacamole-local erpnext trip-map; do
+          [ -f "$CLUSTER/$svc/docker-compose.yml" ] && \
+            (cd "$CLUSTER/$svc" && docker compose up -d) || true
+        done
+      '';
+      ExecStop = pkgs.writeShellScript "ai-apps-stop" ''
+        CLUSTER="/mnt/ai/ai-cluster"
+        for dir in "$CLUSTER"/*/; do
+          name=$(basename "$dir")
+          case "$name" in chroma|litellm|letta) continue ;; esac
+          [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down) || true
+        done
+        [ -f "$CLUSTER/dify/docker/docker-compose.yaml" ] && \
+          (cd "$CLUSTER/dify/docker" && docker compose down) || true
+      '';
     };
   };
 

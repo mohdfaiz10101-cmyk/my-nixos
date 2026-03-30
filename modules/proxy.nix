@@ -6,7 +6,7 @@
 # │ Watchdog: every 30s, auto-detect failure, switch, self-heal│
 # └─────────────────────────────────────────────────────────────┘
 # Port 7890 (HTTP) / 7891 (SOCKS5) — only one service runs at a time
-# Web UI: http://127.0.0.1:9090/ui (when mihomo is active)
+# Web UI: http://0.0.0.0:9090/ui (when mihomo is active)
 { config, pkgs, lib, ... }:
 let
   # ===== TIER 1: Xray VLESS Config (User's own US server) =====
@@ -20,13 +20,13 @@ let
         tag = "http-in";
         port = 7890;
         protocol = "http";
-        listen = "127.0.0.1";
+        listen = "0.0.0.0";
       }
       {
         tag = "socks-in";
         port = 7891;
         protocol = "socks";
-        listen = "127.0.0.1";
+        listen = "0.0.0.0";
         settings.udp = true;
       }
     ];
@@ -119,7 +119,7 @@ let
           fi
         fi
         # Try via current proxy
-        if ${pkgs.curl}/bin/curl -sL -x http://127.0.0.1:7890 --max-time 20 \
+        if ${pkgs.curl}/bin/curl -sL -x http://0.0.0.0:7890 --max-time 20 \
           -H "User-Agent: clash-verge/v2.0" \
           "$target" -o "$TEMP_DIR/raw.yml" 2>/dev/null; then
           if [ -s "$TEMP_DIR/raw.yml" ] && grep -q "proxies:" "$TEMP_DIR/raw.yml" 2>/dev/null; then
@@ -144,7 +144,7 @@ let
       -e 's/^port:.*/mixed-port: 7890/' \
       -e 's/^socks-port:.*/socks-port: 7891/' \
       -e 's/^allow-lan:.*/allow-lan: true/' \
-      -e 's/^external-controller:.*/external-controller: 127.0.0.1:9090/' \
+      -e 's/^external-controller:.*/external-controller: 0.0.0.0:9090/' \
       "$TEMP_DIR/raw.yml"
 
     # Ensure required fields exist
@@ -155,7 +155,7 @@ let
     grep -q "^allow-lan:" "$TEMP_DIR/raw.yml" || \
       ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a allow-lan: true' "$TEMP_DIR/raw.yml"
     grep -q "^external-controller:" "$TEMP_DIR/raw.yml" || \
-      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 127.0.0.1:9090' "$TEMP_DIR/raw.yml"
+      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 0.0.0.0:9090' "$TEMP_DIR/raw.yml"
 
     # Download Country.mmdb if missing (needed for GEOIP rules)
     if [ ! -f "$MIHOMO_DIR/Country.mmdb" ]; then
@@ -229,7 +229,7 @@ let
     sleep 3
     if systemctl is-active --quiet mihomo; then
       echo "mihomo 运行中。测试代理..."
-      if ${pkgs.curl}/bin/curl -o /dev/null -s -m 10 --proxy http://127.0.0.1:7890 https://www.google.com; then
+      if ${pkgs.curl}/bin/curl -o /dev/null -s -m 10 --proxy http://0.0.0.0:7890 https://www.google.com; then
         echo "代理正常工作！"
       else
         echo "警告：mihomo 已启动但无法连接 Google，请检查节点"
@@ -249,7 +249,7 @@ let
 
     test_proxy() {
       local code
-      code=$(${pkgs.curl}/bin/curl -s --max-time 10 -x http://127.0.0.1:7890 \
+      code=$(${pkgs.curl}/bin/curl -s --max-time 10 -x http://0.0.0.0:7890 \
         -o /dev/null -w "%{http_code}" https://www.gstatic.com/generate_204 2>/dev/null) || true
       [[ "$code" =~ ^(200|204|301|302)$ ]]
     }
@@ -371,10 +371,10 @@ let
     systemctl is-active proxy-free-refresh.timer 2>/dev/null && echo "  Timer: ACTIVE" || echo "  Timer: inactive"
     echo ""
     echo "--- Connectivity ---"
-    code=$(${pkgs.curl}/bin/curl -s --max-time 5 -x http://127.0.0.1:7890 \
+    code=$(${pkgs.curl}/bin/curl -s --max-time 5 -x http://0.0.0.0:7890 \
       -o /dev/null -w "%{http_code}" https://www.gstatic.com/generate_204 2>/dev/null) || code="FAIL"
     echo "  HTTP test: $code"
-    ip_info=$(${pkgs.curl}/bin/curl -s --max-time 5 -x http://127.0.0.1:7890 \
+    ip_info=$(${pkgs.curl}/bin/curl -s --max-time 5 -x http://0.0.0.0:7890 \
       https://ipinfo.io/json 2>/dev/null | head -c 200) || ip_info="unavailable"
     echo "  IP Info: $ip_info"
   '';
@@ -481,8 +481,8 @@ in
   networking.firewall.allowedTCPPorts = [ 7890 ];
 
   networking.proxy = {
-    httpProxy = "http://127.0.0.1:7890";
-    httpsProxy = "http://127.0.0.1:7890";
+    httpProxy = "http://0.0.0.0:7890";
+    httpsProxy = "http://0.0.0.0:7890";
     noProxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local,11434,18789";
   };
 }
