@@ -138,7 +138,7 @@ in
       wantedBy = [ "default.target" ];
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${localBin}/glm-proxy";
+        ExecStart = "${py}/bin/python3 ${localBin}/glm-proxy";
         Restart = "on-failure";
         RestartSec = 3;
       };
@@ -152,7 +152,7 @@ in
       wantedBy = [ "default.target" ];
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${localBin}/glm-monitor";
+        ExecStart = "${py}/bin/python3 ${localBin}/glm-monitor";
         Restart = "on-failure";
         RestartSec = 3;
       };

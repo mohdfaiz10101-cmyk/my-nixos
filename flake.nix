@@ -9,9 +9,11 @@
     nix-index-database.inputs.nixpkgs.follows = "nixpkgs";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     zen-browser.inputs.nixpkgs.follows = "nixpkgs";
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, openclaw, nixos-cosmic, nix-index-database, ... }@inputs: {
+  outputs = { self, nixpkgs, openclaw, nixos-cosmic, nix-index-database, disko, ... }@inputs: {
     nixosConfigurations.charlie = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
@@ -120,6 +122,16 @@
         nixos-cosmic.nixosModules.default
         nix-index-database.nixosModules.nix-index
         { programs.nix-index-database.comma.enable = true; }
+      ];
+    };
+
+    # minipc — 远程安装用（nixos-anywhere + disko）
+    nixosConfigurations.minipc = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      specialArgs = { inherit inputs; };
+      modules = [
+        disko.nixosModules.disko
+        ./hosts/minipc/configuration.nix
       ];
     };
   };
