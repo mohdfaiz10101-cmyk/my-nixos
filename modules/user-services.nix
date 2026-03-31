@@ -511,6 +511,16 @@ in
         ExecStart = "${localBin}/system-call-check";
       };
     };
+
+    # --- Memory Sync to NTFS (for Windows Continue) ---
+    sync-memory-ntfs = {
+      description = "Sync Claude memory to NTFS shared partition";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash ${localBin}/sync-memory-to-ntfs";
+      };
+      environment = userEnv;
+    };
   };
 
   # ============================================================
@@ -661,6 +671,16 @@ in
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "1h";
+        Persistent = true;
+      };
+    };
+
+    sync-memory-ntfs = {
+      description = "Sync memory to NTFS for Windows (every 2h + shutdown)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "3min";
+        OnUnitActiveSec = "2h";
         Persistent = true;
       };
     };

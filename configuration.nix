@@ -143,7 +143,7 @@ in
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      data-root = "/mnt/ai/docker";
+      data-root = "/mnt/pool-disks/POOL-D1/docker";
       registry-mirrors = [
         "https://docker.1ms.run"
         "https://docker.xuanyuan.me"
