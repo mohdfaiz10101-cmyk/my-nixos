@@ -89,6 +89,13 @@ in
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
+  # LAN 固定设备名称解析
+  networking.extraHosts = ''
+    192.168.2.100 tony nixos
+    192.168.2.101 minipc
+    192.168.2.36  winpc windows
+  '';
+
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
