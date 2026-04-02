@@ -9,17 +9,23 @@
 #   3. 知识蒸馏没自动化 → 每6小时蒸馏新对话
 #   4. 健康监控缺失 → 每5分钟检查+Telegram报警
 #   6. 统一搜索系统 → 端口 9000
+#
+# 启动优化（SPE-31）：
+#   AI Docker 服务改为延迟启动，不阻塞 multi-user.target/graphical.target
+#   通过 ai-docker-delayed.timer 在开机 3 分钟后触发，桌面快速可用
 # ============================================================
 
 {
   # 1. Docker AI 集群 — 拆分为 3 个独立服务（可单独管理/重启）
+  # ⚡ 注意：所有 AI Docker 服务已移除 wantedBy = ["multi-user.target"]
+  #    改由 ai-docker-delayed.timer 延迟 3 分钟启动，加快桌面响应速度
 
   # 1a. 基础设施层：ChromaDB + LiteLLM
   systemd.services.ai-infrastructure = {
     description = "AI Infrastructure (ChromaDB + LiteLLM)";
     after = [ "docker.service" "network-online.target" ];
     wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+    # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
     path = with pkgs; [ docker docker-compose coreutils bash ];
 
     serviceConfig = {
@@ -48,7 +54,7 @@
     description = "Letta Agent Framework (Docker)";
     after = [ "docker.service" "ai-infrastructure.service" ];
     wants = [ "ai-infrastructure.service" ];
-    wantedBy = [ "multi-user.target" ];
+    # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
     path = with pkgs; [ docker docker-compose coreutils bash ];
 
     serviceConfig = {
@@ -71,7 +77,7 @@
     description = "AI Apps (Dify + n8n + Open WebUI + others)";
     after = [ "docker.service" "letta-compose.service" ];
     wants = [ "letta-compose.service" ];
-    wantedBy = [ "multi-user.target" ];
+    # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
     path = with pkgs; [ docker docker-compose coreutils bash ];
 
     serviceConfig = {
@@ -194,9 +200,10 @@
     ]);
   in {
     description = "Unified Search Gateway (port 9000)";
-    after = [ "network.target" "docker.service" "ai-cluster.service" "ollama.service" ];
+    # 依赖 ai-infrastructure（docker compose），不阻塞 multi-user.target
+    after = [ "network.target" "docker.service" "ai-infrastructure.service" "ollama.service" ];
     wants = [ "ollama.service" ];
-    wantedBy = [ "multi-user.target" ];
+    # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
 
     serviceConfig = {
       Type = "simple";
@@ -206,6 +213,36 @@
       Restart = "on-failure";
       RestartSec = "10s";
       Environment = "HOME=/home/charlie";
+    };
+  };
+
+  # 7. ⚡ AI 服务延迟启动调度器（SPE-31 启动优化）
+  # 开机 3 分钟后触发所有 AI Docker 服务，不阻塞桌面登录
+  systemd.timers.ai-docker-delayed = {
+    description = "Delayed start of AI Docker services after boot";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3min";    # 桌面就绪后 3 分钟启动，确保桌面流畅
+      Unit = "ai-docker-delayed.service";
+    };
+  };
+
+  systemd.services.ai-docker-delayed = {
+    description = "Start AI Docker services (delayed after boot)";
+    after = [ "docker.service" "network-online.target" "mnt-ai.mount" ];
+    wants = [ "docker.service" "network-online.target" ];
+    path = with pkgs; [ systemd bash coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = false;
+      ExecStart = pkgs.writeShellScript "ai-docker-delayed-start" ''
+        echo "Starting AI infrastructure services..."
+        systemctl start ai-infrastructure.service || true
+        systemctl start letta-compose.service || true
+        systemctl start ai-apps.service || true
+        systemctl start unified-search.service || true
+        echo "AI services started."
+      '';
     };
   };
 }

@@ -89,6 +89,10 @@ in
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
+  # ⚡ 启动优化（SPE-31）：NetworkManager-wait-online 默认等待所有接口就绪（耗时 6.5s）
+  # 禁用该服务，AI 服务已改为延迟启动，不再需要此等待
+  systemd.services.NetworkManager-wait-online.enable = false;
+
   # LAN 固定设备名称解析
   networking.extraHosts = ''
     192.168.2.100 tony nixos
@@ -98,6 +102,11 @@ in
 
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
+
+  # --- 音频修复：ALC897 需要 model hint ---
+  boot.extraModprobeConfig = ''
+    options snd-hda-intel model=generic
+  '';
 
   # --- 2. 引導與磁盤：雙系統與防掉盤機制 ---
   boot.loader = {
