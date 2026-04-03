@@ -13,6 +13,12 @@
     options = [ "nofail" "ro" "uid=1000" "iocharset=utf8" "x-systemd.device-timeout=5s" ];
   };
 
+  # Flatpak bind mount 到池分区（释放根分区 3.5G）
+  fileSystems."/var/lib/flatpak" = {
+    device = "/mnt/pool/offload/flatpak";
+    options = [ "bind" "nofail" ];
+  };
+
   # AI 數據 loopback 映像 (ext4 on NTFS)
   fileSystems."/mnt/ai" = {
     device = "/mnt/data/ai-data.img";

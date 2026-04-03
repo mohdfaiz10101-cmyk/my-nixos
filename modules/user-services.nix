@@ -512,6 +512,26 @@ in
       };
     };
 
+    # --- Disk Cleanup ---
+    disk-cleanup = {
+      description = "Auto Disk Cleanup - JetBrains + Temp + Logs";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash ${launcher}/disk-cleanup.sh";
+      };
+      path = [ pkgs.coreutils pkgs.findutils pkgs.bash ];
+    };
+
+    # --- Disk Sentinel（多阈值磁盘卫兵）---
+    disk-sentinel = {
+      description = "Disk Sentinel - Multi-threshold disk monitor";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash ${launcher}/disk-sentinel.sh";
+      };
+      path = [ pkgs.coreutils pkgs.findutils pkgs.bash pkgs.gawk pkgs.gnused pkgs.libnotify pkgs.nix ];
+    };
+
     # --- Memory Sync to NTFS (for Windows Continue) ---
     sync-memory-ntfs = {
       description = "Sync Claude memory to NTFS shared partition";
@@ -671,6 +691,26 @@ in
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "1h";
+        Persistent = true;
+      };
+    };
+
+    disk-cleanup = {
+      description = "Auto disk cleanup (Sun 02:00)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "Sun *-*-* 02:00:00";
+        Persistent = true;
+        RandomizedDelaySec = "15min";
+      };
+    };
+
+    disk-sentinel = {
+      description = "Disk sentinel - check every 5min";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "5min";
         Persistent = true;
       };
     };
