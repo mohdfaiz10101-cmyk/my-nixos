@@ -86,6 +86,9 @@ in
   environment.variables.NIXOS_OZONE_WL = "1";
   environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
 
+  # --- XDG 缓存重定向到池分区（减轻根分区压力）---
+  environment.variables.XDG_CACHE_HOME = "/mnt/pool/offload/cache-charlie";
+
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
@@ -159,7 +162,7 @@ in
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      data-root = "/mnt/pool-disks/POOL-D1/docker";
+      data-root = "/mnt/pool-disks/POOL-B1/docker";
       registry-mirrors = [
         "https://docker.1ms.run"
         "https://docker.xuanyuan.me"
@@ -550,6 +553,17 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [ 22 5900 7681 9090 9098 9875 9876 3002 ];
+  # --- Nix 自动垃圾回收 + 磁盘保护 ---
+  nix.gc = {
+    automatic = true;
+    dates = "daily";
+    options = "--delete-older-than 7d";
+  };
+  nix.extraOptions = ''
+    min-free = ${toString (512 * 1024 * 1024)}
+    max-free = ${toString (2 * 1024 * 1024 * 1024)}
+  '';
+
   # Nix 实验特性
   # Nix 设置
   nix.settings = {
