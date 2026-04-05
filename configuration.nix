@@ -107,6 +107,9 @@ in
   i18n.defaultLocale = "zh_CN.UTF-8";
 
   # --- 音频修复：ALC897 需要 model hint ---
+  # --- ydotool 文字输入守护进程（Voxtype 依赖）---
+  programs.ydotool.enable = true;
+
   boot.extraModprobeConfig = ''
     options snd-hda-intel model=generic
   '';
@@ -181,7 +184,7 @@ in
   users.users.charlie = {
     hashedPassword = "$y$j9T$dQVrueHAipmLfNdbhfOP.0$uPAMY96g28GVwgQLsUOcEPUzCBJWlakEhvcSVUhVge7";
     isNormalUser = true;
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "docker" "input" "uinput" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "docker" "input" "uinput" "ydotool" ];
     shell = pkgs.zsh;
   };
 
