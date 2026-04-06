@@ -19,6 +19,7 @@ in
     ./modules/auto-services.nix
     ./modules/python-env.nix
     ./modules/user-services.nix
+    ./modules/browser.nix      # 浏览器配置声明式管理
   ];
 
   # --- 1. 底層硬體與網路：無縫切換防斷網 ---
@@ -87,7 +88,24 @@ in
   environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
 
   # --- XDG 缓存重定向到池分区（减轻根分区压力）---
+  # 注意：nix 缓存不能放 mergerfs（SQLite 文件锁不兼容 FUSE），单独 symlink 到本地
   environment.variables.XDG_CACHE_HOME = "/mnt/pool/offload/cache-charlie";
+  system.activationScripts.nix-cache-local = {
+    text = ''
+      POOL_NIX="/mnt/pool/offload/cache-charlie/nix"
+      LOCAL_NIX="/home/charlie/.cache/nix"
+      mkdir -p "$LOCAL_NIX"
+      chown charlie:users "$LOCAL_NIX"
+      if [ -d "$POOL_NIX" ] && [ ! -L "$POOL_NIX" ]; then
+        # 合并已有数据到本地
+        cp -an "$POOL_NIX/." "$LOCAL_NIX/" 2>/dev/null || true
+        rm -rf "$POOL_NIX" 2>/dev/null || true
+      fi
+      [ -L "$POOL_NIX" ] || ln -sf "$LOCAL_NIX" "$POOL_NIX"
+      chown -h charlie:users "$POOL_NIX"
+    '';
+    deps = [ "users" ];
+  };
 
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
@@ -165,7 +183,7 @@ in
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      data-root = "/mnt/pool-disks/POOL-B1/docker";
+      data-root = "/var/lib/docker";
       registry-mirrors = [
         "https://docker.1ms.run"
         "https://docker.xuanyuan.me"
@@ -560,7 +578,7 @@ in
   nix.gc = {
     automatic = true;
     dates = "daily";
-    options = "--delete-older-than 7d";
+    options = "--delete-older-than 3d";
   };
   nix.extraOptions = ''
     min-free = ${toString (512 * 1024 * 1024)}
