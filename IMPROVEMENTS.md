@@ -150,3 +150,19 @@
 **參考**: 
 - https://www.linkedin.com/posts/jianfeng-xu-6b36172b_why-your-ai-agent-keeps-losing-its-memory-activity-7434174917727940608-qPDy
 - https://plurality.network/blogs/universal-ai-context-to-switch-ai-tools/
+
+## [2026-04-07] Hub 新增 3D 架構流動圖可視化
+**問題**: 缺乏系統架構整體視圖，30+ 服務/節點關係難以直觀理解
+**解決方案**: 
+- 開發 3D 星球架構流動圖（Canvas 渲染引擎）
+- 350+ 恆星背景 + 5 片星雲 + 16 個特化 3D 行星節點
+- 9 個預設場景展示數據流轉（Claude Code 請求/Aider 重構/AGI 循環等）
+- 集成到 Hub 導航（:9800/arch）
+**狀態**: ✅ 已完成並上線
+**技術細節**:
+- 純 HTML + Canvas API，零依賴
+- 星球系統：徑向漸變 + 高光反射 + 軌道環 + 卫星系統
+- 粒子流動：貝塞爾曲線 + 拖尾動畫 + 節點辉光
+- 交互：點擊節點/場景按鈕/鍵盤 1-9/空格自動播放
+**文件**: ~/hub/static/arch.html (1500 行)
+**配置變更**: nav-config.json + Caddyfile + hub-api.py

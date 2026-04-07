@@ -33,7 +33,7 @@ in
   zramSwap = {
     enable = true;
     algorithm = "zstd";       # 最佳壓縮率/速度平衡
-    memoryPercent = 100;      # 用 100% RAM 做 zram（壓縮後等效 ~32-48GB swap）
+    memoryPercent = 50;       # 降低到 50% 避免高压下性能下降（DeepSeek 建议）
   };
 
   # --- Realtek RTL8710BU WiFi 網卡：自動從 DISK 模式切換到 WiFi 模式 ---
@@ -256,8 +256,9 @@ in
       letta-obsidian = "nix-shell -p python313Packages.requests --run 'python3 /etc/nixos/scripts/letta-obsidian-sync.py'";
       memory-sync = "/etc/nixos/scripts/memory-sync.sh";
       memory-fragments = "nix-shell -p python313Packages.requests --run 'python3 /etc/nixos/scripts/memory/manage-fragments.py'";
-      obsidian-letta = "xdg-open obsidian://open?vault=Obsidian&file=Letta-Memory%2FINDEX.md 2>/dev/null || true";
-      obsidian-fragments = "xdg-open obsidian://open?vault=Obsidian&file=Memory-Fragments%2FINDEX.md 2>/dev/null || true";
+      obsidian-letta = "flatpak run md.obsidian.Obsidian 'obsidian://open?vault=Obsidian&file=Letta-Memory%2FINDEX.md' 2>/dev/null || xdg-open 'obsidian://open?vault=Obsidian&file=Letta-Memory%2FINDEX.md' 2>/dev/null || true";
+      obsidian-fragments = "flatpak run md.obsidian.Obsidian 'obsidian://open?vault=Obsidian&file=Memory-Fragments%2FINDEX.md' 2>/dev/null || xdg-open 'obsidian://open?vault=Obsidian&file=Memory-Fragments%2FINDEX.md' 2>/dev/null || true";
+      obsidian = "flatpak run md.obsidian.Obsidian";
       dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
 
       # Claude Code CLI 交互式选择（默认 LiteLLM）
@@ -592,7 +593,7 @@ in
     # 并行构建加速（12核 CPU）
     max-jobs = "auto";
     cores = 0;
-    auto-optimise-store = true;
+    auto-optimise-store = false;  # 禁用自动优化，改为手动每周优化（DeepSeek 建议）
     # 国内镜像 + 代理加速下载
     substituters = lib.mkForce [
       "https://mirrors.ustc.edu.cn/nix-channels/store"
@@ -608,3 +609,4 @@ in
   # 系统版本锁定
   system.stateVersion = "24.11";
 }
+

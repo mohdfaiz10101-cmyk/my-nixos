@@ -406,9 +406,9 @@ in
     conflicts = [ "mihomo.service" ];
     serviceConfig = {
       ExecStart = "${pkgs.xray}/bin/xray run -c ${xrayConfig}";
-      Restart = "always";
-      RestartSec = 3;
-      StartLimitBurst = 50;
+      Restart = "on-failure";  # 仅失败时重启，避免掩盖问题（DeepSeek 建议）
+      RestartSec = 10;         # 重启间隔 10 秒
+      StartLimitBurst = 3;     # 5 分钟内最多 3 次重启
       StartLimitIntervalSec = 300;
       LimitNOFILE = 65536;
     };
