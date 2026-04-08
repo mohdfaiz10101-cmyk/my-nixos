@@ -7,6 +7,16 @@
     ./disk-config.nix
   ];
 
+  # --- sops-nix 加密 secrets ---
+  sops = {
+    defaultSopsFile = ../../secrets/secrets.yaml;
+    age.keyFile = "/home/charlie/.config/sops/age/keys.txt";
+    secrets = {
+      minipc-hashedPassword = { neededForUsers = true; };
+      minipc-wifi-psk = {};
+    };
+  };
+
   # 启动
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -41,30 +51,24 @@
   # networking.proxy.httpProxy = "http://主机IP:7890";
   # 方案二：minipc 自己跑 xray（推荐，独立翻墙）
   # 取消下面注释即可启用 xray 代理
+  # 注意：代理 secrets 需要在 sops.secrets 中声明后引用
   #
-  # environment.etc."xray/config.json".text = builtins.toJSON {
-  #   inbounds = [{
-  #     port = 7890; protocol = "http"; listen = "127.0.0.1";
-  #   }];
-  #   outbounds = [{
-  #     protocol = "vless";
-  #     settings.vnext = [{
-  #       address = "cfyes.lxy1015.top"; port = 443;
-  #       users = [{ id = "f99d11dd-5f7c-49a3-8ab7-80272d9b887e"; encryption = "none"; }];
-  #     }];
-  #     streamSettings = {
-  #       network = "ws"; security = "tls";
-  #       tlsSettings.serverName = "lx-us1.lxy1015.top";
-  #       wsSettings = { path = "/liangxin/us"; headers.Host = "lx-us1.lxy1015.top"; };
-  #     };
-  #   }];
+  # sops.secrets = {
+  #   vless-uuid = {};
+  #   proxy-server-address = {};
+  #   proxy-server-port = {};
+  #   proxy-tls-serverName = {};
+  #   proxy-ws-path = {};
+  #   proxy-ws-host = {};
   # };
+  # systemd.services.xray = { ... }; # 类似主机的 proxy.nix 配置
 
   # 时区
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
   # WiFi 预配置（安装后自动连接）
+  # WiFi PSK 从 sops secret 文件读取，通过 systemd 服务写入 NM connection
   networking.networkmanager.ensureProfiles.profiles = {
     "PDCN-KeTing" = {
       connection = {
@@ -79,7 +83,7 @@
       };
       wifi-security = {
         key-mgmt = "wpa-psk";
-        psk = "1234567890";
+        psk = "$WIFI_PSK";  # placeholder, replaced by systemd service
       };
       ipv4 = {
         method = "manual";
@@ -90,11 +94,32 @@
     };
   };
 
+  # 用 sops 解密后的 PSK 覆盖 NM connection 文件
+  systemd.services.nm-wifi-psk = {
+    description = "Inject WiFi PSK from sops into NetworkManager";
+    after = [ "network-manager.service" "sops-nix.service" ];
+    wants = [ "sops-nix.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      PSK_FILE="${config.sops.secrets.minipc-wifi-psk.path}"
+      CONN_FILE="/etc/NetworkManager/system-connections/PDCN-KeTing.nmconnection"
+      if [ -f "$PSK_FILE" ] && [ -f "$CONN_FILE" ]; then
+        PSK=$(cat "$PSK_FILE")
+        ${pkgs.gnused}/bin/sed -i "s|^psk=.*|psk=$PSK|" "$CONN_FILE"
+        ${pkgs.networkmanager}/bin/nmcli connection reload 2>/dev/null || true
+      fi
+    '';
+  };
+
   # 用户
   users.users.charlie = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" "docker" ];
-    hashedPassword = "$6$6b3Jp2dPoHp0RCzR$RGFCacxJzYod/4QKqA8SnJMVTekttXc7K2ZIbN22mUGzdny4WTyRiCUfer7eRRSLdmoOAa67jYN9Hvsq.DwKG/";
+    hashedPasswordFile = config.sops.secrets.minipc-hashedPassword.path;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHAFruJJ+bY1fAh05xg86ZHMCh+dMJUq6GjmH11yq2uN charlie@nixos"
     ];

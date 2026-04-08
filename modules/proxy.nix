@@ -9,71 +9,68 @@
 # Web UI: http://0.0.0.0:9090/ui (when mihomo is active)
 { config, pkgs, lib, ... }:
 let
-  # ===== TIER 1: Xray VLESS Config (User's own US server) =====
-  xrayConfig = pkgs.writeText "xray-config.json" (builtins.toJSON {
-    log = {
-      loglevel = "warning";
-      access = "none";
-    };
-    inbounds = [
-      {
-        tag = "http-in";
-        port = 7890;
-        protocol = "http";
-        listen = "0.0.0.0";
+  secretsFile = ../secrets.nix;
+  secrets = if builtins.pathExists secretsFile then import secretsFile else {
+    vless-uuid = "";
+    proxy-server-address = "";
+    proxy-server-port = 443;
+    proxy-tls-serverName = "";
+    proxy-ws-path = "";
+    proxy-ws-host = "";
+  };
+  # sops secrets paths (available at runtime after activation)
+  sopsSecrets = config.sops.secrets;
+
+  # Xray config generator — runs at service start with decrypted sops values
+  xrayConfigGenerator = pkgs.writeShellScript "xray-config-gen" ''
+    set -euo pipefail
+    UUID=$(cat "${sopsSecrets.vless-uuid.path}")
+    ADDR=$(cat "${sopsSecrets.proxy-server-address.path}")
+    PORT=$(cat "${sopsSecrets.proxy-server-port.path}")
+    TLS_SN=$(cat "${sopsSecrets.proxy-tls-serverName.path}")
+    WS_PATH=$(cat "${sopsSecrets.proxy-ws-path.path}")
+    WS_HOST=$(cat "${sopsSecrets.proxy-ws-host.path}")
+
+    ${pkgs.jq}/bin/jq -n \
+      --arg uuid "$UUID" \
+      --arg addr "$ADDR" \
+      --argjson port "$PORT" \
+      --arg tls_sn "$TLS_SN" \
+      --arg ws_path "$WS_PATH" \
+      --arg ws_host "$WS_HOST" \
+    '{
+      log: { loglevel: "warning", access: "none" },
+      inbounds: [
+        { tag: "http-in", port: 7890, protocol: "http", listen: "0.0.0.0" },
+        { tag: "socks-in", port: 7891, protocol: "socks", listen: "0.0.0.0", settings: { udp: true } }
+      ],
+      outbounds: [
+        {
+          tag: "proxy",
+          protocol: "vless",
+          settings: { vnext: [{ address: $addr, port: ($port | tonumber), users: [{ id: $uuid, encryption: "none" }] }] },
+          streamSettings: {
+            network: "ws",
+            security: "tls",
+            tlsSettings: { serverName: $tls_sn },
+            wsSettings: { path: $ws_path, headers: { Host: $ws_host } }
+          }
+        },
+        { tag: "direct", protocol: "freedom", settings: {} },
+        { tag: "block", protocol: "blackhole", settings: {} }
+      ],
+      routing: {
+        domainStrategy: "IPIfNonMatch",
+        rules: [
+          { type: "field", domain: ["geosite:category-ads-all"], outboundTag: "block" },
+          { type: "field", ip: ["geoip:private","127.0.0.0/8","192.168.0.0/16","10.0.0.0/8"], outboundTag: "direct" },
+          { type: "field", domain: ["geosite:cn","geosite:geolocation-cn"], outboundTag: "direct" },
+          { type: "field", ip: ["geoip:cn"], outboundTag: "direct" },
+          { type: "field", domain: ["geosite:google","geosite:github","geosite:telegram","geosite:openai","geosite:geolocation-!cn"], outboundTag: "proxy" }
+        ]
       }
-      {
-        tag = "socks-in";
-        port = 7891;
-        protocol = "socks";
-        listen = "0.0.0.0";
-        settings.udp = true;
-      }
-    ];
-    outbounds = [
-      {
-        tag = "proxy";
-        protocol = "vless";
-        settings.vnext = [{
-          address = "cfyes.lxy1015.top";
-          port = 443;
-          users = [{
-            id = "f99d11dd-5f7c-49a3-8ab7-80272d9b887e";
-            encryption = "none";
-          }];
-        }];
-        streamSettings = {
-          network = "ws";
-          security = "tls";
-          tlsSettings.serverName = "lx-us1.lxy1015.top";
-          wsSettings = {
-            path = "/liangxin/us";
-            headers.Host = "lx-us1.lxy1015.top";
-          };
-        };
-      }
-      {
-        tag = "direct";
-        protocol = "freedom";
-        settings = {};
-      }
-      {
-        tag = "block";
-        protocol = "blackhole";
-        settings = {};
-      }
-    ];
-    routing = {
-      domainStrategy = "IPIfNonMatch";
-      rules = [
-        { type = "field"; domain = ["geosite:category-ads-all"]; outboundTag = "block"; }
-        { type = "field"; ip = ["geoip:private" "127.0.0.0/8" "192.168.0.0/16" "10.0.0.0/8"]; outboundTag = "direct"; }
-        { type = "field"; domain = ["geosite:cn" "geosite:geolocation-cn"]; outboundTag = "direct"; }
-        { type = "field"; ip = ["geoip:cn"]; outboundTag = "direct"; }
-        { type = "field"; domain = ["geosite:google" "geosite:github" "geosite:telegram" "geosite:openai" "geosite:geolocation-!cn"]; outboundTag = "proxy"; }
-      ];
-    };
-  });
+    }' > /run/xray-config.json
+  '';
 
   # ===== Free proxy fetcher: downloads clash configs from GitHub =====
   proxyFreeFetch = pkgs.writeShellScriptBin "proxy-free-fetch" ''
@@ -144,7 +141,7 @@ let
       -e 's/^port:.*/mixed-port: 7890/' \
       -e 's/^socks-port:.*/socks-port: 7891/' \
       -e 's/^allow-lan:.*/allow-lan: true/' \
-      -e 's/^external-controller:.*/external-controller: 0.0.0.0:9090/' \
+      -e 's/^external-controller:.*/external-controller: 127.0.0.1:9090/' \
       "$TEMP_DIR/raw.yml"
 
     # Ensure required fields exist
@@ -155,7 +152,7 @@ let
     grep -q "^allow-lan:" "$TEMP_DIR/raw.yml" || \
       ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a allow-lan: true' "$TEMP_DIR/raw.yml"
     grep -q "^external-controller:" "$TEMP_DIR/raw.yml" || \
-      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 0.0.0.0:9090' "$TEMP_DIR/raw.yml"
+      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 127.0.0.1:9090' "$TEMP_DIR/raw.yml"
 
     # Download Country.mmdb if missing (needed for GEOIP rules)
     if [ ! -f "$MIHOMO_DIR/Country.mmdb" ]; then
@@ -381,6 +378,16 @@ let
 
 in
 {
+  # --- sops secrets for proxy ---
+  sops.secrets = {
+    vless-uuid = {};
+    proxy-server-address = {};
+    proxy-server-port = {};
+    proxy-tls-serverName = {};
+    proxy-ws-path = {};
+    proxy-ws-host = {};
+  };
+
   # DO NOT use services.mihomo — causes "Failed to set up credentials" bug
   # Everything is defined manually below for full control
 
@@ -388,24 +395,24 @@ in
     "d /etc/mihomo 0755 root root - -"
   ];
 
+  # 注：xray, mihomo 包已移至 modules/packages.nix，此处只安装本地脚本包
   environment.systemPackages = [
     proxySub
     proxyFreeFetch
     proxyWatchdog
     proxyStatus
-    pkgs.xray
-    pkgs.mihomo
   ];
 
   # ===== TIER 1: Xray VLESS (Primary — AUTO-START on boot) =====
   systemd.services.xray = {
     description = "Xray VLESS Proxy (Tier 1 - Primary US)";
     wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = [ "network-online.target" "sops-nix.service" ];
+    wants = [ "network-online.target" "sops-nix.service" ];
     conflicts = [ "mihomo.service" ];
     serviceConfig = {
-      ExecStart = "${pkgs.xray}/bin/xray run -c ${xrayConfig}";
+      ExecStartPre = "${xrayConfigGenerator}";
+      ExecStart = "${pkgs.xray}/bin/xray run -c /run/xray-config.json";
       Restart = "on-failure";  # 仅失败时重启，避免掩盖问题（DeepSeek 建议）
       RestartSec = 10;         # 重启间隔 10 秒
       StartLimitBurst = 3;     # 5 分钟内最多 3 次重启
@@ -478,11 +485,11 @@ in
     };
   };
 
-  networking.firewall.allowedTCPPorts = [ 7890 ];
+  # 7890 仅本地使用，防火墙不对外暴露
 
   networking.proxy = {
-    httpProxy = "http://0.0.0.0:7890";
-    httpsProxy = "http://0.0.0.0:7890";
+    httpProxy = "http://127.0.0.1:7890";
+    httpsProxy = "http://127.0.0.1:7890";
     noProxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local,11434,18789";
   };
 }

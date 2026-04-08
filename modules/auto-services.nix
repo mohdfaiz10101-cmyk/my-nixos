@@ -183,11 +183,11 @@
   };
 
   systemd.timers.nixos-auto-confirm = {
-    description = "Daily check: auto-confirm NixOS test config after 3 days";
+    description = "Daily check: auto-confirm NixOS test config after 3 days (15:00)";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "10min";
-      OnCalendar = "daily";
+      OnCalendar = "*-*-* 15:00:00";
       Persistent = true;
     };
   };

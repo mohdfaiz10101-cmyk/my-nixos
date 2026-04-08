@@ -5,9 +5,12 @@ hardware-configuration.nix
 result
 result-*
 
-# 敏感文件隔离
+# 敏感文件隔离（secrets.nix 已迁移到 sops-nix 加密方案）
 secrets.nix
-*.env
+# secrets/ 目录下的 .yaml 已加密（sops-nix），可以安全 git 追踪
+# 但排除其他可能的明文临时文件
+secrets/*.plaintext
+secrets/*.tmp
 .envrc
 .envrc.bak
 .envrc.save
@@ -19,7 +22,6 @@ secrets.nix
 .idea/
 .claude/
 user-secrets.nix
-secrets/
 
 # 测试脚本（含 API token）
 claude-*.js

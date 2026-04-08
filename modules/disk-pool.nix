@@ -2,28 +2,12 @@
 
 # ============================================================
 # 磁盘自动池化模块
-#
-# 原理：
-#   1. 开机扫描所有带 POOL- 前缀标签的分区
-#   2. 自动挂载到 /mnt/pool-disks/POOL-xxx/
-#   3. MergerFS 合并成统一的 /mnt/pool
-#
-# 重装后：rebuild 即恢复，不需要手动配置
-# 加新盘：给分区打 POOL-xxx 标签，重启即入池
-# 减盘：拔掉就行，剩余盘继续工作
+# 原理：开机扫描 POOL- 前缀分区 → 挂载 → MergerFS 合并
+# 注：mergerfs, mergerfs-tools, snapraid, ntfs3g, e2fsprogs, parted
+#     包已移至 modules/packages.nix
 # ============================================================
 
 {
-  # MergerFS + 磁盘工具
-  environment.systemPackages = with pkgs; [
-    mergerfs
-    mergerfs-tools  # 平衡、去重等工具
-    snapraid        # 可选：校验冗余
-    ntfs3g          # NTFS 支持
-    e2fsprogs       # ext4 工具
-    parted          # 分区工具
-  ];
-
   # 自动发现 + 挂载 + 合池 服务
   systemd.services.disk-pool = {
     description = "Auto-discover and pool POOL-* labeled disks";
@@ -69,10 +53,10 @@
   };
 
   systemd.timers.snapraid-sync = {
-    description = "Daily SnapRAID sync";
+    description = "Daily SnapRAID sync (12:00)";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "daily";
+      OnCalendar = "*-*-* 12:00:00";
       Persistent = true;
       RandomizedDelaySec = "1h";
     };
