@@ -244,6 +244,43 @@ in
       environment = userEnv;
     };
 
+    # --- Mihomo Backup ---
+    mihomo-backup = {
+      description = "Mihomo config incremental backup";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${localBin}/mihomo-guardian --backup";
+      };
+    };
+
+    # --- Mihomo Guardian ---
+    mihomo-guardian = {
+      description = "Mihomo proxy health check with auto-rollback";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash ${localBin}/mihomo-guardian --check";
+        TimeoutStartSec = "120";
+      };
+      environment = graphicalEnv;
+    };
+
+    # --- Mihomo Watch ---
+    mihomo-watch = {
+      description = "Mihomo config file watcher (inotify)";
+      wantedBy = [ "default.target" ];
+      after = [ "network-online.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${pkgs.bash}/bin/bash ${localBin}/mihomo-guardian --watch";
+        Restart = "on-failure";
+        RestartSec = "30";
+      };
+      path = [ pkgs.inotify-tools ];
+      environment = graphicalEnv;
+    };
+
     # --- Backup Cleanup ---
     backup-cleanup = {
       description = "Monthly cleanup of .bak/.error/.save files in /etc/nixos/";
@@ -473,6 +510,26 @@ in
         OnCalendar = "Mon *-*-* 11:00:00";
         Persistent = true;
         RandomizedDelaySec = "5min";
+      };
+    };
+
+    mihomo-backup = {
+      description = "Mihomo config backup (every 6h)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "5min";
+        OnUnitActiveSec = "6h";
+        Persistent = true;
+      };
+    };
+
+    mihomo-guardian = {
+      description = "Mihomo health check (every 3min)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "3min";
+        Persistent = true;
       };
     };
   };

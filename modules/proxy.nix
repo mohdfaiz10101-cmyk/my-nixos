@@ -6,7 +6,7 @@
 # │ Watchdog: every 30s, auto-detect failure, switch, self-heal│
 # └─────────────────────────────────────────────────────────────┘
 # Port 7890 (HTTP) / 7891 (SOCKS5) — only one service runs at a time
-# Web UI: http://0.0.0.0:9090/ui (when mihomo is active)
+# Web UI: http://127.0.0.1:9091/ui (when mihomo is active)
 { config, pkgs, lib, ... }:
 let
   secretsFile = ../secrets.nix;
@@ -141,7 +141,7 @@ let
       -e 's/^port:.*/mixed-port: 7890/' \
       -e 's/^socks-port:.*/socks-port: 7891/' \
       -e 's/^allow-lan:.*/allow-lan: true/' \
-      -e 's/^external-controller:.*/external-controller: 127.0.0.1:9090/' \
+      -e 's/^external-controller:.*/external-controller: 127.0.0.1:9091/' \
       "$TEMP_DIR/raw.yml"
 
     # Ensure required fields exist
@@ -152,7 +152,7 @@ let
     grep -q "^allow-lan:" "$TEMP_DIR/raw.yml" || \
       ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a allow-lan: true' "$TEMP_DIR/raw.yml"
     grep -q "^external-controller:" "$TEMP_DIR/raw.yml" || \
-      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 127.0.0.1:9090' "$TEMP_DIR/raw.yml"
+      ${pkgs.gnused}/bin/sed -i '/^mixed-port:/a external-controller: 127.0.0.1:9091' "$TEMP_DIR/raw.yml"
 
     # Download Country.mmdb if missing (needed for GEOIP rules)
     if [ ! -f "$MIHOMO_DIR/Country.mmdb" ]; then
