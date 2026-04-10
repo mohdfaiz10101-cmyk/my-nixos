@@ -36,13 +36,14 @@ in
     };
 
     # --- Browser Cookie Sync ---
-    browser-cookie-sync = {
-      description = "Browser Cookie Sync";
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${localBin}/sync-all-browser-cookies";
-      };
-    };
+    # DISABLED: Floorp cookies.sqlite 不存在
+    #     browser-cookie-sync = {
+    #       description = "Browser Cookie Sync";
+    #       serviceConfig = {
+    #         Type = "oneshot";
+    #         ExecStart = "${localBin}/sync-all-browser-cookies";
+    #       };
+    #     #     };
 
     # --- Claude Orphan Killer ---
     claude-orphan-killer = {
@@ -140,15 +141,16 @@ in
     };
 
     # --- Memory Dream ---
-    memory-dream = {
-      description = "Memory Dream - AI memory consolidation";
-      wants = [ "network-online.target" ];
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${localBin}/memory-dream";
-      };
-      environment = graphicalEnv;
-    };
+    # DISABLED: 脚本未实现
+    #     memory-dream = {
+    #       description = "Memory Dream - AI memory consolidation";
+    #       wants = [ "network-online.target" ];
+    #       serviceConfig = {
+    #         Type = "oneshot";
+    #         ExecStart = "${localBin}/memory-dream";
+    #       };
+    #     #       environment = graphicalEnv;
+    #     };
 
     # --- NixOS Auto Commit ---
     nixos-auto-commit = {
@@ -251,6 +253,7 @@ in
         Type = "oneshot";
         ExecStart = "${localBin}/mihomo-guardian --backup";
       };
+      path = [ pkgs.coreutils pkgs.bash pkgs.findutils pkgs.gnugrep pkgs.gnused pkgs.diffutils ];
     };
 
     # --- Mihomo Guardian ---
@@ -307,14 +310,14 @@ in
       };
     };
 
-    browser-cookie-sync = {
-      description = "Browser Cookie sync (every 5min)";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "1min";
-        OnUnitActiveSec = "5min";
-      };
-    };
+    #     browser-cookie-sync = {
+    #       description = "Browser Cookie sync (every 5min)";
+    #       wantedBy = [ "timers.target" ];
+    #       timerConfig = {
+    #         OnBootSec = "1min";
+    #         OnUnitActiveSec = "5min";
+    #       };
+    #     };
 
     claude-orphan-killer = {
       description = "Claude orphan process killer (every 60s)";
@@ -405,15 +408,15 @@ in
       };
     };
 
-    memory-dream = {
-      description = "Memory dream consolidation (every 12h)";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "10min";
-        OnUnitActiveSec = "12h";
-        Persistent = true;
-      };
-    };
+    #     memory-dream = {
+    #       description = "Memory dream consolidation (every 12h)";
+    #       wantedBy = [ "timers.target" ];
+    #       timerConfig = {
+    #         OnBootSec = "10min";
+    #         OnUnitActiveSec = "12h";
+    #         Persistent = true;
+    #       };
+    #     };
 
     nixos-auto-commit = {
       description = "NixOS config auto-commit (daily 22:00)";

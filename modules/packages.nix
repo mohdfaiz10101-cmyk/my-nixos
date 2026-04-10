@@ -87,11 +87,12 @@ in
     hunspell
     hunspellDicts.en_US
     sqlcipher
-    (texlive.combine {
-      inherit (texlive)
-        scheme-small collection-langchinese collection-fontsrecommended
-        fancyhdr titlesec geometry enumitem xcolor hyperref bookmark;
-    })
+    # texlive 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
+    # (texlive.combine {
+    #   inherit (texlive)
+    #     scheme-small collection-langchinese collection-fontsrecommended
+    #     fancyhdr titlesec geometry enumitem xcolor hyperref bookmark;
+    # })
 
     # === 桌面工具 ===
     feh
@@ -115,10 +116,11 @@ in
     docker-compose
     direnv
     vscode-with-extensions
-    jetbrains.idea
+    # jetbrains.idea  # 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
     claude-code
     cursor-cli
     code-cursor-fhs
+    zed-editor
 
     # === 浏览器 ===
     firefox
@@ -144,7 +146,7 @@ in
     mihomo
 
     # === AI & 语音 ===
-    ollama-cuda
+#    ollama-cuda  # 临时禁用：磁盘空间不足
     whisper-cpp
     ffmpeg
     sox
@@ -158,6 +160,9 @@ in
     warp-terminal
     kitty
     zellij
+    starship        # 智能提示符
+    atuin           # 命令历史搜索
+    fzf             # 模糊查找
 
     # === KDE 桌面增强 ===
     catppuccin-cursors.mochaDark
@@ -178,7 +183,7 @@ in
     })
 
     # === 办公 & 字体 ===
-    libreoffice-qt6-fresh
+    # libreoffice-qt6-fresh  # 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
     keepassxc
     noto-fonts
     noto-fonts-cjk-serif
@@ -193,7 +198,7 @@ in
     ttyd
 
     # === 浏览器自动化 & 图片 ===
-    playwright-mcp
+    # playwright-mcp  # 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
     imv
 
     # === 自定义脚本包 ===

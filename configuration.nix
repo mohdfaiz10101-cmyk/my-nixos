@@ -23,6 +23,8 @@
     ./modules/python-env.nix
     ./modules/user-services.nix
     ./modules/browser.nix
+    ./modules/security.nix
+    ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
   ];
 
   # --- 硬件固件 ---

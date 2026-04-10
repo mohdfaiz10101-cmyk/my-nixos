@@ -201,8 +201,8 @@
   in {
     description = "Unified Search Gateway (port 9000)";
     # 依赖 ai-infrastructure（docker compose），不阻塞 multi-user.target
-    after = [ "network.target" "docker.service" "ai-infrastructure.service" "ollama.service" ];
-    wants = [ "ollama.service" ];
+    after = [ "network.target" "docker.service" "ai-infrastructure.service" ];  # 移除 ollama.service 依赖
+    #wants = [ "ollama.service" ];  # 临时禁用
     # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
 
     serviceConfig = {

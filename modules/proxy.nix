@@ -66,7 +66,7 @@ let
           { type: "field", ip: ["geoip:private","127.0.0.0/8","192.168.0.0/16","10.0.0.0/8"], outboundTag: "direct" },
           { type: "field", domain: ["geosite:cn","geosite:geolocation-cn"], outboundTag: "direct" },
           { type: "field", ip: ["geoip:cn"], outboundTag: "direct" },
-          { type: "field", domain: ["geosite:google","geosite:github","geosite:telegram","geosite:openai","geosite:geolocation-!cn"], outboundTag: "proxy" }
+          { type: "field", domain: ["domain:gemini.google.com","domain:generativelanguage.googleapis.com","domain:aistudio.google.com","domain:bard.google.com","domain:anthropic.com","domain:claude.ai","geosite:google","geosite:github","geosite:telegram","geosite:openai","geosite:geolocation-!cn"], outboundTag: "proxy" }
         ]
       }
     }' > /run/xray-config.json

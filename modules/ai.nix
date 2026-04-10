@@ -1,18 +1,18 @@
 { config, pkgs, inputs, lib, ... }: {
-  # --- 1. Ollama 推理後端 (NVIDIA CUDA 加速) ---
-  services.ollama = {
-    enable = true;
-    package = pkgs.ollama-cuda;
-    host = "0.0.0.0";
-    port = 11434;
-    home = "/mnt/ai/ollama";
-    environmentVariables = {
-      OLLAMA_KEEP_ALIVE = "5m";
-      OLLAMA_NUM_PARALLEL = "4";
-      OLLAMA_MAX_LOADED_MODELS = "2";
-      OLLAMA_GPU_OVERHEAD = "200";
-    };
-  };
+  # --- 1. Ollama 推理後端 (NVIDIA CUDA 加速) --- 临时禁用以节省磁盘空间
+  # services.ollama = {
+  #   enable = true;
+  #   package = pkgs.ollama-cuda;
+  #   host = "0.0.0.0";
+  #   port = 11434;
+  #   home = "/mnt/ai/ollama";
+  #   environmentVariables = {
+  #     OLLAMA_KEEP_ALIVE = "5m";
+  #     OLLAMA_NUM_PARALLEL = "4";
+  #     OLLAMA_MAX_LOADED_MODELS = "2";
+  #     OLLAMA_GPU_OVERHEAD = "200";
+  #   };
+  # };
 
   # --- 3. Dashboard 服務 ---
   systemd.services.nixos-dashboard = let

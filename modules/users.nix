@@ -4,7 +4,7 @@
   # --- sops-nix 全局配置 ---
   sops = {
     defaultSopsFile = ../secrets/secrets.yaml;
-    age.keyFile = "/home/charlie/.config/sops/age/keys.txt";
+    age.keyFile = "/root/.config/sops/age/keys.txt";
     secrets = {
       charlie-hashedPassword = { neededForUsers = true; };
       minipc-hashedPassword = {};

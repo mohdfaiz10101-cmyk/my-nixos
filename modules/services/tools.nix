@@ -17,6 +17,10 @@ let
   };
 in
 {
+  # --- GNOME Keyring (libsecret 依赖，Remmina 等应用需要) ---
+  services.gnome.gnome-keyring = {
+    enable = true;
+  };
   systemd.user.services = {
 
     # --- Clipboard Sync ---
