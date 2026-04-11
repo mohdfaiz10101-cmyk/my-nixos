@@ -26,6 +26,7 @@
     ./modules/security.nix
     ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
     ./modules/tablet-proxy.nix         # 平板代理自动切换
+    ./modules/docker-nat-fix.nix       # Docker 容器 NAT 转发修复
   ];
 
   # --- 硬件固件 ---
