@@ -25,6 +25,7 @@
     ./modules/browser.nix
     ./modules/security.nix
     ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
+    ./modules/tablet-proxy.nix         # 平板代理自动切换
   ];
 
   # --- 硬件固件 ---

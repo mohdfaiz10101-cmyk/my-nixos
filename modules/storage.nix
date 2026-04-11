@@ -16,6 +16,7 @@
   # Flatpak bind mount 到池分区（释放根分区 3.5G）
   fileSystems."/var/lib/flatpak" = {
     device = "/mnt/pool/offload/flatpak";
+    fsType = "none";
     options = [ "bind" "nofail" ];
   };
 

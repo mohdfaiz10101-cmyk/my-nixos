@@ -121,6 +121,7 @@ in
     cursor-cli
     code-cursor-fhs
     zed-editor
+    windsurf
 
     # === 浏览器 ===
     firefox

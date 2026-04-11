@@ -40,6 +40,15 @@ let
       --arg ws_host "$WS_HOST" \
     '{
       log: { loglevel: "warning", access: "none" },
+      dns: {
+        servers: [
+          { address: "8.8.8.8", domains: ["geosite:geolocation-!cn"] },
+          { address: "1.1.1.1", domains: ["geosite:geolocation-!cn"] },
+          { address: "223.5.5.5", domains: ["geosite:cn", "geosite:geolocation-cn"] },
+          "localhost"
+        ],
+        queryStrategy: "UseIPv4"
+      },
       inbounds: [
         { tag: "http-in", port: 7890, protocol: "http", listen: "0.0.0.0" },
         { tag: "socks-in", port: 7891, protocol: "socks", listen: "0.0.0.0", settings: { udp: true } }
@@ -244,6 +253,40 @@ let
 
     log() { echo "$(date '+%H:%M:%S') [watchdog] $1"; }
 
+    # DNS pre-check: ensure proxy domain resolves
+    dns_precheck() {
+      local proxy_domain
+      proxy_domain=$(cat /run/xray-config.json 2>/dev/null | ${pkgs.jq}/bin/jq -r '.outbounds[0].settings.vnext[0].address' 2>/dev/null || echo "")
+      if [ -z "$proxy_domain" ]; then return 0; fi
+
+      # Test current DNS
+      if ${pkgs.dnsutils}/bin/nslookup "$proxy_domain" >/dev/null 2>&1; then
+        return 0
+      fi
+
+      log "DNS FAILED for $proxy_domain! Injecting fallback DNS..."
+      cp /etc/resolv.conf /run/resolv.conf.bak 2>/dev/null || true
+      {
+        echo "nameserver 8.8.8.8"
+        echo "nameserver 1.1.1.1"
+        echo "nameserver 223.5.5.5"
+        cat /etc/resolv.conf 2>/dev/null
+      } > /run/resolv.conf.tmp
+      cp /run/resolv.conf.tmp /etc/resolv.conf 2>/dev/null || true
+
+      if ${pkgs.dnsutils}/bin/nslookup "$proxy_domain" >/dev/null 2>&1; then
+        log "DNS recovered with fallback servers"
+        return 0
+      fi
+      log "DNS still failing after fallback injection"
+      return 1
+    }
+
+    notify_tier() {
+      DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus" \
+        ${pkgs.libnotify}/bin/notify-send -u critical "Proxy Watchdog" "$1" 2>/dev/null || true
+    }
+
     test_proxy() {
       local code
       code=$(${pkgs.curl}/bin/curl -s --max-time 10 -x http://0.0.0.0:7890 \
@@ -291,6 +334,9 @@ let
     echo "$FAILS" > "$FAIL_COUNT_FILE"
     log "PROXY DOWN! Tier: $CURRENT, fails: $FAILS"
 
+    # DNS pre-check before restart attempts
+    dns_precheck || log "WARNING: DNS precheck failed, continuing anyway"
+
     # ---- TIER 1: Restart xray ----
     log "[Tier 1] Restarting xray..."
     systemctl stop mihomo 2>/dev/null || true
@@ -301,6 +347,7 @@ let
       echo "xray" > "$STATE_FILE"
       echo "0" > "$FAIL_COUNT_FILE"
       log "[Tier 1] Xray recovered!"
+      notify_tier "Tier 1: Xray recovered"
       exit 0
     fi
 
@@ -315,6 +362,7 @@ let
         echo "mihomo" > "$STATE_FILE"
         echo "0" > "$FAIL_COUNT_FILE"
         log "[Tier 2] Mihomo working!"
+        notify_tier "Tier 2: Switched to Mihomo"
         exit 0
       fi
       systemctl stop mihomo 2>/dev/null || true
@@ -332,6 +380,7 @@ let
         echo "free" > "$STATE_FILE"
         echo "0" > "$FAIL_COUNT_FILE"
         log "[Tier 3] Fresh free proxies working!"
+        notify_tier "Tier 3: Using fresh free proxies"
         exit 0
       fi
       systemctl stop mihomo 2>/dev/null || true
@@ -341,6 +390,7 @@ let
 
     # ---- ALL FAILED: keep xray as last resort ----
     log "ALL TIERS FAILED! Starting xray (may recover later)"
+    notify_tier "ALL TIERS FAILED! Proxy is down"
     systemctl start xray 2>/dev/null || true
     echo "xray" > "$STATE_FILE"
 
@@ -410,13 +460,16 @@ in
     after = [ "network-online.target" "sops-nix.service" ];
     wants = [ "network-online.target" "sops-nix.service" ];
     conflicts = [ "mihomo.service" ];
+    restartIfChanged = false;  # prevent nixos-rebuild from killing proxy mid-session
+    unitConfig = {
+      StartLimitBurst = 3;
+      StartLimitIntervalSec = 300;
+    };
     serviceConfig = {
       ExecStartPre = "${xrayConfigGenerator}";
       ExecStart = "${pkgs.xray}/bin/xray run -c /run/xray-config.json";
-      Restart = "on-failure";  # 仅失败时重启，避免掩盖问题（DeepSeek 建议）
-      RestartSec = 10;         # 重启间隔 10 秒
-      StartLimitBurst = 3;     # 5 分钟内最多 3 次重启
-      StartLimitIntervalSec = 300;
+      Restart = "on-failure";
+      RestartSec = 10;
       LimitNOFILE = 65536;
     };
   };
@@ -427,6 +480,7 @@ in
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     conflicts = [ "xray.service" ];
+    restartIfChanged = false;  # prevent nixos-rebuild from killing proxy mid-session
     serviceConfig = {
       ExecStart = "${pkgs.mihomo}/bin/mihomo -d /etc/mihomo -f /etc/mihomo/config.yaml";
       Restart = "on-failure";
@@ -443,6 +497,7 @@ in
     wants = [ "network-online.target" ];
     path = [
       pkgs.curl pkgs.coreutils pkgs.systemd pkgs.gnugrep pkgs.gnused
+      pkgs.dnsutils pkgs.libnotify pkgs.jq
       proxyFreeFetch
     ];
     serviceConfig = {
@@ -457,8 +512,8 @@ in
     description = "Proxy watchdog timer (every 30s)";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "30s";
-      OnUnitActiveSec = "30s";
+      OnBootSec = "15s";
+      OnUnitActiveSec = "15s";
       AccuracySec = "5s";
     };
   };
@@ -490,6 +545,6 @@ in
   networking.proxy = {
     httpProxy = "http://127.0.0.1:7890";
     httpsProxy = "http://127.0.0.1:7890";
-    noProxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local,11434,18789";
+    noProxy = "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,100.100.100.100,localhost,*.local,*.ts.net,open.bigmodel.cn,11434,18789";
   };
 }

@@ -4,7 +4,7 @@
   zramSwap = {
     enable = true;
     algorithm = "zstd";
-    memoryPercent = 50;
+    memoryPercent = 25;  # 23GB RAM × 25% ≈ 5.8GB swap（之前50%过多）
   };
 
   # --- 降低 swappiness（优先用 RAM，zramSwap 作为安全网）---
