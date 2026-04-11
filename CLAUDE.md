@@ -1,344 +1,600 @@
-# NixOS 系統維護手冊 — Charlie's Snowflake
-# 完整系統上下文見 CONTEXT.md（跨 AI 共用）
+# 行为增强规则
 
-## 架構概覽
-- Flake 架構，入口 `flake.nix`，輸出端點 `charlie`
-- UEFI + GRUB 引導，EFI 掛載於 `/boot`（252MB，與 Windows 11 共用）
-- 桌面：GNOME + GDM，GPU：NVIDIA RTX 3060 Ti（閉源驅動）
-- 雙系統：NixOS + Windows 11（同一 NVMe）
-- 無 WiFi 硬體（桌機 Intel H510），僅 USB 有線網路
+## 语言规则
+- MUST 始终使用中文回复用户，所有对话、解释、报告均用中文
+- 代码注释可以用英文，但所有面向用户的输出必须是中文
 
-## 關鍵分區 UUID
-- 根分區 `/`：`2d8662db-7f69-49a6-b396-ef96dc3e0b23`（ext4，nvme0n1p9）
-- EFI `/boot`：`FA67-631E`（vfat，nvme0n1p2）
+## 输出格式规则（Power User Protocol 2026）
 
-## 已知問題與修復歷史
-### 2026-02 GRUB 黑屏事件
-- 症狀：預設 Generation 開機黑屏，掉進 `grub>` 命令行
-- 根因：EFI 分區 252MB 爆滿（95%），GRUB 寫入不完整
-- 修復：LiveCD 進入 → 手動選 Gen 64 → 重寫 GRUB
-- 防護措施已部署：
-  1. `configurationLimit = 3`：限制 GRUB 保留 Generation 數量
-  2. `ns` alias 改為先 build 再 switch：防止壞配置直接切換
-  3. Gen 64 釘死為 GC root：`/nix/var/nix/gcroots/pinned-stable-gen64`
+### 核心规则（共 8 条，无例外）
 
-## 安全操作規範
-- 重構指令：`ns`（先 build 驗證，成功才 switch + --install-bootloader）
-- 清理指令：`nc`（nix-collect-garbage -d，不會刪除被釘住的 Generation）
-- 遠端恢復：`nix-recover`（Git pull 最新配置 → build → switch，自動處理代理）
-- 緊急回滾：
-  ```bash
-  # 方法 1：GRUB 選 Gen 64 開機，然後拉遠端配置重建
-  nix-recover
+**R1 零废话**：禁止寒暄前缀（"好的""我来""接下来"）、禁止第一人称动作描述、禁止过渡句。直接输出结果。
 
-  # 方法 2：手動切回 Gen 64
-  sudo nix-env --profile /nix/var/nix/profiles/system --switch-generation 64
-  sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
+**R2 指令式语态**：每行是状态更新，格式 `动作 → 结果 → 下一步`。不解释"为什么要这样做"，除非用户问。
+
+**R3 统一状态标记**：只用一套前缀语法 — `[OK]` `[FAIL]` `[SKIP]`。不混用其他状态系统（emoji 状态、框线状态等）。
+
+**R4 紧凑布局**：段落不超 3 行。只在**主题切换**时插入空行，同一主题内连续输出。代码块带语言标识。
+
+**R5 加粗节制**：每段最多 **1 个加粗**（核心结论）。用加粗替代 markdown 标题做分节。
+
+**R6 代码/输出限制**：单个代码块不超 15 行，超出用 `见 <文件路径>` 替代。工具输出超 30 行只显示关键部分。
+
+**R7 并行执行**：能并行的工具调用一次发出。每次工具调用前 1 句意图说明，返回后 1 句状态确认。
+
+**R8 装饰预算**：装饰元素（分隔线、标记符号、框线）不超过回复总行数的 10%。信息密度优先。
+
+### 视觉模板（优先使用）
+
+**核心原则**：视觉散热 — 避免长文字堆叠，用结构化布局提升信息扫描速度。
+
+**首选模板（按使用频率）**：
+
+**① 卡片分组** — 多服务/多项目状态汇总
+
+```
+╔════════════════════╗  ╔════════════════════╗  ╔════════════════════╗
+║  服务名    [状态]  ║  ║  服务名    [状态]  ║  ║  服务名    [状态]  ║
+║────────────────────║  ║────────────────────║  ║────────────────────║
+║  关键指标1         ║  ║  关键指标1         ║  ║  关键指标1         ║
+║  关键指标2         ║  ║  关键指标2         ║  ║  关键指标2         ║
+╚════════════════════╝  ╚════════════════════╝  ╚════════════════════╝
+```
+
+适用：健康检查、多服务概览、配置汇总。窄终端降级为单列卡片。
+
+**② 时间轴** — 操作历史、会话回顾
+
+```
+  时间   事件
+  ──────────────────────────────────────────────────
+  HH:MM  ●── 操作标题 ·························· [状态]
+         │   关键细节行 1
+         │   关键细节行 2
+         │
+  HH:MM  ●── 下一操作 ·························· [状态]
+         │   细节行
+         │
+  HH:MM  ◆── 当前节点（结论）
+```
+
+适用：会话任务回顾、版本日志、故障排查时间线。
+
+**③ 极简双栏** — 问题诊断、配置对比
+
+```
+▌问题现象                         ▌根因 + 修复
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  症状描述行 1                  │  修复步骤 1
+  症状描述行 2                  │  修复步骤 2
+                                │  修复步骤 3
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ◆ 影响范围                        ◆ 修复结论
+```
+
+适用：Bug 诊断、配置前后对比。去除沉重框线，用 `━` 和 `│` 轻量分隔。
+
+**次选模板（特定场景）**：
+
+**④ 树状层级** — 多步骤操作、依赖关系
+
+```
+▸ 根节点
+├─ 步骤 A ····································· [OK]
+│  ├─ 子步骤 A1 ······························· [OK]
+│  └─ 子步骤 A2 ······························· [RUNNING]
+└─ 步骤 B ····································· ○ 待执行
+```
+
+**⑤ 流程管道** — 数据流、CI 流水线
+
+```
+┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐
+│ 阶段 1 │ →  │ 阶段 2 │ →  │ 阶段 3 │ →  │ 阶段 4 │
+└────────┘    └────────┘    └────────┘    └────────┘
+   [OK]         [OK]       [RUNNING]         ○
+```
+
+**模板选择规则**：
+- 操作 ≤ 3 步 → 直接用 `动作 → [OK]` 格式，不用模板
+- 多个独立状态 → 卡片分组
+- 时间顺序重要 → 时间轴
+- 前后对比 → 极简双栏
+- 有明确依赖 → 树状层级
+- 流程/管道 → 流程管道
+
+**禁止**：一次回复中使用超过 2 种模板（视觉疲劳）。
+
+## 自动验证（强制）
+- **联网验证（新增死规则）**：涉及第三方工具、软件功能、API 使用时，MUST 先 WebSearch 验证最新文档和正确用法，不要凭记忆或假设
+  - 示例：配置 Warp Terminal 前，先搜索 "Warp Terminal launch configuration 2026" 验证当前版本支持的功能
+  - 示例：使用 KDE API 前，先搜索 "KDE Plasma 6 kwriteconfig6 latest" 确认参数格式
+  - 特别是快速演进的工具（AI 工具、终端、IDE），过时信息会导致方案失效
+  - **禁止重复 fetch 规则**：同一 URL 在同一会话内只允许 fetch 一次。litellm 文档已本地缓存，NEVER 再次 WebFetch 或 browser_navigate 到 `docs.litellm.ai/docs/providers`。需要 litellm 信息时，查 memory/ 缓存或用 WebSearch 搜索具体问题
+  - **绝对禁止打开 litellm docs URL**：NEVER 通过任何方式（xdg-open、Bash 调用浏览器、browser_navigate、WebFetch）打开 `docs.litellm.ai/docs/providers`。此 URL 曾因 xdg-open 触发 Floorp 反复开标签页。需要 litellm 信息 → 只用 WebSearch 搜索具体问题
+- 修改 NixOS 配置后，MUST 运行 `nix flake check` 或 `nixos-rebuild build` 验证语法
+- 修改 KDE 配置后，MUST 用 `kreadconfig6` 确认写入成功
+- 编辑脚本后，MUST 运行 `bash -n <file>` 检查语法
+- **修改任何服务代码后，MUST：(1) 重启服务 (2) curl 测试关键 API (3) 检查日志无报错 (4) 验证前端加载**
+- **每次完成功能，MUST 自我优化→验证→提升→测试，完整闭环后才汇报**
+
+## 规划持久化协议（PLAN_PERSIST — 防闪退）
+
+目标：**规划结论产出后立即持久化**，闪退后可通过 `resume` 或 memory 恢复。
+
+### 触发条件
+以下场景 MUST 立即持久化：
+- 生成架构设计/方案对比/规划结论
+- 子 agent 调研报告返回后
+- ExitPlanMode 前后
+- 长对话产出关键分析结果
+
+### 持久化流程
+1. **Plan 文件**：ExitPlanMode 写入 `~/.claude/plans/` → 已自动完成
+2. **Memory 摘要**：MUST 在生成结论后**立即**将核心结论写入 `memory/ideas-roadmap.md` 或 `memory/codebase-map.md`
+   - 格式：`- [日期] [主题] 结论摘要（详见 plans/xxx.md）`
+   - 包含：关键决策、对比表结论、待执行步骤
+3. **会话 ID 记录**：在 memory 中记录 `会话ID: xxx`，方便 `claude --resume xxx` 恢复
+4. **子 agent 关键发现**：子 agent 返回后，提取 top-3 结论写入 memory，不要只存在 JSONL 中
+
+### 恢复协议
+闪退后新会话启动时：
+- 检查 `~/.claude/plans/` 最近修改的计划文件
+- 检查 `memory/ideas-roadmap.md` 最近条目
+- 提示用户是否 `claude --resume <session-id>` 继续
+
+## 安全检索协议（SAFETY RETRIEVAL）
+
+执行破坏性操作前，MUST 先检索 `memory/` 中的历史经验，避免重蹈覆辙。
+
+### 触发条件
+以下命令/操作执行前，必须触发检索：
+- `nixos-rebuild` / `nix flake update` / `nix-env`
+- `systemctl` restart/stop/disable
+- 修改 `/etc/nixos/` 下任何文件
+- `rm` / `dd` / `mkfs` / `fdisk` 等磁盘操作
+- Docker `rm` / `prune` / 网络变更
+- NVIDIA 驱动相关任何操作
+- 代理/网络/mihomo 配置变更
+
+### 检索流程
+1. **关键词提取**：从即将执行的操作中提取 2-3 个关键实体（如 `nvidia`, `port 8080`, `bootloader`）
+2. **Grep 检索**：在 `memory/` 目录下搜索这些关键词
+3. **结果评估**：
+   - 命中历史故障 → 输出 `[历史风险] 检测到相关记录：...`，评估与当前操作的关联性
+   - 无命中 → 正常执行
+4. **不可跳过**：即使没有命中，也必须在执行前完成检索步骤（培养肌肉记忆）
+
+## 操作前记忆检索（PRE_EXECUTE_GATE）
+
+在以下关键操作前，MUST 主动检索历史教训，防止重复犯错。此协议与 SAFETY RETRIEVAL 互补 — SAFETY RETRIEVAL 覆盖破坏性操作，PRE_EXECUTE_GATE 覆盖知识密集型操作。
+
+### 触发条件
+- 启动 Explore agent 搜索代码库前
+- 调研新工具/新框架/新配置前
+- 修复 bug 前（先查是否踩过同类坑）
+- 编写新的部署/配置流程前
+- 任何涉及 3 步以上操作的任务
+
+### 执行流程
+1. **提取关键词**：从任务描述中提取 2-3 个核心实体
+2. **Grep 检索**：在 `memory/` 目录搜索（优先 lessons-learned.md、troubleshooting.md、codebase-map.md）
+3. **结果判断**：
+   - 命中相关记录 → 直接使用已有结论，输出 `[PRE_GATE] 使用缓存：{摘要}`
+   - 无命中 → 正常执行，输出 `[PRE_GATE] 无历史记录，正常执行`
+4. **强制输出**：每次触发 MUST 输出一行 `[PRE_GATE]` 状态，无例外
+
+### 效果
+- 被动记忆 → 主动预警
+- 消除重复探索（单次可节省 50-200K tokens）
+- 已有教训立即可用，无需重新踩坑
+
+## 架构进化评估（EVOLUTION_MONITOR）
+
+当用户执行 `memory audit` 或类似指令时，运行以下评估：
+
+### 评估维度
+1. **检索噪声率**：grep 关键词返回的不相关结果比例。超过 30% → 建议引入分类标签或 JSON Schema
+2. **重复修复率**：同一故障类型出现 3 次以上手动修复 → 建议封装为自动化脚本/MCP 工具
+3. **知识库体积**：memory/ 总大小超过 2MB → 建议评估是否需要分层存储（结构化 + 语义检索）
+4. **配置碎片化**：nixos-config.md 中出现大量可复用配置片段 → 建议提取为独立 Nix Modules
+
+### 输出格式
+评估结果以表格呈现，包含：当前值、阈值、是否触发升级建议。未触发则简报"当前体系健康"。
+
+### 原则
+- **不自动执行升级**，只输出提案，由用户决定是否推进
+- **不做持续监控**，仅在用户主动触发时运行，避免日常操作开销
+
+## 深度思考
+- 遇到复杂问题时使用 think hard 模式，不要急于给出答案
+- NixOS/Flake 相关问题必须先读 /etc/nixos/ 下的实际配置，不要凭记忆编造 option
+
+## 上下文管理
+- 任务切换时主动 /compact，不要让无关上下文拖慢质量
+- 长会话超过 50% context 时提醒用户
+
+## 工作模式
+- 批量并行：能并行的操作一定并行执行
+- 自主决策：不反复询问，先做后报告
+- 操作前说明：每次执行前简述操作逻辑（做什么、为什么、影响什么）
+
+## 智能模型路由（AUTO_MODEL_ROUTING v2）
+
+**核心原则**：**Sonnet 为默认模型**，通过 Plugin Hook 预分类零成本路由。省 Opus 额度，无需手动切换。
+
+### 启动方式（MUST）
+```bash
+claude-with-router   # = claude --model sonnet --plugin-dir ~/claude-router-plugin
+```
+**默认 Sonnet**，Hook 自动判断是否升降级。
+
+### Hook 驱动的路由流程
+```
+用户 prompt → classify-prompt.py 预分类（规则引擎，$0）
+           → 注入 additionalContext 到当前会话
+           ↓
+✅ HANDLE DIRECTLY → Sonnet 直接处理（0 overhead，60-70% 场景）
+⚡ DELEGATE TO HAIKU → Task(model: "haiku")（简单查询）
+🧠 DELEGATE TO OPUS → Task(model: "opus")（复杂架构）
+```
+
+### 路由决策表
+
+| 任务类型 | Hook 分类 | 执行方式 | 成本 |
+|---------|----------|---------|------|
+| 简单问答、git 状态、格式化 | fast | Task(model: "haiku") | $0.01/M |
+| 中文对话、翻译、总结 | — | Bash: `glm "<prompt>"` | 免费 |
+| Bug 修复、功能实现、测试 | standard | Sonnet 直接处理 | $3/M |
+| 配置修改、服务部署 | standard | Sonnet 直接处理 | $3/M |
+| 代码生成、算法实现（长上下文） | deepseek | Bash: `curl -s http://localhost:4000/v1/chat/completions -H "Authorization: Bearer sk-litellm-charlie-2026" -H "Content-Type: application/json" -d '{"model":"silicon/deepseek-v3.2","messages":[...]}'` | $0.27/M |
+| 架构设计、方案对比、安全 | deep | Task(model: "opus") | $15/M |
+
+### 外部模型调用方式（非 Anthropic）
+- **GLM**：`glm "<prompt>"` — 智谱免费额度，中文任务首选
+- **DeepSeek**：通过 LiteLLM 网关 `http://localhost:4000/v1`，key `sk-litellm-charlie-2026`，model `silicon/deepseek-v3.2` — 代码强化模型，164K 上下文
+- **Aider 批量重构**：`aider --model openai/silicon-deepseek-v3.2` — Git-aware 多文件编辑
+- 用户说 "用 deepseek" → 通过 LiteLLM curl 调用
+- 用户说 "用 aider" → Bash: `aider <args>`
+
+### 收到 Hook 指令时（MUST）
+- `[Claude Router] ✅ HANDLE DIRECTLY` → 直接处理，不分发
+- `[Claude Router] ⚡ DELEGATE TO HAIKU` → 立即 Task(model: "haiku", subagent_type: "general-purpose", ...)
+- `[Claude Router] 🧠 DELEGATE TO OPUS` → 立即 Task(model: "opus", subagent_type: "general-purpose", ...)
+- **Hook metadata 包含 `suggest_deepseek: true`** → 优先使用 DeepSeek（大 token 消耗任务）
+  - 方式 1（推荐）：通过 LiteLLM curl 调用
+    ```bash
+    curl -s http://localhost:4000/v1/chat/completions \
+      -H "Authorization: Bearer sk-litellm-charlie-2026" \
+      -H "Content-Type: application/json" \
+      -d @/tmp/deepseek_payload.json | jq -r '.choices[0].message.content'
+    ```
+  - 方式 2：通过 Pipeline API（集成压缩+缓存）
+    ```bash
+    curl -X POST http://localhost:9801/api/pipeline \
+      -H "Content-Type: application/json" \
+      -d '{"task":"<用户任务>","pipeline":"medium"}'
+    ```
+- 用户说 "用 glm" → Bash: `glm "<prompt>"`
+- 用户说 "用 deepseek" → curl LiteLLM `silicon/deepseek-v3.2`
+- 用户说 "用 aider" → Bash: `aider <args>`（Git-aware 批量重构）
+- 用户手动指定模型 → 遵循用户指令
+
+### 分发上下文传递（MUST）
+分发 prompt 时，MUST 包含：
+- 用户原始 prompt 完整内容
+- 相关文件路径和内容摘要
+- 约束条件（CLAUDE.md 规则、NEVER TOUCH 文件等）
+- 验证要求（修改后需运行的验证命令）
+
+### 模型标识（MUST — 仅首行 1 次）
+
+回复**第一行**输出单行标识，格式固定：`▸ {模型} | {路由原因}`
+
+模型符号表：Haiku=`⚡`  Sonnet=`✅`  Opus=`🧠`  DeepSeek=`🔧`  GLM=`🐉`  Aider=`🔀`
+
+示例：`▸ ✅ Sonnet | Bug 修复` / `▸ 🔺 Sonnet → Opus | 连续失败升级`
+
+**禁止**：中间散布标识、结尾重复标识、框线装饰。整条回复只出现 **1 次**模型标识。
+
+### PM 展示层格式统一（MUST）
+
+**核心原则**：PM 是唯一面向用户的展示层。所有子 agent 返回的原始结果，PM 必须重新格式化后再输出，不允许原样转发。
+
+**统一格式规范**：
+
+1. **首行标识**（已有规则，保持不变）
+   ```
+   ▸ {emoji} {model_name} | {routing_reason}
+   ```
+
+2. **内容区域** — 所有模型输出统一使用 CLAUDE.md 已定义的视觉模板（卡片分组、时间轴、极简双栏等），不因模型不同而改变格式。
+
+3. **子 agent 结果规范化流程**：
+   - 子 agent 返回原始文本 → PM 提取关键信息 → 用统一模板重新排版 → 输出
+   - 禁止直接粘贴子 agent 的 markdown 原文
+   - 禁止不同 agent 使用不同的框线/表格/列表风格
+
+4. **外部模型原始输出**（GLM/DeepSeek/Aider）：
+   - 对话式/短文本输出：使用 `┃` 前缀格式（见下节"外部模型输出格式"）
+   - 结构化信息（诊断结果、配置对比、多项目状态等）：PM 提取关键信息用视觉模板重新排版，不用 `┃` 前缀包裹大段文字
+
+5. **格式选择优先级**：
+   - 状态/诊断结果 → 卡片分组
+   - 前后对比/问题排查 → 极简双栏
+   - 操作历史 → 时间轴
+   - 简短确认（≤3行）→ `动作 → [OK]` 纯文本，不用模板
+
+6. **已执行/已写入标记**（MUST）— 区分"分析信息"与"实际操作"：
+   - **信息/分析内容** → 正常视觉模板（卡片、双栏等），无特殊前缀
+   - **已执行/已写入内容** → 用 `►` 前缀 + 内联代码标记，格式如下：
+   ```
+   ► 已执行
+     修改 `proxy.nix` — 添加 gemini 代理规则
+     写入 `memory/lessons-learned.md` — YAML 引号嵌套教训
+   ```
+   - **判断标准**：修改了文件、写入了配置、重启了服务、安装了软件 → 必须标记 `►`
+   - **禁止**：纯分析、建议、待执行操作使用 `►` 标记（只有真正完成的操作才标记）
+   - **与状态标记配合**：`►` 行尾加 `[OK]`/`[FAIL]`，如 `► 重启 mihomo → [OK]`
+
+7. **禁止项**：
+   - 禁止同一回复中使用超过 2 种模板
+   - 禁止混用多种框线风格（`╔═╗` 和 `┃` 和 `▌` 不在同一次回复中出现）
+   - 禁止子 agent 原始 markdown 表格直接展示
+   - 禁止已执行操作无 `►` 标记（必须让用户一眼区分哪些是实际操作）
+
+### 外部模型输出格式（MUST — 仅对话式输出）
+
+通过 Bash 调用外部模型（GLM/DeepSeek/Aider）且输出为**对话式短文本**时，用左栏线格式呈现。若输出包含结构化信息（诊断/对比/状态），则由 PM 按"PM 展示层格式统一"规则用视觉模板重排版。
+
+```
+🐉 GLM-4-Flash
+┃ 输出内容行1
+┃ 输出内容行2
+┃ 输出内容行3
+```
+
+**模型 emoji 映射**：
+- 🐉 GLM-4-Flash（中文对话/翻译/总结）
+- 🔧 DeepSeek-V3（代码生成/算法实现）
+- 🔀 Aider（Git-aware 批量重构）
+
+**格式规则**：
+- 模型名称行单独一行，不附加其他装饰
+- 内容行统一用 `┃ ` 前缀（U+2503 + 空格）
+- 多段文本用空白 `┃` 分隔段落
+- 不在内容前后添加框线包裹（符合 R8 装饰预算）
+
+**示例**：
+```
+🐉 GLM-4-Flash
+┃ 外部模型输出优化方案已确认
+┃ 采用左栏线 + 缩进格式
+┃
+┃ 优势：紧凑清晰，装饰占比 < 5%
+```
+
+### 分发后的结果处理
+- 子 agent 返回后，PM 必须按"PM 展示层格式统一"规则重新排版后再输出，禁止原样转发
+- 如果子 agent 报告任务超出能力，当前模型接管或升级
+
+### 失败自动升级（ESCALATION — MUST）
+
+**触发条件**（任一满足即升级）：
+- 同一任务连续 **2 次** 工具调用返回 error/失败
+- 尝试修复后问题**仍然存在**（验证未通过）
+- 明确感知任务**超出当前模型能力**（架构设计、多模块耦合）
+- 用户明确表达不满（"不对"、"换个方案"、"搞不定"）
+
+**升级链**：
+```
+Haiku 失败 → 升级到 Sonnet：Task(model: "sonnet", prompt: "<原始任务 + 失败原因 + 已尝试的方法>")
+Sonnet 失败 → 升级到 Opus：Task(model: "opus", prompt: "<原始任务 + 失败原因 + 已尝试的方法>")
+Opus 失败 → 报告用户，不再自动升级
+```
+
+**升级时 MUST 传递**：
+- 原始任务描述
+- 已尝试的方法和失败原因
+- 相关文件路径和当前状态
+- 格式：`[ESCALATION] 从 {当前模型} 升级到 {目标模型}，原因：{失败摘要}`
+
+**降级链**（子 agent 完成后）：
+- Opus 子 agent 完成 → 回到 Sonnet 会话继续（自动，无需操作）
+- 不要因为一次升级就保持 Opus 处理后续简单任务
+
+### 规则优先级
+此规则优先级：**HIGH** — 仅次于安全规则和 NEVER TOUCH 规则。
+
+## 受保护文件（NEVER TOUCH）
+- **NixOS Generation** — 不得随意修改 /etc/nixos/ 下的 .nix 文件，除非用户明确要求且先 `nixos-rebuild build` 验证
+- 任何任务（P0-P7）MUST 在 Docker 层 / 用户空间完成，不碰 NixOS modules
+
+## NixOS 专项
+- Nix 表达式必须基于实际文件，不要编造不存在的 option 或函数
+- 修改 configuration.nix 前必须先 Read 当前内容
+- 涉及 NVIDIA 驱动相关修改要特别谨慎，先确认当前驱动状态
+- flake.nix 修改后必须运行 `nix flake check` 验证
+
+## 错误修复
+- 出错后不要重复同样的方法，换思路
+- 连续失败 2 次必须 /clear 重新开始，用更精确的 prompt
+
+## 探索-记忆闭环协议（EXPLORE_MEMORY_LOOP）
+
+目标：**避免重复探索消耗 token**，通过 Letta 语义记忆实现 explore → persist → recall 闭环。
+
+### 记忆后端
+- **主通道**：Letta MCP（`letta_search` / `letta_store`），向量化语义检索
+- **降级通道**：`memory/codebase-map.md`（grep 关键词匹配），仅在 Letta 不可用时启用
+- **判断 Letta 可用**：调用 `letta_agents` 工具，成功返回则 Letta 在线
+
+### Pre-Explore Gate（探索前拦截）
+触发条件：任何需要 Explore agent 或大范围 Grep/Glob 搜索代码库的场景
+
+执行流程：
+- **MUST: 启动 Explore 前，先调用 `letta_search` 搜索相关关键词**
+  - agent 选择：代码问题 → `code-assistant`，系统问题 → `nixos-sysadmin`
+- 命中相关结果 → `[SKIP Explore] 使用 Letta 缓存：...`，直接用缓存结论，**节省 token**
+- 未命中 → 正常执行 Explore
+- **Letta 不可用时降级**：grep `memory/codebase-map.md` 搜索
+
+### Post-Explore Persist（探索后持久化）
+触发条件：任何 Explore agent 返回结果后
+
+执行流程：
+- **MUST: Explore 完成后，调用 `letta_store` 写入关键发现**
+  - text 格式：`[日期] [项目] 查询意图 → 关键发现（文件路径、架构 pattern）`
+  - tags：`explore-cache,[项目名],[关键词]`
+  - agent：`code-assistant`（代码发现）或 `nixos-sysadmin`（系统发现）
+- **同时写入 `memory/codebase-map.md`** 作为降级备份（一行摘要即可）
+- 只记**结论性发现**，不记搜索过程
+
+### Cross-Reference（交叉引用）
+- 探索发现涉及 bug → 同时写入 `lessons-learned.md`
+- 探索发现涉及配置 → 同时检查 `nixos-config.md` 是否需要更新
+- **一个事实只存一处**，Letta archival 侧重**代码结构和语义**，md 文件侧重**经验和操作**
+
+### Letta MCP 工具速查
+- `letta_search` — 语义搜索归档记忆（Pre-Explore Gate 用）
+- `letta_store` — 写入归档记忆（Post-Explore Persist 用）
+- `letta_recall` — 读取核心记忆（用户偏好、系统状态）
+- `letta_update_core` — 更新核心记忆块
+- `letta_ask` — 向 agent 提问（带对话上下文）
+- `letta_agents` — 列出所有 agents（健康检查用）
+
+## 记忆管理 — 笔记分配规则
+
+每次操作完成后，MUST 按以下规则自动记录到对应文件。不遗漏、不重复、不混放。
+
+### 笔记路由表（写到哪个文件）
+
+| 记录什么 | 写到哪里 | 示例 |
+|---------|---------|------|
+| 踩坑、bug、修复经验 | `memory/lessons-learned.md` | mihomo credentials bug |
+| NixOS 配置变更（路径、服务、代理架构） | `memory/nixos-config.md` | 代理从 2 层升级到 3 层 |
+| 问题速查（症状→原因→修复步骤） | `memory/troubleshooting.md` | fcitx5 不工作怎么修 |
+| 跨会话待办任务（新增/完成/删除） | `memory/pending-tasks.md` | 安装 WezTerm |
+| 用户偏好、设备清单、方案架构决策 | `memory/MEMORY.md` | 新增设备、改变工作流 |
+| AI 工具安装/对比 | `memory/ai-tools.md` | OpenCode vs Aider |
+| 新方案/灵感/idea/进展 | `memory/ideas-roadmap.md` | 新功能设想、方案状态变更 |
+| 代码库探索结论（路径、架构、pattern） | `memory/codebase-map.md` | API 路由结构、组件关系 |
+| 设备互联拓扑 | `memory/setup-plan.md` | VR 串流方案变更 |
+| 系统级上下文（供所有 AI 共用） | `/etc/nixos/CONTEXT.md` | 分区变更、桌面切换 |
+| 系统改进追踪（issue/proposal） | `/etc/nixos/IMPROVEMENTS.md` | Docker 代理端口问题 |
+| 操作手册（Hub/Discord/API/systemd） | `memory/command-reference.md` | 新增操作手册 |
+| 本 CLI 行为规则 | `~/CLAUDE.md` | 新增验证规则 |
+
+### 强制执行规则（MUST）
+- **MUST: 每完成一个实际操作（修改配置、安装软件、修复 bug、架构变更），立即按路由表写入对应 md 文件**
+- **MUST: 不要攒着等会话结束才补，操作完成后的下一个回复中就要包含笔记写入动作**
+- **MUST: 写入前 grep 检查其他 md 文件是否有相关旧信息，发现过时的立即更新**
+- **一个事实只存一处**：避免重复，需要引用时用 `详见 xxx.md`
+- **格式统一**：lessons-learned 用 `- [日期] [操作者] 场景：内容`，其他文件按已有格式追加
+- **操作者标识（MUST）**：每条记录必须标注执行该操作的模型，格式 `[Opus]` / `[Sonnet]` / `[GLM]` / `[Haiku]` / `[DeepSeek]` 等，放在日期后
+- **会话结束自检**：最后一条回复前，回顾整个会话，确认所有操作都已记录
+
+### memory/ 路径
+```
+~/.claude/projects/-home-charlie/memory/
+├── MEMORY.md          # 核心档案（索引 + 设备 + 偏好 + 架构）
+├── lessons-learned.md # 踩坑日志（append-only）
+├── nixos-config.md    # NixOS 配置笔记
+├── troubleshooting.md # 问题速查表
+├── pending-tasks.md   # 跨会话待办
+├── setup-plan.md      # 设备互联方案
+├── ai-tools.md        # AI 工具对比
+├── ideas-roadmap.md   # 方案灵感汇总（35个规划项）
+└── codebase-map.md    # 代码库探索缓存（EXPLORE_MEMORY_LOOP）
+```
+
+## Plan Mode 后自动降级（成本优化）
+- **规则**：ExitPlanMode 批准计划后，如果后续是实施类任务（写代码/配置/文件），MUST 输出提示：
   ```
+  💡 后续实施建议切换到 Sonnet：/model sonnet（节省 5 倍成本）
+  ```
+- **判断标准**：计划文件中包含"新建文件""修改文件""配置""部署"等实施关键词
+- **例外**：架构重构、复杂调试、多模块耦合分析 → 继续 Opus
 
-## 配置結構
-- `configuration.nix`：主配置（引導、桌面、網路、用戶、套件）
-- `hardware-configuration.nix`：硬體偵測（UUID、kernel modules）
-- `modules/proxy.nix`：代理方案（xray vless+ws+tls，HTTP 7890 + SOCKS5 7891）
-- `modules/ai.nix`：AI 相關服務（Ollama、OpenClaw、Letta）
-- `modules/storage.nix`：儲存掛載
-- `modules/productivity.nix`：生產力工具
+## 自动学习（复利工程）
+- IMPORTANT: 每次犯错或发现新 pattern 时，MUST 自动追加到对应文件（按上表路由）
+- lessons-learned 格式：`- [日期] [操作者] 场景：教训内容`
+- 同时评估是否需要更新本 CLAUDE.md 的规则
+- 定期清理过时或错误的规则
+- **冲突同步**：更新 memory/ 文件时，检查 /etc/nixos/CONTEXT.md 和 IMPROVEMENTS.md 是否需要同步
 
-## 代理架構（2026-03-22 更新）
-- xray：系統級代理，開機自啟，port 7890（HTTP）+ 7891（SOCKS5）
-- 協議：vless+ws+tls，出口節點在美國/新加坡
-- 配置寫入 modules/proxy.nix（Nix 內聯，不依賴外部文件）
-- mihomo：已停用（訂閱節點全是香港，被 Anthropic 封鎖）
-- networking.proxy：系統環境變數，git/curl 等自動走代理
-- GNOME 系統代理：已設定 manual 模式指向 127.0.0.1:7890
-- Firefox：已配 user.js 使用 HTTP 代理（非 SOCKS）
-- 已移除：clash-verge-rev、TUN 模式、proxy-watchdog、dae
+## Skill 自动封装协议（AUTO_SKILL）
 
-## specialisation
-- `F3 - Recovery Stable Mode`：開機選單救援選項，強制啟用 NetworkManager + allowUnfree
+### 触发条件（MUST 自检）
+完成以下操作后，MUST 评估是否值得封装为 Skill：
+- 新配置/部署流程（≥3 步）
+- 非平凡 bug 修复（有排查过程）
+- 可复用代码 pattern 或工作流
+- 发现了有价值的系统优化方案
 
-## 用戶偏好
-- **自動模式優先**：所有操作自動確認，不需要每次詢問
-- 改動合理時自動 git commit，不需要每次確認
-- 保持 CLAUDE.md 和 CONTEXT.md 同步更新，記錄每次操作結果
-- CONTEXT.md 是跨 AI 共享的上下文檔案（Gemini、Claude 等共用）
-- 錯誤與踩坑也要記錄到 CLAUDE.md，避免跨 session 重複犯錯
+### 评估标准（满足 ≥2 条即值得封装）
+- **可复用性**：未来可能再次遇到相同场景
+- **复杂度**：不是简单的一行命令（涉及多步操作或排查）
+- **知识密度**：包含非显而易见的信息或经验
+- **缺失性**：现有 skills 未覆盖（可用 `ls ~/.claude/skills/` 确认）
 
-## cc-switch 配置（2026-02-28）
-- cc-switch 數據庫：`~/.cc-switch/cc-switch.db`
-- JetBrains 插件（Claude Code GUI by codemossai）從此數據庫讀取 provider 配置
-- 導入腳本：`/tmp/import-cc-switch.py`（從 `~/.claude/settings.json` 導入）
-- Provider ID：`b6b4d75b-5f43-45ac-8b3f-a6c872a6aa52`
-- 數據庫 schema：providers 表包含 id, app_type, name, settings_config, is_current 等欄位
-- 插件讀取邏輯：`~/.local/share/JetBrains/IntelliJIdea2025.3/idea-claude-code-gui/ai-bridge/read-cc-switch-db.js`
+### 封装流程
+1. 评估通过 → 输出提示：`💡 检测到可封装知识：{一句话摘要}，建议创建 Skill（y/n）`
+2. 用户确认 → 执行：`python3 ~/.claude/skills/create-skill.py --name "{name}" --content "内容摘要" --category "{分类}" --tags "{标签列表}"`
+3. 脚本自动完成 → 生成 SKILL.md + 同步索引
+4. 验证 → `ls ~/.claude/skills/{name}/SKILL.md`
 
-## 操作日誌
-### 2026-02-25 Session 1
-- 診斷 GRUB 黑屏根因：EFI 分區 95% 滿
-- UUID 驗證通過（根分區 + EFI 均一致）
-- 部署防護：configurationLimit=3、安全 ns alias、Gen 64 GC root
-- 新增 F3 Recovery Stable Mode specialisation
-- 加回 direnv 支援（.envrc 含 Anthropic API 配置）
-- .envrc 從 git 移除（含 API key，已加入 .gitignore）
-- npm install 報錯：VSCode 內部 xterm 插件嘗試寫入 /nix/store（唯讀），非配置問題
-- 待執行：安全修復流程（釘 Gen64 → 清理 → build → switch --install-bootloader）
+### Skill 内容格式
+```yaml
+---
+name: skill-name
+description: 一句话描述
+user-invocable: false
+version: "1.0.0"
+category: 分类名
+tags: [tag1, tag2, tag3]
+effort: low|medium|high
+---
+# Skill 标题
+## 场景
+什么情况下使用
+## 步骤
+具体操作步骤
+## 注意事项
+踩坑经验
+```
 
-### 2026-02-26 Session 2
-- 診斷 WiFi：桌機無 WiFi 硬體（Intel H510），僅 USB 有線網路
-- 選定代理方案：mihomo + clash-verge-rev（取代 flclash/dae）
-- 建立 modules/proxy.nix：services.mihomo + programs.clash-verge + networking.proxy
-- 清理 configuration.nix：移除壞掉的 clashTUI 服務、手動 dae 服務、flclash/dae/clash-meta 套件
-- 下載訂閱配置（liangxin.xyz，&flag=meta 取得 mihomo YAML 格式）
-- 訂閱含節點：香港、新加坡、日本、美國、韓國、台灣（vless + hysteria2）
+## 回复前自检协议（SELF_CHECK_PROTOCOL）
 
-### 2026-02-26 Session 3
-- 修復代理衝突：mihomo TUN + clash-verge-rev 雙引擎互搶流量導致全系統斷網
-- 移除 clash-verge-rev（無獨立訂閱，與 mihomo 衝突）
-- 關閉 TUN 模式：改為手動代理（port 7890），不再劫持全部流量
-- 從 mihomo 訂閱配置中移除已注入的 TUN 段
-- chown /etc/nixos 給 charlie 用戶（JetBrains 可直接編輯，不需 root）
-- 新增 nix-recover 遠端恢復腳本（Git pull → build → switch，自動偵測代理）
-- nixos-rebuild switch 成功，直連 + 代理均正常
+每次回复发送前，MUST 逐项检查。这不是"建议"而是"拦截器" — 任何一项未通过都必须先处理再回复。
 
-## AI 服務架構（2026-02-27 更新）
-- Ollama：本地推理後端，CUDA 加速，port 11434，數據存放 `/mnt/ai/ollama`
-- OLLAMA_KEEP_ALIVE=30m（冷啟動要 50 秒，30 秒太短會頻繁卸載）
-- 已安裝模型：qwen3:8b、deepseek-r1:14b
-- OpenClaw：API 閘道器，port 18789，預設模型 qwen3:8b
-- Gemini API key 存放於 `/etc/nixos/secrets/letta.env`（已 gitignore）
-- Gemini 免費額度已用完（2026-02-27），需要升級付費方案或等待重置
-- secrets 目錄不進 git
+### 自检清单
+- [ ] **记忆写入**：本次会话有实际操作（修改配置/安装软件/修复 bug/架构变更）→ 是否已按记忆路由表写入对应 memory/ 文件？
+- [ ] **PRE_GATE**：启动了 Explore agent → 是否先执行了 PRE_EXECUTE_GATE 检索？
+- [ ] **SAFETY RETRIEVAL**：执行了破坏性操作 → 是否先检索了 memory/ 历史教训？
+- [ ] **NixOS 验证**：修改了 .nix 文件 → 是否运行了 `nix flake check`？
+- [ ] **服务验证**：修改了服务代码 → 是否重启 + curl 测试 + 检查日志？
+- [ ] **脚本语法**：编辑了脚本 → 是否运行了 `bash -n` 检查？
 
-## AI 自動化集群（2026-02-27 部署）
-- 所有服務容器化，compose 文件位於 `/mnt/ai/ai-cluster/`
-- Dify：多模態 AI 入口，port 3000，初始密碼 `charlie2026`
-  - compose: `/mnt/ai/ai-cluster/dify/docker/docker-compose.yaml`
-  - 數據: `/mnt/ai/ai-cluster/dify/docker/volumes/`
-  - 含 PostgreSQL + Redis + Weaviate + Sandbox + Plugin Daemon
-- n8n：自動化工作流引擎，port 5678
-  - compose: `/mnt/ai/ai-cluster/n8n/docker-compose.yml`（project: n8n2）
-  - 數據: `/mnt/ai/n8n-data/`
-- Chroma：向量知識庫，port 8000
-  - compose: `/mnt/ai/ai-cluster/chroma/docker-compose.yml`（project: chroma2）
-  - 數據: `/mnt/ai/chroma-data/`
-- AutoGen Studio：核心調度大腦，port 8080，自建鏡像（autogenstudio 0.4.2）
-  - compose: `/mnt/ai/ai-cluster/autogen/docker-compose.yml`（project: autogen）
-  - 數據: `/mnt/ai/autogen-data/`
-  - 支援 Ollama (host.docker.internal:11434) + Claude + Gemini API
-- LiteLLM：智能路由代理，port 4000，master_key: `sk-litellm-charlie-2026`
-  - compose: `/mnt/ai/ai-cluster/litellm/docker-compose.yml`（project: litellm）
-  - 路由配置: `/mnt/ai/ai-cluster/litellm/config.yaml`
-  - 容器已配置 HTTP_PROXY/HTTPS_PROXY 指向 host.docker.internal:7890
-  - auto 路由 = Gemini Flash（需代理出網，免費額度已用完待重置）
-  - 直選模型：local/qwen3-8b, local/deepseek-r1-14b, cloud/claude-opus, cloud/gemini-flash, cloud/gemini-pro
-  - Fallback 鏈：qwen3 → deepseek → gemini-flash；claude → gemini-pro
-  - 踩坑：LiteLLM routing_strategy 不尊重 priority（usage-based-routing-v2 和 simple-shuffle 都不行）
-- 知識洗鍊引擎：`/mnt/ai/ai-cluster/knowledge-distiller/`
-  - 輸入: `/mnt/ai/conversations/`（放入 Gemini/Claude JSON 導出）
-  - 運行: `cd /mnt/ai/ai-cluster/knowledge-distiller && docker compose -p distiller --profile run up`
-  - 用 DeepSeek-R1 遞歸總結 → Chroma 覆蓋寫入
+### 执行方式
+- **不需要显式输出清单**（不占 token）
+- **在内部推理时逐项确认**，任何未通过项立即补执行
+- **未通过项超过 2 个** → 先处理未通过项再继续当前任务
 
-## IDE 整合（2026-02-27 更新）
-- JetBrains Continue 插件：AI 編碼助手
-  - 配置: `~/.continue/config.yaml`（新版 schema v1，需要 name/version/schema 欄位）
-  - config.json 已棄用，新版用 config.yaml
-  - Chat 模型：Qwen3 8B + DeepSeek R1（直連 Ollama）、Claude Opus（走 LiteLLM）
-  - Tab 補全：Qwen3 8B（直連 Ollama）
-  - 踩坑：qwen3/deepseek-r1 的 thinking mode 導致 content 為空
-    - Ollama OpenAI 兼容端點不支持 `think: false`
-    - LiteLLM 的 `merge_reasoning_content_in_choices` 在 streaming 模式下無效
-    - Continue 的 `requestOptions.extraBodyProperties` 無法正確傳遞 `think: false`
-    - 解法：Continue 用原生 Ollama provider 直連（繞過 LiteLLM）
-  - LiteLLM 保留給 Claude Opus 等需要路由/代理的雲端模型
+### 失败计数
+- 如果同一检查项连续 3 次被跳过 → 自动写入 lessons-learned.md 作为待改进项
 
-## 存儲架構（2026-02-26 更新）
-- 系統盤 `/`：nvme0n1p9，89GB ext4（保持 <70% 使用率）
-- sda4 `/mnt/data`：932GB NTFS（UUID: C672D33272D32649）
-- `/mnt/ai`：100GB ext4 loopback 映像（位於 /mnt/data/ai-data.img）
-  - Docker data-root：`/mnt/ai/docker`
-  - Ollama 模型：`/mnt/ai/ollama`
-  - Letta 數據：`/mnt/ai/letta`
-- EFI `/boot`：252MB（configurationLimit=3 防溢出）
+## 回复结尾（条件触发）
 
-### 2026-02-27 Session 5
-- 修復 Docker containerd snapshot 嚴重損坏（上次拉鏡像中斷導致）
-- 完全重置 Docker data-root，清理 18 個幽靈容器
-- 部署 AI 自動化集群：Dify (port 3000) + n8n (port 5678) + Chroma (port 8000)
-- 所有服務數據落盤 /mnt/ai，系統盤 64%，/mnt/ai 31%
+- **默认**：不附加任何检查行或元数据尾注
+- **仅当本次有实际记忆写入时**，末尾附 1 行：`📎 已写入 → {文件名}`
+- **仅当有待补记忆未写入时**，末尾附 1 行：`📎 待补 → {文件名}`（下条回复必须补上）
+- 纯对话、无操作的回复 → 不附加任何尾注
 
-### 2026-02-27 Session 6
-- 踩坑：Continue 插件只寫了 config.yaml，但 JetBrains 版 (v1.0.60) 需要 config.json 才能識別
-- 補寫 `~/.continue/config.json`，插件恢復正常
-- 新增用戶偏好：錯誤與踩坑必須記錄到 CLAUDE.md，防止重複
-
-### 2026-02-27 Session 7 — Continue 插件 + LiteLLM 全鏈路調試
-- Continue config.yaml 升級到 schema v1（需要 name/version/schema 頂層欄位，models 用 name 不用 title）
-- 診斷 Continue "Generating..." 卡住問題，根因鏈：
-  1. qwen3/deepseek-r1 thinking mode 導致 streaming 回應只有 `reasoning_content`，`content` 為空
-  2. LiteLLM `usage-based-routing-v2` 和 `simple-shuffle` 都不尊重 model_info.priority
-  3. Gemini Flash 從 LiteLLM 容器出網超時（mihomo 只聽 127.0.0.1，Docker 容器訪問不到）
-  4. 開放 mihomo allow-lan + 防火牆 7890 後，Gemini 免費額度已用完（429）
-- 修復措施：
-  - Ollama KEEP_ALIVE 從 30s → 30m（減少冷啟動）
-  - mihomo allow-lan: true + 防火牆開 7890（Docker 容器代理出網）
-  - proxy-sub 腳本自動注入 allow-lan: true
-  - LiteLLM 容器加 HTTP_PROXY/HTTPS_PROXY 環境變數
-  - LiteLLM config 加 `drop_params: true` + `merge_reasoning_content_in_choices: true`
-  - Continue 改用原生 Ollama provider 直連（繞過 LiteLLM thinking mode 問題）
-  - LiteLLM 保留給 Claude Opus 等雲端模型
-- nixos-rebuild switch 成功（OLLAMA_KEEP_ALIVE + 防火牆 7890）
-- 待驗證：Continue Ollama provider 是否正確處理 thinking mode
-
-## 省Token優化方案（2026-02-28 更新）
-- **Prompt Caching**：已啟用 `promptCaching` 和 `cacheSystemPrompt`
-- **智譜 GLM**：已配置 GLM-4.7、GLM-4.5-air、GLM-4.5-x
-  - 路由：通過 LiteLLM（cloud/glm-4, cloud/glm-4-flash, cloud/glm-4-plus）
-  - 優勢：128K 上下文自動緩存，系統 Prompt 100% 命中
-  - 成本：比 Claude 便宜 90%
-- **Redis 緩存**：LiteLLM 已啟用 Redis 緩存（port 6380）
-  - 緩存命中率：通過 Dashboard 「省 Token 優化狀態」面板查看
-- **Continue 配置**：已加入智譜 GLM 模型選項
-  - GLM-4.7 (省Token)：128K 上下文，適合長對話
-  - GLM-4.5 Air (省Token)：更快響應，適合簡單任務
-- **預估節省**：50-90% token消耗
-
-## Obsidian 記憶管理（2026-02-28 更新）
-- **Letta → Obsidian 同步**：`letta-obsidian` 腳本
-  - 導出 core memory + archival memory
-  - YAML frontmatter（agent、timestamp、tags）
-  - 同步日誌記錄（可往上翻查版本歷史）
-- **記憶碎片管理系統**：`memory-manage` 腳本
-  - 從 Claude history + Letta 收集碎片
-  - 自動打標籤（規則引擎，不耗 token）
-  - 重要性評分（0-10）
-  - 30 天未訪問自動歸檔
-  - 按標籤導出到 Obsidian
-  - 多級標籤：NixOS, Docker, AI, Letta, Git, 問題, 修復, 配置
-- **Obsidian Vault**：`~/Documents/Obsidian/`
-  - `Letta-Memory/` - Letta 記憶（按 agent 分類）
-  - `Memory-Fragments/` - 記憶碎片（按標籤分類）
-  - `INDEX.md` - 索引文件
-- **安裝方式**：`flatpak install flathub md.obsidian.Obsidian`
-- **zsh 後台同步**：每次開終端自動觸發
-- **Dashboard 整合**：
-  - 一鍵打開 Letta 記憶 / 記憶碎片（obsidian:// 協議）
-  - 顯示記憶碎片數量統計
-
-## 輸入法配置（2026-02-28）
-- fcitx5 每窗口記憶狀態
-- 環境變量：`GTK_IM_MODULE`、`QT_IM_MODULE`、`XMODIFIERS`
-- 默認簡體中文，代碼框保持英文
-
-## Letta 記憶整合（2026-02-27 Session 8）
-- 修復 archival memory seeding：embedding 從 letta-free（404）改為 Ollama nomic-embed-text
-  - 關鍵：`embedding_endpoint_type` 必須用 `openai`，endpoint 帶 `/v1` 後綴
-  - 三個 agent 各插入 31 條知識（CLAUDE.md + CONTEXT.md）
-- 新增 `letta-sync.py`：從 Letta API 導出 core memory + archival memory 到 Claude Code 記憶目錄
-  - 輸出：`~/.claude/projects/-etc-nixos/memory/letta-memory.md`
-- 新增 `letta-sync.sh`：wrapper 腳本，帶 1 小時 cooldown 防重複
-- zsh interactiveShellInit 後台自動同步（每次開終端觸發，不阻塞）
-- 新增 alias：`letta-sync`（手動觸發同步）
-- 踩坑：Letta `ollama` endpoint type 用原生 API，不走 OpenAI 兼容端點，導致 404
-  - 解法：用 `openai` type + `http://host.docker.internal:11434/v1`
-
-## NixOS Dashboard（2026-02-28 更新）
-- 統一 Web 控制台：http://127.0.0.1:9099
-- **功能面板**：
-  - 快捷操作按鈕（系統/AI/代理/Letta 四類命令）
-  - 系統狀態監控（磁盤、服務、容器）
-  - **省 Token 優化狀態**：Redis 緩存命中率、記憶碎片統計
-  - **待辦清單**：LocalStorage 持久化
-  - Letta 對話面板（三個 agent 切換）
-  - 命令輸出終端（SSE 流式輸出）
-  - **Obsidian 快捷入口**：一鍵打開 Letta 記憶 / 記憶碎片
-- 技術棧：
-  - 後端：Flask + Python 3.13
-  - 前端：單頁 HTML + Vanilla JS（Catppuccin Mocha 暗色主題）
-  - 部署：systemd 服務 `nixos-dashboard.service`
-- 使用：
-  - 訪問：`dashboard` alias 或 http://127.0.0.1:9099
-  - CLI 流式輸出帶進度條（長命令自動啟用）
-
-## 1688 智能採購系統（2026-02-28 部署）
-- 目錄：`/mnt/ai/ai-cluster/1688-system/`
-- **架構**：
-  - FastAPI 後端（port 5000）：商品處理、去重、Letta 調用
-  - Chroma（port 8000）：向量化存儲、商品去重
-  - Letta Agent：智能篩選（記憶偏好、供應商評價）
-  - Telegram Bot：手機推送篩選結果
-  - 油猴腳本：瀏覽器端抓取商品
-- **使用流程**：
-  1. 安裝油猴腳本 `userscript/1688-assistant.user.js`
-  2. 瀏覽 1688.com，點擊「提交篩選」按鈕
-  3. 後端自動去重 + Letta 篩選
-  4. 符合條件的商品推送至 Telegram
-- **配置**：
-  - Telegram Bot Token：`/mnt/ai/ai-cluster/1688-system/.env`
-  - Letta Agent 創建：`backend/create_letta_agent.py`
-- **踩坑**：
-  - LiteLLM `host.docker.internal` 解析到錯誤網關
-  - 解法：改用 `172.19.0.1`（litellm_default 網關）
-  - Gemini API 免費額度已用完（429 Rate Limit）
-
-### 2026-02-28 Session 9
-- 修復 LiteLLM 網絡連接：`host.docker.internal` → `172.19.0.1`
-- 部署 1688 智能採購系統：
-  - FastAPI 後端 + Chroma 去重
-  - 油猴腳本（瀏覽器抓取）
-  - Telegram Bot（手機推送）
-  - Letta Agent 配置
-- 修復 Obsidian 字體訪問：flatpak override --filesystem=host:ro
-
-### 2026-02-28 Session 10
-- 部署 1688 后端容器（:5000）+ 创建 Letta purchasing-screener Agent
-- Telegram Bot 配置完成（@charlie_1688_bot, Chat ID 5036541266）
-- 部署 Mem0 内容过滤器（:5001）+ Firefox 扩展
-- 新增窗口假死检测器（freeze-detector.sh + systemd user service）
-- SETUP.md 补充手机端 Git 操作指南
-
-## Flatpak 字体踩坑（2026-02-28，重要教训）
-### 问题链
-1. Obsidian（flatpak）看不到中文 → 因为 flatpak sandbox 内 fontconfig 不扫描 NixOS 字体路径
-2. 解法：复制 CJK 字体到 `~/.local/share/fonts/`（flatpak 会扫描 `/run/host/user-fonts/`）
-3. **副作用**：GNOME 系统字体设为 `Noto Sans`，但系统只有 CJK 变体（`Noto Sans CJK JP`），
-   fontconfig 把西文也匹配到 CJK VF 字体 → 文件管理器/系统 UI 文字乱码/看不见
-4. 修复：安装基础 `noto-fonts` 包（包含 `Noto Sans` 非 CJK 版本）
-
-### 防护规则（所有 flatpak 应用适用）
-- NixOS 字体在 `/run/current-system/sw/share/fonts/`，flatpak 看不到
-- 需要复制到 `~/.local/share/fonts/`（不能用 symlink，sandbox 不跟随）
-- **复制 CJK 字体前必须确认基础字体已安装**（`noto-fonts`、`dejavu_fonts` 等）
-- 系统包必须同时包含：`noto-fonts` + `noto-fonts-cjk-*`（缺任何一个都会出问题）
-- 复制字体后必须验证：`fc-match "Noto Sans"` 应返回非 CJK 版本
-- 如果 GNOME 字体设为 X，必须确保系统有精确的 X 字体包
-
-### 2026-03-22 系統重裝後全面恢復
-- **系統重裝原因**：/nix 遷移失敗 → initrd UUID 引導失敗 → mihomo 訂閱到期 → 全盤重裝
-- **根分區 UUID 變更**：b7615046... → 2d8662db-7f69-49a6-b396-ef96dc3e0b23（新裝）
-- **代理遷移**：mihomo → xray（vless+ws+tls，美國節點）
-  - mihomo 停用原因：訂閱節點全是香港，被 Anthropic API 封鎖
-  - xray 配置以 builtins.toJSON 內聯（Flake 純求值模式不支持 readFile 外部路徑）
-- **修復項目**：
-  - 恢復所有 modules imports（proxy, essentials, git, community, productivity, scripts）
-  - NTFS dirty volume：storage.nix 加 force 選項
-  - fcitx5：禁用 GNOME ibus 覆蓋 + waylandFrontend + fcitx5-gtk
-  - Firefox：user.js 配置 HTTP 代理（SOCKS 協議不匹配導致超時）
-  - GNOME 系統代理：gsettings manual 模式 127.0.0.1:7890
-  - 字體：複製 Noto Sans + CJK 到 ~/.local/share/fonts/（flatpak 用）
-- **恢復服務**：
-  - Docker AI 集群：Dify, n8n, Chroma, LiteLLM, Letta, AutoGen
-  - Ollama 模型：qwen3:8b, deepseek-r1:14b
-  - Obsidian（flatpak）
-  - JetBrains IDEA 數據從 /mnt/data/config/ 恢復
-- **新增功能**：
-  - 每日自動備份（systemd timer → /mnt/data/home-backup/）
-  - 一鍵恢復腳本（full-restore.sh）
-  - Tmux 配置
-  - Kitty 終端
-- **待完成**：
-  - GitHub SSH 推送（SSH key 已生成，需添加到 GitHub）
-- **踩坑記錄**：
-  - Nix Flake 純求值模式：builtins.readFile 不能讀 /etc 路徑，必須用 builtins.toJSON 或 pkgs.writeText
-  - node_modules 被 git 追蹤（1750 文件）→ 加 .gitignore + git rm --cached
-  - GNOME 覆蓋 IM 環境變數為 ibus → extraGSettingsOverrides + excludePackages
-  - Docker image conflict → docker compose down + 刪 image + 重建
+## 常用命令参考
+- NixOS 重建：`sudo nixos-rebuild switch --flake /etc/nixos#charlie`
+- Flake 检查：`nix flake check /etc/nixos`
+- KDE 重载：`dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.reconfigure`
+- 磁盘池状态：`bash ~/launcher/disk-pool-mount.sh status`
