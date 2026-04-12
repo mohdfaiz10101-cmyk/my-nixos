@@ -170,8 +170,10 @@ in
       serviceConfig = {
         Type = "simple";
         ExecStart = "${localBin}/memory-evolution-engine";
-        Restart = "always";
-        RestartSec = 10;
+        Restart = "on-failure";
+        RestartSec = 300;
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = 3600;
       };
       environment = userEnv;
     };
@@ -186,7 +188,9 @@ in
         WorkingDirectory = "${aiCluster}/hyperchat";
         ExecStart = "${py}/bin/python3 app_v2.py";
         Restart = "on-failure";
-        RestartSec = 5;
+        RestartSec = 300;
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = 3600;
       };
       environment = userEnv;
     };

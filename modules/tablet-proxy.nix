@@ -59,7 +59,10 @@
 
       case "$ACTION" in
           up)
-              if [[ "$INTERFACE" =~ ^enp.*u.* ]]; then
+              # 严格匹配 USB 以太网接口（enp 开头 + u 在中间 + 数字结尾）
+              # 避免误匹配 WiFi 接口（wlp0s20f0u9）
+              if [[ "$INTERFACE" =~ ^enp.*u[0-9]+$ ]]; then
+                  log "检测到 USB 网络接口: $INTERFACE"
                   sleep 2
                   if check_tablet_proxy; then
                       enable_tablet_proxy
@@ -69,7 +72,8 @@
               fi
               ;;
           down)
-              if [[ "$INTERFACE" =~ ^enp.*u.* ]]; then
+              if [[ "$INTERFACE" =~ ^enp.*u[0-9]+$ ]]; then
+                  log "USB 网络接口 $INTERFACE 断开"
                   if ! check_tablet_proxy; then
                       enable_local_proxy
                   fi

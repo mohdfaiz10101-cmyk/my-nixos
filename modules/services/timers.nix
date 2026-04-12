@@ -246,6 +246,17 @@ in
       environment = userEnv;
     };
 
+    # --- AI Architecture Audit ---
+    ai-architecture-audit = {
+      description = "AI Architecture Audit Dashboard - 7 dimensions health check";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash ${localBin}/ai-architecture-audit";
+      };
+      environment = graphicalEnv;
+      path = [ pkgs.coreutils pkgs.bash pkgs.curl pkgs.jq pkgs.findutils pkgs.gnugrep ];
+    };
+
     # --- Mihomo Backup ---
     mihomo-backup = {
       description = "Mihomo config incremental backup";
@@ -533,6 +544,17 @@ in
         OnBootSec = "2min";
         OnUnitActiveSec = "3min";
         Persistent = true;
+      };
+    };
+
+    # --- AI Architecture Audit Timer ---
+    ai-architecture-audit = {
+      description = "AI Architecture Audit weekly scan (Mon 09:30)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "Mon *-*-* 09:30:00";
+        Persistent = true;
+        RandomizedDelaySec = "5min";
       };
     };
   };

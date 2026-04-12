@@ -36,6 +36,9 @@
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   hardware.usb-modeswitch.enable = true;
 
+  # --- USB 网络设备支持（平板/手机 USB Tethering）---
+  boot.kernelModules = [ "rndis_host" "cdc_ether" "cdc_ncm" "cdc_mbim" ];
+
   # --- 时区和语言 ---
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";

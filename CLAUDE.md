@@ -178,13 +178,19 @@
 - 编写新的部署/配置流程前
 - 任何涉及 3 步以上操作的任务
 
-### 执行流程
+### 执行流程（三级缓存）
 1. **提取关键词**：从任务描述中提取 2-3 个核心实体
-2. **Grep 检索**：在 `memory/` 目录搜索（优先 lessons-learned.md、troubleshooting.md、codebase-map.md）
-3. **结果判断**：
-   - 命中相关记录 → 直接使用已有结论，输出 `[PRE_GATE] 使用缓存：{摘要}`
-   - 无命中 → 正常执行，输出 `[PRE_GATE] 无历史记录，正常执行`
-4. **强制输出**：每次触发 MUST 输出一行 `[PRE_GATE]` 状态，无例外
+2. **L1 缓存 — Letta 语义搜索**（如果在线）：
+   - 调用 `letta_search` 搜索关键词
+   - 命中 → `[PRE_GATE] L1 命中（Letta）：{摘要}`，直接使用
+3. **L2 缓存 — 共享知识索引**：
+   - 检查 `~/.local/share/ai-learning/shared-knowledge-index.json`
+   - 命中 → `[PRE_GATE] L2 命中（索引）：{摘要}`
+4. **L3 缓存 — Grep 检索**：
+   - grep `memory/` 目录（优先 lessons-learned.md、troubleshooting.md、codebase-map.md）
+   - 命中 → `[PRE_GATE] L3 命中（memory）：{摘要}`
+5. **全部未命中** → `[PRE_GATE] 无历史记录，正常执行`
+6. **强制输出**：每次触发 MUST 输出一行 `[PRE_GATE]` 状态，标注命中层级
 
 ### 效果
 - 被动记忆 → 主动预警
@@ -207,6 +213,29 @@
 ### 原则
 - **不自动执行升级**，只输出提案，由用户决定是否推进
 - **不做持续监控**，仅在用户主动触发时运行，避免日常操作开销
+
+## 定期架构感知协议（ARCH_AWARENESS）
+
+### 目标
+让用户**被动感知**系统架构状态，无需记住何时检查什么。
+
+### 触发条件
+以下场景 MUST 输出架构提醒：
+1. **新会话启动**（第一条消息回复时）：
+   - 检查 `~/ai-audit-report.md` 的生成时间
+   - 超过 7 天 → `[ARCH] 架构审计报告已过期（${天数}天前），建议运行 ai-architecture-audit`
+   - 报告中有离线服务 → `[ARCH] 检测到 ${n} 个离线服务，建议检查`
+2. **执行系统变更后**（修改 NixOS/Docker/服务配置）：
+   - `[ARCH] 系统已变更，建议运行 ai-architecture-audit 更新审计报告`
+3. **周一首次会话**：
+   - 自动检查并输出本周 skill 使用摘要（如果 skill-usage-stats.json 存在）
+
+### 输出格式
+`[ARCH] {一句话描述}`
+
+### 不输出的情况
+- 审计报告 < 7 天且无异常 → 静默
+- 纯对话/问候 → 不触发
 
 ## 深度思考
 - 遇到复杂问题时使用 think hard 模式，不要急于给出答案
@@ -525,6 +554,35 @@ Opus 失败 → 报告用户，不再自动升级
 - 定期清理过时或错误的规则
 - **冲突同步**：更新 memory/ 文件时，检查 /etc/nixos/CONTEXT.md 和 IMPROVEMENTS.md 是否需要同步
 
+## Skill 匹配提醒协议（SKILL_REMINDER）
+
+### 触发条件
+每个会话的**第一个实质性任务**开始前自动触发（纯对话/问候不触发）。
+
+### 执行流程
+1. **关键词提取**：从用户任务描述中提取 2-3 个核心实体
+2. **Skill 匹配**：在 `~/.claude/skills/` 中搜索匹配的 skill（按目录名和 SKILL.md 中的 tags 匹配）
+3. **结果处理**：
+   - 命中 1 个 → `[SKILL] 建议使用 skill: {name}（{description}）`
+   - 命中多个 → `[SKILL] 发现 {n} 个相关 skill: {name1}, {name2}...`
+   - 未命中 → 静默，不输出任何提示
+4. **强制级别**：建议级（不阻断任务执行，仅提示）
+
+### 匹配规则
+- 目录名包含关键词 → 直接命中
+- SKILL.md 中 tags 包含关键词 → 命中
+- description 包含关键词 → 弱命中（仅在无强命中时展示）
+
+### 与 AUTO_SKILL 的关系
+- SKILL_REMINDER：任务**开始前**匹配已有 skill → 避免重复探索
+- AUTO_SKILL：任务**完成后**评估是否创建新 skill → 知识积累
+- 两者互补，形成"使用 → 创建"闭环
+
+### 周度 Skill 审计（整合到 ai-architecture-audit）
+- 每周审计报告中包含 "Skills 使用率" 维度
+- 从未使用的 skills → 建议删除或合并
+- 高频操作无对应 skill → 建议创建
+
 ## Skill 自动封装协议（AUTO_SKILL）
 
 ### 触发条件（MUST 自检）
@@ -565,6 +623,35 @@ effort: low|medium|high
 ## 注意事项
 踩坑经验
 ```
+
+## Skill 匹配提醒协议（SKILL_REMINDER）
+
+### 触发条件
+每个会话的**第一个实质性任务**开始前自动触发（纯对话/问候不触发）。
+
+### 执行流程
+1. **关键词提取**：从用户任务描述中提取 2-3 个核心实体
+2. **Skill 匹配**：在 `~/.claude/skills/` 中搜索匹配的 skill（按目录名和 SKILL.md 中的 tags 匹配）
+3. **结果处理**：
+   - 命中 1 个 → `[SKILL] 建议使用 skill: {name}（{description}）`
+   - 命中多个 → `[SKILL] 发现 {n} 个相关 skill: {name1}, {name2}...`
+   - 未命中 → 静默，不输出任何提示
+4. **强制级别**：建议级（不阻断任务执行，仅提示）
+
+### 匹配规则
+- 目录名包含关键词 → 直接命中
+- SKILL.md 中 tags 包含关键词 → 命中
+- description 包含关键词 → 弱命中（仅在无强命中时展示）
+
+### 与 AUTO_SKILL 的关系
+- SKILL_REMINDER：任务**开始前**匹配已有 skill → 避免重复探索
+- AUTO_SKILL：任务**完成后**评估是否创建新 skill → 知识积累
+- 两者互补，形成"使用 → 创建"闭环
+
+### 周度 Skill 审计（整合到 ai-architecture-audit）
+- 每周审计报告中包含 "Skills 使用率" 维度
+- 从未使用的 skills → 建议删除或合并
+- 高频操作无对应 skill → 建议创建
 
 ## 回复前自检协议（SELF_CHECK_PROTOCOL）
 

@@ -24,6 +24,7 @@
   systemd.services.ai-infrastructure = {
     description = "AI Infrastructure (ChromaDB + LiteLLM)";
     after = [ "docker.service" "network-online.target" ];
+    requires = [ "docker.service" ];
     wants = [ "network-online.target" ];
     # 已移除: wantedBy = [ "multi-user.target" ]; → 改由 ai-docker-delayed 触发
     path = with pkgs; [ docker docker-compose coreutils bash ];
@@ -113,7 +114,7 @@
   # 2. 微信增量同步（每15分钟）
   systemd.services.wechat-sync = {
     description = "WeChat incremental sync";
-    path = with pkgs; [ python3 sqlite bash coreutils ];
+    path = with pkgs; [ python3 sqlite bash coreutils procps sqlcipher ];
     serviceConfig = {
       Type = "oneshot";
       User = "charlie";
