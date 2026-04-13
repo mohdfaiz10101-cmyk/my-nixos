@@ -23,15 +23,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # === 前置检查 ===
-    # 确保 docker-compose.yml 存在
-    system.checks = [
-      (lib.check {
-        name = "litellm-docker-compose-exists";
-        condition = builtins.pathExists "${cfg.composeDir}/docker-compose.yml";
-        message = "LiteLLM docker-compose.yml 不存在于 ${cfg.composeDir}";
-      })
-    ];
 
     # === systemd 服务定义 ===
     systemd.services.litellm = {
@@ -63,23 +54,20 @@ in
         # === 工作目录（docker-compose 脚本位置） ===
         WorkingDirectory = cfg.composeDir;
 
-        # === 前置检查脚本（Docker 路径验证）===
+        # === 前置检查 ===
         ExecStartPre = [
-          # 第一步：运行 Docker 路径验证
-          "${pkgs.bash}/bin/bash /etc/nixos/scripts/docker-path-verify.sh"
-
-          # 第二步：检查 docker-compose.yml 存在
+          # 检查 docker-compose.yml 存在
           "${pkgs.bash}/bin/bash -c 'test -f ${cfg.composeDir}/docker-compose.yml || (echo \"LiteLLM docker-compose.yml 未找到: ${cfg.composeDir}/docker-compose.yml\"; exit 1)'"
 
-          # 第三步：确保容器镜像已拉取（可选，避免启动时延迟）
+          # 确保容器镜像已拉取（可选，失败不中止）
           "-${pkgs.docker}/bin/docker pull litellm/litellm:latest"
         ];
 
         # === 启动命令 ===
         ExecStart = "${pkgs.docker-compose}/bin/docker-compose -f docker-compose.yml up";
 
-        # === 停止命令 ===
-        ExecStop = "${pkgs.docker-compose}/bin/docker-compose -f docker-compose.yml down";
+        # === 停止命令（使用 lib.mkForce 覆盖自动生成的 preStop） ===
+        ExecStop = lib.mkForce "${pkgs.docker-compose}/bin/docker-compose -f docker-compose.yml down";
 
         # === 日志配置 ===
         StandardOutput = "journal";
@@ -141,10 +129,6 @@ in
         fi
       '';
 
-      # === 停止前清理 ===
-      preStop = ''
-        echo "[LiteLLM] 正在停止..."
-      '';
     };
   };
 }

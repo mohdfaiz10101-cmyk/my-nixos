@@ -685,3 +685,4 @@ effort: low|medium|high
 - Flake 检查：`nix flake check /etc/nixos`
 - KDE 重载：`dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.reconfigure`
 - 磁盘池状态：`bash ~/launcher/disk-pool-mount.sh status`
+

@@ -10,7 +10,8 @@
     ./modules/audio.nix
     ./modules/networking.nix
     ./modules/services.nix
-    ./modules/services/litellm-docker.nix  # LiteLLM Docker Compose 服务（新增）
+    ./modules/services/litellm-docker.nix      # LiteLLM Docker Compose 服务
+    ./modules/services/litellm-healthcheck.nix # LiteLLM 健康检查 + 自动拉起
     ./modules/storage.nix
     ./modules/ai.nix
     ./modules/proxy.nix
@@ -88,16 +89,12 @@
     ];
   };
 
-  # === LiteLLM Docker 服务配置（可选）===
-  # 开启后会在开机时自动启动 LiteLLM 容器
-  # 需要指定 docker-compose.yml 的位置
-  # 取消注释以下行并修改 composeDir 路径
-  #
-  # services.litellm-docker = {
-  #   enable = true;
-  #   composeDir = "/mnt/ai-cluster/litellm";  # 改为实际路径
-  #   port = 4000;
-  # };
+  # === LiteLLM Docker 服务配置 ===
+  services.litellm-docker = {
+    enable = true;
+    composeDir = "/mnt/ai-cluster/litellm";  # ✓ 修正路径（移除多余的 /ai）
+    port = 4000;
+  };
 
   system.stateVersion = "26.05";
 }

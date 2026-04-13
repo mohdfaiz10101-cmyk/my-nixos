@@ -27,6 +27,16 @@
   # services.desktopManager.cosmic.enable = true; # 上游 cosmic-edit 哈希不匹配，等修复
   # services.displayManager.cosmic-greeter.enable = false;
 
+  # --- KWallet 服务（VSCode/浏览器密钥存储）---
+  # 背景：VSCode 扩展（Roo Code 等）需要 keyring 服务存储 API token
+  # 症状：每次重启要重新登录，配置无法持久化
+  # 修复：启用 KWallet，自动随 Plasma 启动
+  security.pam.services.kwallet = {
+    name = "kwallet";
+    enableKwallet = true;
+  };
+  programs.dconf.enable = true;  # KWallet 依赖 dconf
+
   # --- Sunshine 远程串流服务器（Moonlight 客户端连接）---
   services.sunshine = {
     enable = true;

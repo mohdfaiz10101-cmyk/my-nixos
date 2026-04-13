@@ -20,10 +20,24 @@
     options = [ "bind" "nofail" ];
   };
 
-  # AI 數據 loopback 映像 (ext4 on NTFS)
-  fileSystems."/mnt/ai" = {
-    device = "/mnt/data/ai-data.img";
-    fsType = "ext4";
-    options = [ "loop" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  # AI 數據 loopback 映像 (ext4 on NTFS) — 已禁用：镜像文件不存在
+  # fileSystems."/mnt/ai" = {
+  #   device = "/mnt/data/ai-data.img";
+  #   fsType = "ext4";
+  #   options = [ "loop" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  # };
+
+  # 方案 B: 将 /var 挂载到外置盘，减轻根分区压力
+  fileSystems."/var" = {
+    device = "/mnt/data/var";
+    fsType = "none";
+    options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  };
+
+  # 将 /tmp 挂载到外置盘
+  fileSystems."/tmp" = {
+    device = "/mnt/data/tmp";
+    fsType = "none";
+    options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
   };
 }
