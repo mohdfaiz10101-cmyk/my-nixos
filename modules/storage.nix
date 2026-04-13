@@ -34,10 +34,16 @@
     options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
   };
 
-  # 将 /tmp 挂载到外置盘
-  fileSystems."/tmp" = {
-    device = "/mnt/data/tmp";
-    fsType = "none";
-    options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
-  };
+  # /tmp 使用 tmpfs（内存文件系统）— 修复 Claude Code Bash 工具 NTFS 权限问题
+  # 原配置 bind mount 到 NTFS 导致权限错误，现改用 tmpfs
+  # tmpfs 大小：50% 可用内存（24GB RAM → 最大 12GB）
+  boot.tmp.useTmpfs = true;
+  boot.tmp.tmpfsSize = "50%";
+
+  # 旧配置（已禁用）：
+  # fileSystems."/tmp" = {
+  #   device = "/mnt/data/tmp";
+  #   fsType = "none";
+  #   options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  # };
 }
