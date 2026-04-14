@@ -6,6 +6,7 @@
 
   systemd.services.litellm-healthcheck = {
     description = "LiteLLM Health Check and Auto-Restart";
+    path = with pkgs; [ docker docker-compose curl bash systemd ];
 
     serviceConfig = {
       Type = "oneshot";

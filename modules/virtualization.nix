@@ -5,7 +5,7 @@
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      data-root = "/opt/docker-data";  # ✓ 根分区 ext4，避免 /var 的 NTFS bind mount
+      data-root = "/mnt/ai/docker";  # ext4 loop mount (93G), 依赖 mnt-ai.mount
       # 让 NixOS 防火墙统一管理端口，Docker 不再自动操作 iptables
       # 需要手动在 networking.firewall 中开放 Docker 服务端口
       iptables = false;
@@ -26,11 +26,19 @@
     };
   };
 
-  # === systemd 集成：启动前路径验证 ===
-  # 已禁用：data-root 固定为 /opt/docker-data（根分区 ext4），无需验证
-  # systemd.services.docker.preStart = ''
-  #   ${pkgs.bash}/bin/bash /etc/nixos/scripts/docker-path-verify.sh
-  # '';
+  # === systemd 集成：Docker 依赖 ext4 loop mount ===
+  systemd.services.docker = {
+    after = [ "mnt-ai.mount" ];
+    requires = [ "mnt-ai.mount" ];
+  };
+
+  # Docker CLI 默认查找 /var/run/docker.sock，但实际 socket 在 /run/docker.sock
+  # /var/run 不是 /run 的符号链接，且权限 0700 阻止非 root 遍历
+  # 修复：放宽 /var/run 权限 + 创建符号链接
+  systemd.tmpfiles.rules = [
+    "d /var/run 0755 root root -"
+    "L+ /var/run/docker.sock - - - - /run/docker.sock"
+  ];
 
   # --- KVM / libvirt ---
   virtualisation.libvirtd.enable = true;

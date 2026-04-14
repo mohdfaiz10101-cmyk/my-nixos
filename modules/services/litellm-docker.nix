@@ -72,8 +72,6 @@ in
         # === 日志配置 ===
         StandardOutput = "journal";
         StandardError = "journal";
-        StandardOutputAdditionalFD = [ "stdout" ];
-        StandardErrorAdditionalFD = [ "stderr" ];
 
         # === 用户权限 ===
         # 使用 root 确保 Docker socket 访问权限

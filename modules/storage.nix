@@ -20,19 +20,22 @@
     options = [ "bind" "nofail" ];
   };
 
-  # AI 數據 loopback 映像 (ext4 on NTFS) — 已禁用：镜像文件不存在
-  # fileSystems."/mnt/ai" = {
-  #   device = "/mnt/data/ai-data.img";
-  #   fsType = "ext4";
-  #   options = [ "loop" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
-  # };
+  # AI 數據 loopback 映像 (ext4 on NTFS) — Docker data-root 在此镜像内
+  fileSystems."/mnt/ai" = {
+    device = "/mnt/data/ai-data.img";
+    fsType = "ext4";
+    options = [ "loop" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  };
 
   # 方案 B: 将 /var 挂载到外置盘，减轻根分区压力
-  fileSystems."/var" = {
-    device = "/mnt/data/var";
-    fsType = "none";
-    options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
-  };
+  # **已禁用** — NTFS 不支持 POSIX 权限/符号链接/文件锁，导致 systemd 服务失败
+  # 症状：docker.service/syncthing.service/systemd-hostnamed.service 全部报 I/O 错误
+  # 修复：/var 恢复到根分区（ext4），大数据目录单独 bind mount
+  # fileSystems."/var" = {
+  #   device = "/mnt/data/var";
+  #   fsType = "none";
+  #   options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+  # };
 
   # /tmp 使用 tmpfs（内存文件系统）— 修复 Claude Code Bash 工具 NTFS 权限问题
   # 原配置 bind mount 到 NTFS 导致权限错误，现改用 tmpfs

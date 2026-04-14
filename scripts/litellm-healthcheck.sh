@@ -33,7 +33,7 @@ restart_litellm() {
         sleep 15
     else
         log "⚠️  litellm.service 未配置，尝试手动启动容器..."
-        cd /mnt/ai/ai-cluster/litellm 2>/dev/null || {
+        cd /mnt/ai-cluster/litellm 2>/dev/null || cd /mnt/ai/ai-cluster/litellm 2>/dev/null || {
             log "❌ LiteLLM 目录不存在，无法启动"
             exit 1
         }
