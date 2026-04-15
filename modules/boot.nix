@@ -37,6 +37,15 @@
     };
   };
 
+  # --- GRUB → EFI 分区同步（永久修复）---
+  # bootPath=/boot 在 rootfs ext4，GRUB EFI 二进制从 /boot/efi (FAT32) 读 grub.cfg
+  # switch-to-configuration 先写 GRUB 再跑 activation，所以这里能拿到最新的 grub.cfg
+  system.activationScripts.syncGrubToEfi = lib.mkAfter ''
+    if [ -f /boot/grub/grub.cfg ] && [ -d /boot/efi/grub ]; then
+      cp /boot/grub/grub.cfg /boot/efi/grub/grub.cfg
+    fi
+  '';
+
   # Windows EFI 分区挂载（GRUB chainload 用）
   fileSystems."/mnt/win_efi" = {
     device = "/dev/disk/by-uuid/FA67-631E";

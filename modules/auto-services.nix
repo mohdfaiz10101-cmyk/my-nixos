@@ -135,6 +135,7 @@
     path = with pkgs; [ docker curl bash coreutils gawk ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "30";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/health-monitor.sh";
     };
   };
@@ -154,6 +155,7 @@
     path = with pkgs; [ bash coreutils systemd nix nixos-rebuild libnotify sudo ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "60";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/nixos-safe-upgrade.sh auto-confirm";
     };
   };
@@ -191,6 +193,7 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = false;
+      TimeoutStartSec = "900";
       ExecStart = pkgs.writeShellScript "ai-docker-delayed-start" ''
         echo "Starting AI infrastructure services..."
         systemctl start ai-infrastructure.service || true
@@ -200,4 +203,7 @@
       '';
     };
   };
+
+  # 8. fwupd-refresh 超时保护（原 infinity → 120s）
+  systemd.services.fwupd-refresh.serviceConfig.TimeoutStartSec = lib.mkForce "120";
 }

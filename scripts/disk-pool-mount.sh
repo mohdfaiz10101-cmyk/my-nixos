@@ -78,18 +78,12 @@ mount_disk() {
     local mount_opts=""
     case "$fstype" in
         ntfs|ntfs3)
-            # 先试 ntfs3 正常挂载，失败则加 force（处理脏卷），最后降级 ntfs-3g
-            if mount -t ntfs3 -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
-                log "已挂载: $label ($dev, ntfs3) → $mountpoint"
-                return 0
-            elif mount -t ntfs3 -o rw,noatime,force,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
-                log "已挂载: $label ($dev, ntfs3+force 脏卷) → $mountpoint"
-                return 0
-            elif ntfs-3g -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
-                log "已挂载: $label ($dev, ntfs-3g 降级) → $mountpoint"
+            # ntfs3 内核驱动有 bug（脏卷卡死），优先用 ntfs-3g（FUSE）
+            if ntfs-3g -o rw,noatime,uid=1000,gid=100,fmask=0022,dmask=0022 "$dev" "$mountpoint" 2>/dev/null; then
+                log "已挂载: $label ($dev, ntfs-3g) → $mountpoint"
                 return 0
             else
-                log "挂载失败: $label ($dev, ntfs)"
+                log "挂载失败: $label ($dev, ntfs-3g)"
                 return 1
             fi
             ;;

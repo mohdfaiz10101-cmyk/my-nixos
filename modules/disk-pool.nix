@@ -18,6 +18,7 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      TimeoutStartSec = "60";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/disk-pool-mount.sh start";
       ExecStop = "${pkgs.bash}/bin/bash /etc/nixos/scripts/disk-pool-mount.sh stop";
     };
@@ -38,6 +39,7 @@
     path = with pkgs; [ util-linux coreutils ntfs3g mergerfs gawk gnugrep findutils ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "30";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/disk-pool-mount.sh rescan";
     };
   };
@@ -48,6 +50,7 @@
     path = with pkgs; [ snapraid bash ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "300";
       ExecStart = "${pkgs.bash}/bin/bash -c 'test -f /etc/snapraid.conf && snapraid sync || true'";
     };
   };

@@ -32,10 +32,11 @@
   systemd.services.home-backup = {
     description = "Backup home data to /mnt/data";
     after = [ "mnt-data.mount" ];
-    requires = [ "mnt-data.mount" ];
+    wants = [ "mnt-data.mount" ];
     path = [ pkgs.rsync pkgs.coreutils pkgs.util-linux ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "120";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/home-backup.sh";
       StandardOutput = "journal";
       StandardError = "journal";
@@ -59,6 +60,7 @@
     path = [ pkgs.bash pkgs.coreutils pkgs.gnutar pkgs.gzip pkgs.nix pkgs.findutils pkgs.libnotify ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "120";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/system-health-monitor.sh";
       StandardOutput = "journal";
       StandardError = "journal";
@@ -103,6 +105,7 @@
     path = [ pkgs.bash pkgs.python313 pkgs.coreutils ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "60";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/claude-to-obsidian.sh";
       StandardOutput = "journal";
       StandardError = "journal";
@@ -125,6 +128,7 @@
     path = [ pkgs.bash pkgs.coreutils pkgs.sqlite ];
     serviceConfig = {
       Type = "oneshot";
+      TimeoutStartSec = "30";
       ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/floorp-bookmark-backup.sh";
       StandardOutput = "journal";
       StandardError = "journal";

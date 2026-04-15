@@ -158,6 +158,8 @@ in
     libnotify
 
     # === 终端 ===
+    ghostty
+    wezterm
     warp-terminal
     kitty
     zellij

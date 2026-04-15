@@ -23,6 +23,14 @@
     enable = true;
     user = "charlie";
   };
+
+  # 防止 KDE 会话崩溃后回到 SDDM 登录界面密码失效
+  # SDDM 自动登录 race condition 修复：延迟登录避免 Wayland 会话未就绪
+  services.displayManager.sddm.settings.Autologin = {
+    Session = "plasma";
+    User = "charlie";
+    Relogin = true;  # 会话崩溃后自动重登录
+  };
   services.desktopManager.plasma6.enable = true;
   # services.desktopManager.cosmic.enable = true; # 上游 cosmic-edit 哈希不匹配，等修复
   # services.displayManager.cosmic-greeter.enable = false;
