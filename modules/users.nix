@@ -94,4 +94,9 @@
 
   # --- nix-ld：讓 JetBrains 插件等預編譯 binary 能在 NixOS 上運行 ---
   programs.nix-ld.enable = true;
+
+  # --- VSCode 配置 ---
+  # 注意：VSCode 配置管理需要 home-manager
+  # 当前 NixOS 配置未启用 home-manager，暂用 systemd tmpfiles 方案
+  # 详细方案对比见 pending-tasks.md
 }

@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-LITELLM_URL="http://localhost:4000/health"
+LITELLM_URL="http://localhost:4000/health/liveliness"
 LOG_FILE="/var/log/litellm-healthcheck.log"
 MAX_RETRIES=3
 

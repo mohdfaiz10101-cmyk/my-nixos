@@ -35,7 +35,7 @@ for svc in chromadb letta litellm; do
         send_alert "容器 *$svc* 未运行！尝试自动恢复..."
         # 尝试自动重启
         case "$svc" in
-            chromadb) cd /mnt/ai/ai-cluster/chroma && docker compose up -d 2>/dev/null ;;
+            chromadb) docker start letta-chromadb 2>/dev/null ;;
             letta) cd /mnt/ai/ai-cluster/letta && docker compose up -d 2>/dev/null ;;
             litellm) cd /mnt/ai/ai-cluster/litellm && docker compose up -d 2>/dev/null ;;
         esac
