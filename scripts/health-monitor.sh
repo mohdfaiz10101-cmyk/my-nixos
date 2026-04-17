@@ -13,9 +13,10 @@ send_alert() {
     if [ -f "$ALERT_FILE-$hash" ] && [ $(($(date +%s) - $(stat -c %Y "$ALERT_FILE-$hash"))) -lt 600 ]; then
         return
     fi
+    local HOST_NAME=$(cat /etc/hostname 2>/dev/null || echo "nixos")
     curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="$TG_CHAT_ID" \
-        -d text="🚨 $(hostname): $msg" \
+        -d text="🚨 ${HOST_NAME}: $msg" \
         -d parse_mode="Markdown" > /dev/null 2>&1 || true
     touch "$ALERT_FILE-$hash"
 }

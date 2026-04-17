@@ -132,7 +132,7 @@
   # 4. 健康监控 + Telegram 报警（每5分钟）
   systemd.services.health-monitor = {
     description = "System health monitor with Telegram alerts";
-    path = with pkgs; [ docker curl bash coreutils gawk ];
+    path = with pkgs; [ docker curl bash coreutils gawk hostname ];
     serviceConfig = {
       Type = "oneshot";
       TimeoutStartSec = "30";

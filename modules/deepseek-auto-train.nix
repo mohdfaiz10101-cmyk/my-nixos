@@ -12,6 +12,7 @@
   # 自动训练 service
   systemd.services.deepseek-auto-train = {
     description = "DeepSeek LoRA Auto Training";
+    path = with pkgs; [ python3 bash coreutils docker ];
     serviceConfig = {
       Type = "oneshot";
       User = "charlie";
