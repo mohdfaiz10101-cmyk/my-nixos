@@ -4,7 +4,7 @@ set -euo pipefail
 
 TG_BOT_TOKEN="8797063873:AAGvApEP9frmA74b6nmxODHshzo1TwJR5ks"
 TG_CHAT_ID="5036541266"
-ALERT_FILE="/tmp/health-alert-sent"
+ALERT_FILE="/run/health-alert-sent"
 
 send_alert() {
     local msg="$1"
@@ -18,12 +18,12 @@ send_alert() {
         -d chat_id="$TG_CHAT_ID" \
         -d text="🚨 ${HOST_NAME}: $msg" \
         -d parse_mode="Markdown" > /dev/null 2>&1 || true
-    touch "$ALERT_FILE-$hash"
+    touch "$ALERT_FILE-$hash" 2>/dev/null || true
 }
 
-# 检查磁盘使用率
-for mount in / /mnt/ai /boot; do
-    usage=$(df "$mount" 2>/dev/null | awk 'NR==2{gsub(/%/,"",$5); print $5}')
+# 检查磁盘使用率（移除/boot，根分区已覆盖）
+for mount in / /mnt/ai; do
+    usage=$(timeout 3 df "$mount" 2>/dev/null | awk 'NR==2{gsub(/%/,"",$5); print $5}')
     if [ -n "$usage" ] && [ "$usage" -gt 90 ]; then
         send_alert "磁盘 $mount 使用率 ${usage}%！"
     fi
@@ -44,7 +44,7 @@ for svc in chromadb letta litellm; do
 done
 
 # 检查 Ollama
-if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+if ! timeout 3 curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
     send_alert "Ollama 服务未响应！"
 fi
 

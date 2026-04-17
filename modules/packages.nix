@@ -186,7 +186,7 @@ in
     })
 
     # === 办公 & 字体 ===
-    # libreoffice-qt6-fresh  # 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
+    libreoffice-qt6-fresh
     keepassxc
     noto-fonts
     noto-fonts-cjk-serif

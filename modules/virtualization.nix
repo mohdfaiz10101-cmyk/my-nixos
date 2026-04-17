@@ -32,13 +32,9 @@
     requires = [ "mnt-ai.mount" ];
   };
 
-  # Docker CLI 默认查找 /var/run/docker.sock，但实际 socket 在 /run/docker.sock
-  # /var/run 不是 /run 的符号链接，且权限 0700 阻止非 root 遍历
-  # 修复：放宽 /var/run 权限 + 创建符号链接
-  systemd.tmpfiles.rules = [
-    "d /var/run 0755 root root -"
-    "L+ /var/run/docker.sock - - - - /run/docker.sock"
-  ];
+  # 注：/var/run 已由 NixOS 自动设为 /run 的符号链接，无需额外 tmpfiles 规则。
+  # 旧版本 tmpfiles L+ 规则（已移除）会在 /var/run→/run 时创建 /run/docker.sock→/run/docker.sock 循环链接，
+  # 导致 docker.socket 激活后 socket 文件丢失。
 
   # --- KVM / libvirt ---
   virtualisation.libvirtd.enable = true;

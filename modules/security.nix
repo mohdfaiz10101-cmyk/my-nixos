@@ -27,4 +27,8 @@
     maxretry = 5;
     bantime = "1h";
   };
+
+  # sudo — 启用 setuid 位修复权限问题
+  security.sudo.enable = true;
 }
+
