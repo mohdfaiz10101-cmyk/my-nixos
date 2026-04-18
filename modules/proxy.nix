@@ -1,7 +1,7 @@
 # modules/proxy.nix — 3-Tier Proxy Failover System
 # ┌─────────────────────────────────────────────────────────────┐
-# │ Tier 1: Xray VLESS (Primary, auto-start, user's US server) │
-# │ Tier 2: Mihomo (Backup, free proxies from GitHub)          │
+# │ Tier 2: Xray VLESS (Backup, user's US server) │
+# │ Tier 1: Mihomo (Primary, free proxies from GitHub)          │
 # │ Tier 3: Emergency fresh free proxy fetch + reconfigure     │
 # │ Watchdog: every 30s, auto-detect failure, switch, self-heal│
 # └─────────────────────────────────────────────────────────────┘
@@ -337,8 +337,8 @@ let
     # DNS pre-check before restart attempts
     dns_precheck || log "WARNING: DNS precheck failed, continuing anyway"
 
-    # ---- TIER 1: Restart xray ----
-    log "[Tier 1] Restarting xray..."
+    # ---- TIER 2: Restart xray ----
+    log "[Tier 2] Restarting xray..."
     systemctl stop mihomo 2>/dev/null || true
     sleep 1
     systemctl restart xray 2>/dev/null || true
@@ -346,13 +346,13 @@ let
     if test_proxy; then
       echo "xray" > "$STATE_FILE"
       echo "0" > "$FAIL_COUNT_FILE"
-      log "[Tier 1] Xray recovered!"
-      notify_tier "Tier 1: Xray recovered"
+      log "[Tier 2] Xray recovered!"
+      notify_tier "Tier 2: Xray recovered"
       exit 0
     fi
 
-    # ---- TIER 2: Switch to mihomo ----
-    log "[Tier 2] Switching to mihomo..."
+    # ---- TIER 1: Switch to mihomo ----
+    log "[Tier 1] Switching to mihomo..."
     systemctl stop xray 2>/dev/null || true
     sleep 1
     if [ -f /etc/mihomo/config.yaml ] && grep -q "proxies:" /etc/mihomo/config.yaml 2>/dev/null; then
@@ -361,13 +361,13 @@ let
       if test_proxy; then
         echo "mihomo" > "$STATE_FILE"
         echo "0" > "$FAIL_COUNT_FILE"
-        log "[Tier 2] Mihomo working!"
-        notify_tier "Tier 2: Switched to Mihomo"
+        log "[Tier 1] Mihomo working!"
+        notify_tier "Tier 1: Switched to Mihomo"
         exit 0
       fi
       systemctl stop mihomo 2>/dev/null || true
     else
-      log "[Tier 2] No valid mihomo config"
+      log "[Tier 1] No valid mihomo config"
     fi
 
     # ---- TIER 3: Fetch fresh free proxies ----
@@ -408,9 +408,9 @@ let
     echo "Active tier: $CURRENT"
     echo "Consecutive fails: $FAILS"
     echo ""
-    echo "--- Xray (Tier 1) ---"
+    echo "--- Xray (Tier 2) ---"
     systemctl is-active xray 2>/dev/null && echo "  Status: RUNNING" || echo "  Status: stopped"
-    echo "--- Mihomo (Tier 2) ---"
+    echo "--- Mihomo (Tier 1) ---"
     systemctl is-active mihomo 2>/dev/null && echo "  Status: RUNNING" || echo "  Status: stopped"
     echo "--- Watchdog ---"
     systemctl is-active proxy-watchdog.timer 2>/dev/null && echo "  Timer: ACTIVE" || echo "  Timer: inactive"
@@ -453,9 +453,9 @@ in
     proxyStatus
   ];
 
-  # ===== TIER 1: Xray VLESS (Primary — AUTO-START on boot) =====
+  # ===== TIER 2: Xray VLESS (Backup — AUTO-START on boot) =====
   systemd.services.xray = {
-    description = "Xray VLESS Proxy (Tier 1 - Primary US)";
+    description = "Xray VLESS Proxy (Tier 2 - Backup US)";
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" "sops-nix.service" ];
     wants = [ "network-online.target" "sops-nix.service" ];
@@ -474,9 +474,9 @@ in
     };
   };
 
-  # ===== TIER 2: Mihomo (Backup — managed by watchdog) =====
+  # ===== TIER 1: Mihomo (Primary — managed by watchdog) =====
   systemd.services.mihomo = {
-    description = "Mihomo Proxy (Tier 2 - Backup)";
+    description = "Mihomo Proxy (Tier 1 - Primary)";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     conflicts = [ "xray.service" ];

@@ -1,6 +1,6 @@
 # NixOS 系統上下文 — Charlie's Snowflake
 # 此檔案供所有 AI 助手共用（Claude、Gemini 等），請勿刪除
-# 最後更新：2026-03-27
+# 最後更新：2026-04-18
 
 
 ## AI 記憶系統架構 (2026-03-27 新增)
@@ -106,17 +106,17 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 - 包定義使用 `builtins.hasAttr` 容錯檢查（見 productivity.nix）
 - `/nix/store` 唯讀，不能在裡面跑 `npm install`
 
-## 代理與網路（2026-03-22 更新）
-- **xray**：系統級代理，vless+ws+tls，開機自啟
-  - HTTP 代理：port 7890
-  - SOCKS5 代理：port 7891
-  - 出口節點：美國（cfyes.lxy1015.top → lx-us1.lxy1015.top）
-  - 配置以 `builtins.toJSON` 內聯於 `modules/proxy.nix`（純 Nix，不依賴外部文件）
-- networking.proxy 系統環境變數（git/curl 自動走代理）
-- GNOME 系統代理：manual 模式指向 127.0.0.1:7890
-- Firefox：已配 user.js 使用 HTTP 代理
-- **已移除**：clash-verge-rev、TUN 模式、dae
-- **2026-03-23 更新**：mihomo 和 proxy-watchdog 已重新启用为 3-Tier Failover 备份方案
+## 代理與網路（2026-04-18 更新）
+- **3-Tier Failover System**：互斥运行，同一时间只有一个服务监听 7890/7891
+  - **Tier 1: Mihomo**（主力，GitHub 免费代理池，每 6h 自动刷新）
+  - **Tier 2: Xray VLESS**（备用，用户美国 VPS，开机自启，Restart=always）
+  - **Tier 3: 紧急刷新**（watchdog 自动拉取免费代理并重配置）
+- **当前状态**：xray active（Tier 2 在跑），mihomo inactive（互斥）
+- **Watchdog**：每 30 秒健康检查 + 自动切换 tier
+- **端口**：HTTP 7890 / SOCKS5 7891
+- **命令**：`proxy-status` / `proxy-free-fetch` / `proxy-sub <URL>`
+- **注意**：不再使用 `services.mihomo` NixOS 模块（credentials bug），手动定义 systemd service
+- **2026-04-18 修正**：Tier 标注已修正（mihomo=Tier1, xray=Tier2）
 
 ## Essence 同步協議
 - `up` alias：git pull → commit → push → rclone sync 到 Google Drive
@@ -168,11 +168,23 @@ sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 
 ### 2026-03-23 代理架构重建
 - **架构变更**：从单 xray → 3-Tier Failover System
-  - Tier 1: Xray VLESS（主力，开机自启，Restart=always）
-  - Tier 2: Mihomo（备份，使用 GitHub 免费代理）
+  - Tier 1: Mihomo（主力，GitHub 免费代理池）
+  - Tier 2: Xray VLESS（备用，用户美国 VPS，当前开机自启）
   - Tier 3: 紧急刷新（watchdog 自动从 GitHub 拉取免费代理）
+- **注意**：当前 xray 开机自启先抢端口，mihomo 虽是 Tier 1 但无法自动启动（无 wantedBy）
 - **重要**：不再使用 `services.mihomo` NixOS 模块（credentials bug），手动定义 systemd service
 - **Watchdog**：每 30 秒健康检查 + 自动切换 tier
 - **免费代理池**：每 6 小时自动从 GitHub 刷新（peasoft/NoMoreWalls 等）
 - **端口**：HTTP 7890 / SOCKS5 7891（互斥运行，同一时间只有一个服务监听）
 - **命令**：`proxy-status` / `proxy-free-fetch` / `proxy-sub <URL>`
+
+### 2026-04-18 系统维护
+- proxy.nix Tier 标注修正（mihomo=Tier1, xray=Tier2），nixos-rebuild switch 完成
+- LiteLLM healthy（13 模型），glm-4.6v-flash 视觉模型可用
+- Letta embedding 413 修复（bge-large-zh 限制 512 tokens）
+- OP 守护机制：op-connection-guard.timer 每 10 分钟，escalate_to_cc() 失败流转已生效
+- AGI 核心模块：cognitive_engine.py + macg.py + brain.py + flows/*.py 已创建
+- Android P0：device-registry.json + sensor-bridge.py 已创建
+- heartbeat-check 幽灵 timer 已清理（job 文件不存在导致反复 exit 2）
+- lessons-learned.md 归档（1375→19 行，旧条目移至 archive）
+- CC↔OP 架构：CC 规划/编码，OP 运维/定时任务，AGENTS.md 实时同步规则

@@ -29,6 +29,8 @@
   # 开机自动绑定 363e:7961 到 mt7921u 驱动
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="363e", ATTR{idProduct}=="7961", RUN+="/bin/sh -c 'echo 363e 7961 > /sys/bus/usb/drivers/mt7921u/new_id 2>/dev/null || true'"
+    # 禁用 bestechnic MicLink 语音助手键盘的 HID 键盘输入（防止乱输字）
+    SUBSYSTEM=="input", ATTRS{idVendor}=="3151", ATTRS{idProduct}=="20ab", ENV{ID_INPUT_KEYBOARD}="0", ENV{ID_INPUT_KEY}="0"
   '';
 
   # 防火墙开放 SSH
