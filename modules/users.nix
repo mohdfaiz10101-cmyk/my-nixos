@@ -35,8 +35,9 @@
       export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"
       eval "$(direnv hook zsh)"
       /etc/nixos/scripts/letta-sync.sh &>/dev/null &
-      export GTK_IM_MODULE=fcitx
-      export QT_IM_MODULE=fcitx
+      # Wayland 会话下不设 GTK_IM_MODULE/QT_IM_MODULE（由 fcitx5 waylandFrontend 模块管理）
+      # 手动设这两个变量会强制 X11 IM 桥接，导致 Floorp/微信等 Wayland 原生应用输入失效
+      # 参见 lessons-learned.md 2026-04-18 条目
       export XMODIFIERS=@im=fcitx
     '';
     shellAliases = {
