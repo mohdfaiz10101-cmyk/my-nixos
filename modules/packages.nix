@@ -88,6 +88,7 @@ in
     hunspell
     hunspellDicts.en_US
     sqlcipher
+    recoll  # 全文索引（闲置时自动更新）
     # texlive 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）
     # (texlive.combine {
     #   inherit (texlive)
