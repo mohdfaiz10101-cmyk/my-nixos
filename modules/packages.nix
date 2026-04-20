@@ -72,6 +72,7 @@ in
     yq-go
     rclone
     inotify-tools
+    restic
     wl-clipboard
     translate-shell
     pciutils
