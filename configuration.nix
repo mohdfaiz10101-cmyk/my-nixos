@@ -97,4 +97,34 @@
   };
 
   system.stateVersion = "26.05";
+
+  # ========== 无 GPU 紧急恢复模式 ==========
+  # 用途：显卡驱动崩溃/Wayland 卡死时，从 GRUB 选此项进纯 TTY 修复
+  # 保留：SSH、网络、Docker、Claude Code、OpenCode 全部可用
+  # 使用：开机 GRUB 选 "NixOS — noGUI (Emergency)" 进入
+  specialisation.noGUI.configuration = {
+    # 禁用 NVIDIA 驱动（改用 modesetting 基础驱动，TTY 可用）
+    services.xserver.videoDrivers = lib.mkForce [ "modesetting" ];
+    hardware.nvidia.modesetting.enable = lib.mkForce false;
+    boot.extraModprobeConfig = lib.mkForce "";
+    boot.kernelParams = [ "nomodeset" "systemd.unit=multi-user.target" ];
+
+    # 禁用桌面环境（KDE/SDDM/Sunshine 全部关闭）
+    services.xserver.enable = lib.mkForce false;
+    services.displayManager.sddm.enable = lib.mkForce false;
+    services.desktopManager.plasma6.enable = lib.mkForce false;
+    services.sunshine.enable = lib.mkForce false;
+    services.displayManager.autoLogin.enable = lib.mkForce false;
+
+    # 禁用 Wayland 相关环境变量
+    environment.variables.NIXOS_OZONE_WL = lib.mkForce "";
+    environment.variables.ELECTRON_OZONE_PLATFORM_HINT = lib.mkForce "";
+
+    # 禁用依赖桌面的服务
+    services.flatpak.enable = lib.mkForce false;
+    xdg.portal.enable = lib.mkForce false;
+
+    # 保留：SSH、网络、Docker — 修复用
+    # （这些模块已在 imports 中，无需重复声明）
+  };
 }

@@ -9,7 +9,15 @@
     open = false;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
+    # 修复 nvidia-modeset 0x0000c67d GPU挂起导致无信号问题（2026-04-20）
+    # 根因：GSP firmware 超时 bug，在 595.x Wayland+KDE 下已知存在
+    powerManagement.enable = true;
   };
+
+  # 禁用 GSP firmware（GPU System Processor），根治 0x0000c67d 挂起
+  boot.extraModprobeConfig = ''
+    options nvidia NVreg_EnableGpuFirmware=0
+  '';
 
   # Vulkan 使用 NVIDIA GPU（修复 Zed 等 Vulkan 应用检测 llvmpipe 问题）
   environment.variables.VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.x86_64.json";
