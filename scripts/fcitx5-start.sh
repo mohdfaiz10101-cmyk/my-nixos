@@ -5,8 +5,9 @@
 sleep 2
 
 # 设置环境变量
-export GTK_IM_MODULE=fcitx
-export QT_IM_MODULE=fcitx
+# GTK_IM_MODULE 和 QT_IM_MODULE 不在这里全局设置
+# Wayland-native 应用（Floorp/opencode 等）不需要也不能设置这两个变量
+# WeChat UOS wrapper 会在自己的进程内按需设置
 export XMODIFIERS=@im=fcitx
 export DISPLAY=:0
 export WAYLAND_DISPLAY=wayland-0
