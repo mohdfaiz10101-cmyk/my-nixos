@@ -22,6 +22,11 @@
   # Vulkan 使用 NVIDIA GPU（修复 Zed 等 Vulkan 应用检测 llvmpipe 问题）
   environment.variables.VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.x86_64.json";
 
+  # NVIDIA Container Toolkit — Docker GPU 直通（数字人流水线需要）
+  # suppressNvidiaDriverAssertion：noGUI specialisation 禁用了 nvidia videoDriver，需绕过断言
+  hardware.nvidia-container-toolkit.enable = true;
+  hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
+
   # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
