@@ -453,10 +453,11 @@ in
     proxyStatus
   ];
 
-  # ===== TIER 2: Xray VLESS (Backup — AUTO-START on boot) =====
+  # ===== TIER 2: Xray VLESS (Backup — managed by watchdog, NOT auto-started) =====
+  # 注意：故意不设 wantedBy，防止 nixos-rebuild switch 在 mihomo 运行时启动 xray
+  # 触发 Conflicts 停掉当前代理（Claude 断线 bug）。watchdog 负责启停。
   systemd.services.xray = {
     description = "Xray VLESS Proxy (Tier 2 - Backup US)";
-    wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" "sops-nix.service" ];
     wants = [ "network-online.target" "sops-nix.service" ];
     conflicts = [ "mihomo.service" ];
