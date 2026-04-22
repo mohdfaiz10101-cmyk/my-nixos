@@ -11,9 +11,14 @@
     disko.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    home-manager.url = "github:nix-community/home-manager/5d5640599a0050b994330328b9fd45709c909720";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    plasma-manager.url = "github:nix-community/plasma-manager/a524a6160e6df89f7673ba293cf7d78b559eb1a5";
+    plasma-manager.inputs.nixpkgs.follows = "nixpkgs";
+    plasma-manager.inputs.home-manager.follows = "home-manager";
   };
 
-  outputs = { self, nixpkgs, nix-index-database, disko, sops-nix, ... }@inputs: {
+  outputs = { self, nixpkgs, nix-index-database, disko, sops-nix, home-manager, plasma-manager, ... }@inputs: {
     nixosConfigurations.charlie = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
@@ -25,6 +30,14 @@
         nix-index-database.nixosModules.nix-index
         { programs.nix-index-database.comma.enable = true; }
         sops-nix.nixosModules.sops
+        # home-manager + plasma-manager：声明式固化用户配置（任务栏等）
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.extraSpecialArgs = { inherit inputs; };
+          home-manager.users.charlie = import ./home/charlie.nix;
+        }
       ];
     };
 
