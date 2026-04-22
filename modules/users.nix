@@ -9,6 +9,24 @@
       charlie-hashedPassword = { neededForUsers = true; };
       minipc-hashedPassword = {};
       minipc-wifi-psk = {};
+      # GLM / Z.AI API Key — 替代明文硬编码在脚本和 systemd service 中
+      zai-api-key = {
+        owner = "charlie";
+        group = "users";
+        mode = "0400";
+      };
+    };
+    # 生成 env 格式文件供 macg-api.service / glm CLI 的 EnvironmentFile 使用
+    templates."zai-api-key-env" = {
+      owner = "charlie";
+      group = "users";
+      mode = "0400";
+      path = "/run/secrets/zai-api-key-env";
+      content = ''
+        ANTHROPIC_API_KEY=${config.sops.placeholder."zai-api-key"}
+        ANTHROPIC_AUTH_TOKEN=${config.sops.placeholder."zai-api-key"}
+        ZAI_API_KEY=${config.sops.placeholder."zai-api-key"}
+      '';
     };
   };
 
