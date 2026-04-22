@@ -23,7 +23,7 @@ in
       USER_JS="$PROF_DIR/user.js"
 
       cat > "$USER_JS.tmp" << 'FLOORP_PROXY'
-// [NixOS Managed] Proxy settings - DO NOT EDIT manually
+// [NixOS Managed] Proxy + Wayland input settings - DO NOT EDIT manually
 // Managed by /etc/nixos/modules/browser.nix
 user_pref("network.proxy.type", 1);
 user_pref("network.proxy.http", "127.0.0.1");
@@ -35,6 +35,9 @@ user_pref("network.proxy.socks_port", 7891);
 user_pref("network.proxy.socks_version", 5);
 user_pref("network.proxy.no_proxies_on", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,localhost,*.local");
 user_pref("network.proxy.allow_hijacking_localhost", true);
+// Wayland native + fcitx5 输入法（KDE Plasma 6 Wayland 必须）
+user_pref("widget.use-xdg-desktop-portal.mime-handler", 1);
+user_pref("widget.use-xdg-desktop-portal.file-picker", 1);
 FLOORP_PROXY
 
       if ! cmp -s "$USER_JS.tmp" "$USER_JS" 2>/dev/null; then

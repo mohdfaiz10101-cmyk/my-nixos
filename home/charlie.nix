@@ -58,4 +58,18 @@
       }
     ];
   };
+
+  # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
+  # wrapper 在 ~/.local/bin/floorp，设置 MOZ_ENABLE_WAYLAND=1 + unset IM 变量
+  xdg.desktopEntries.floorp = {
+    name = "Floorp";
+    exec = "/home/charlie/.local/bin/floorp %U";
+    icon = "floorp";
+    comment = "Browse the Web";
+    categories = [ "Network" "WebBrowser" ];
+    mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" ];
+    settings = {
+      StartupWMClass = "floorp";
+    };
+  };
 }
