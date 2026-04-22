@@ -23,11 +23,12 @@
     options = [ "bind" "nofail" ];
   };
 
-  # AI 數據 loopback 映像 (ext4 on NTFS) — Docker data-root 在此镜像内
+  # AI 數據目录 — 原生 ext4 (POOL-D1, sdd1)，替代旧 loop image on NTFS
+  # 迁移时间: 2026-04-22，性能提升: 去掉 loop+NTFS 两层开销
   fileSystems."/mnt/ai" = {
-    device = "/mnt/data/ai-data.img";
-    fsType = "ext4";
-    options = [ "loop" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
+    device = "/mnt/pool-disks/POOL-D1/ai";
+    fsType = "none";
+    options = [ "bind" "nofail" "x-systemd.requires=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" "x-systemd.after=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" ];
   };
 
   # 方案 B: 将 /var 挂载到外置盘，减轻根分区压力
