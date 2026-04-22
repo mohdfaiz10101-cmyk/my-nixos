@@ -31,8 +31,11 @@
     # 仅允许局域网访问 Docker 服务，不对外暴露
     # 如需从外部访问，请在此添加具体 IP
     # 允许 Docker 容器（172.16/12 网段）访问宿主机代理端口 7890（mihomo）
+    # Docker 容器网段动态访问宿主机端口（替代 docker-iptables-allow.service 手动脚本）
     extraCommands = ''
       iptables -A nixos-fw -s 172.16.0.0/12 -p tcp --dport 7890 -j nixos-fw-accept
+      iptables -A nixos-fw -s 172.16.0.0/12 -p tcp --dport 7891 -j nixos-fw-accept
+      iptables -A nixos-fw -s 172.16.0.0/12 -p tcp --dport 11434 -j nixos-fw-accept
     '';
   };
 

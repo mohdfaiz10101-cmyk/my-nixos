@@ -18,6 +18,11 @@
     isNormalUser = true;
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "docker" "input" "uinput" "ydotool" ];
     shell = pkgs.zsh;
+    # 声明式 SSH 公钥 — rebuild 后不丢失，免手动恢复 authorized_keys
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHAFruJJ+bY1fAh05xg86ZHMCh+dMJUq6GjmH11yq2uN"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLV1tGBKQPdPZmGBRd2jzFoOggrB0obaOMxvJ+5tIhL windows-backup@spectrai"
+    ];
   };
 
   # --- sudo 免密 ---
