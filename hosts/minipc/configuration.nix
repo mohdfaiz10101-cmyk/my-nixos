@@ -5,6 +5,7 @@
 {
   imports = [
     ./disk-config.nix
+    ./docker.nix
   ];
 
   # --- sops-nix 加密 secrets ---
