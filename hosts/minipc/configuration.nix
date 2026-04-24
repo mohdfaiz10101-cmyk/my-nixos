@@ -118,6 +118,9 @@
     '';
   };
 
+  # wheel 组免密 sudo（远程运维必须）
+  security.sudo.wheelNeedsPassword = false;
+
   # 用户
   users.users.charlie = {
     isNormalUser = true;
@@ -193,6 +196,26 @@
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     trusted-users = [ "root" "charlie" ];
+    # 构建时使用大主机代理（Go/Cargo 等下载需要翻墙）
+    extra-sandbox-paths = [ "/etc/hosts" ];
+  };
+  nix.buildMachines = [];  # 本地构建
+  nix.extraOptions = ''
+    netrc-file = /home/charlie/.netrc
+  '';
+
+  # 构建代理环境变量（sops-nix Go 下载需要）
+  systemd.services.nix-daemon.environment = {
+    HTTP_PROXY = "http://192.168.2.100:7890";
+    HTTPS_PROXY = "http://192.168.2.100:7890";
+    NO_PROXY = "127.0.0.0/8,192.168.0.0/16,localhost,.bigmodel.cn,.siliconflow.cn";
+  };
+
+  # 全局代理（非声明式，仅用户空间，Docker/Go 构建需要）
+  environment.variables = {
+    HTTP_PROXY = "http://192.168.2.100:7890";
+    HTTPS_PROXY = "http://192.168.2.100:7890";
+    NO_PROXY = "127.0.0.0/8,192.168.0.0/16,localhost,.bigmodel.cn,.siliconflow.cn";
   };
 
   system.stateVersion = "25.11";
