@@ -46,15 +46,13 @@
   i18n.defaultLocale = "zh_CN.UTF-8";
 
   # --- 输入法 fcitx5 ---
-  # waylandFrontend = false: 使 NixOS module 自动设置 GTK_IM_MODULE/QT_IM_MODULE/GTK_PATH
-  # 根因：waylandFrontend=true 时 NixOS module 不设置这些变量，依赖 KWin relay（NVIDIA 下不稳定）
-  # waylandFrontend=false：fcitx5 通过 XIM/X11 提供输入法，GTK/Qt 模块路径由 NixOS 自动注入
-  # 2026-04-24 修复：结束近两个月 Floorp/Claude Code CLI 中文输入法反复失效问题
+  # waylandFrontend = true: fcitx5 注册 Wayland text-input-v3，Kitty/OpenCode 可用
+  # GTK_IM_MODULE/QT_IM_MODULE 在 desktop.nix sessionVariables 显式设置，不依赖自动注入
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
     fcitx5 = {
-      waylandFrontend = false;
+      waylandFrontend = true;
       addons = with pkgs; [
         qt6Packages.fcitx5-chinese-addons
         fcitx5-rime

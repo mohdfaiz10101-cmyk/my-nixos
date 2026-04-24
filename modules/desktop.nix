@@ -99,11 +99,15 @@
     KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
-  # --- fcitx5 環境變量 ---
-  # GTK_IM_MODULE / QT_IM_MODULE 由 NixOS fcitx5 模塊根據 waylandFrontend 自動管理
-  # waylandFrontend=true 時不自動設置這兩項，讓 Wayland 原生 text-input 協議生效
+  # --- fcitx5 環境變量（顯式設置，不依賴 waylandFrontend 自動注入）---
+  # waylandFrontend=true：fcitx5 注冊 Wayland text-input-v3（Kitty/OpenCode 用）
+  # GTK/Qt 應用同時通過環境變量走 fcitx5 模塊路徑，兩者並存
   environment.sessionVariables = {
-    XMODIFIERS = "@im=fcitx";
+    XMODIFIERS      = "@im=fcitx";
+    GTK_IM_MODULE   = "fcitx";
+    QT_IM_MODULE    = "fcitx";
+    SDL_IM_MODULE   = "fcitx";
+    INPUT_METHOD    = "fcitx";
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;

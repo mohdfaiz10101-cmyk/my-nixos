@@ -20,6 +20,7 @@
   # --- 防火墙 ---
   networking.firewall = {
     enable = true;
+    trustedInterfaces = [ "tailscale0" ];  # Tailscale 已端对端加密，信任全部流量
     allowedTCPPorts = [
       22    # SSH
       # Docker 服务端口（iptables=false 后需手动开放）
@@ -47,6 +48,8 @@
       PasswordAuthentication = false;
       PubkeyAuthentication = true;
       X11Forwarding = false;
+      AllowTcpForwarding = "yes";
+      GatewayPorts = "clientspecified";
     };
     ports = [ 22 ];
   };
