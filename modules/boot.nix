@@ -21,7 +21,7 @@
       useOSProber = true;
       efiSupport = true;
       efiInstallAsRemovable = true;
-      configurationLimit = 3;
+      configurationLimit = 5;
       theme = pkgs.sleek-grub-theme;
       gfxmodeEfi = "1920x1080";
       extraEntries = lib.mkOrder 0 ''

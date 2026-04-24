@@ -59,6 +59,16 @@
     ];
   };
 
+  # ── 修复 ~/.cache 符号链接导致 home-manager 启动失败 ──
+  # 根因：~/.cache 是指向 /mnt/ai/cache/xdg 的符号链接
+  # HM linkGeneration 尝试 mkdir ~/.cache → 报"文件已存在" → 级联失败
+  # 方案：在 linkGeneration 前清理旧的 .keep 符号链接，让 HM 重新创建
+  home.activation.fixCacheKeep = lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ] ''
+    if [ -L "$HOME/.cache/.keep" ]; then
+      $DRY_RUN_CMD rm -f "$HOME/.cache/.keep"
+    fi
+  '';
+
   # ── xdg-desktop-portal 提前启动（防止 Plasma 组件 DBus NoReply 超时卡死）──
   # 根因：portal 默认懒启动，Plasma 各组件启动时 portal 未就绪
   # → "Failed to register with host portal QDBusError NoReply" → 会话看似卡死

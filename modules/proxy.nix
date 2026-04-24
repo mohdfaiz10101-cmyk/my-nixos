@@ -294,33 +294,33 @@ let
       [[ "$code" =~ ^(200|204|301|302)$ ]]
     }
 
-    CURRENT=$(cat "$STATE_FILE" 2>/dev/null || echo "xray")
+    CURRENT=$(cat "$STATE_FILE" 2>/dev/null || echo "mihomo")
     FAILS=$(cat "$FAIL_COUNT_FILE" 2>/dev/null || echo "0")
 
     # ---- PROXY IS WORKING ----
     if test_proxy; then
       echo "0" > "$FAIL_COUNT_FILE"
 
-      # If not on tier 1, periodically try to recover to xray
-      if [ "$CURRENT" != "xray" ]; then
+      # If not on tier 1 (mihomo), periodically try to recover back
+      if [ "$CURRENT" != "mihomo" ]; then
         LAST_CHANGE=$(stat -c %Y "$STATE_FILE" 2>/dev/null || echo 0)
         NOW=$(date +%s)
         ELAPSED=$((NOW - LAST_CHANGE))
 
         if [ "$ELAPSED" -gt 300 ]; then
-          log "Proxy OK on $CURRENT, trying to recover to xray (tier 1)..."
-          systemctl stop mihomo 2>/dev/null || true
+          log "Proxy OK on $CURRENT, trying to recover to mihomo (tier 1)..."
+          systemctl stop xray 2>/dev/null || true
           sleep 2
-          systemctl start xray 2>/dev/null || true
+          systemctl start mihomo 2>/dev/null || true
           sleep 5
           if test_proxy; then
-            echo "xray" > "$STATE_FILE"
-            log "Recovered to xray (tier 1)!"
+            echo "mihomo" > "$STATE_FILE"
+            log "Recovered to mihomo (tier 1)!"
           else
-            log "Xray recovery failed, back to $CURRENT"
-            systemctl stop xray 2>/dev/null || true
+            log "Mihomo recovery failed, back to $CURRENT"
+            systemctl stop mihomo 2>/dev/null || true
             sleep 2
-            systemctl start mihomo 2>/dev/null || true
+            systemctl start xray 2>/dev/null || true
             sleep 3
             touch "$STATE_FILE"
           fi
@@ -337,32 +337,18 @@ let
     # DNS pre-check before restart attempts
     dns_precheck || log "WARNING: DNS precheck failed, continuing anyway"
 
-    # ---- TIER 2: Restart xray ----
-    log "[Tier 2] Restarting xray..."
-    systemctl stop mihomo 2>/dev/null || true
-    sleep 1
-    systemctl restart xray 2>/dev/null || true
-    sleep 5
-    if test_proxy; then
-      echo "xray" > "$STATE_FILE"
-      echo "0" > "$FAIL_COUNT_FILE"
-      log "[Tier 2] Xray recovered!"
-      notify_tier "Tier 2: Xray recovered"
-      exit 0
-    fi
-
-    # ---- TIER 1: Switch to mihomo ----
-    log "[Tier 1] Switching to mihomo..."
+    # ---- TIER 1: Restart mihomo ----
+    log "[Tier 1] Restarting mihomo..."
     systemctl stop xray 2>/dev/null || true
     sleep 1
     if [ -f /etc/mihomo/config.yaml ] && grep -q "proxies:" /etc/mihomo/config.yaml 2>/dev/null; then
-      systemctl start mihomo 2>/dev/null || true
+      systemctl restart mihomo 2>/dev/null || true
       sleep 5
       if test_proxy; then
         echo "mihomo" > "$STATE_FILE"
         echo "0" > "$FAIL_COUNT_FILE"
-        log "[Tier 1] Mihomo working!"
-        notify_tier "Tier 1: Switched to Mihomo"
+        log "[Tier 1] Mihomo recovered!"
+        notify_tier "Tier 1: Mihomo recovered"
         exit 0
       fi
       systemctl stop mihomo 2>/dev/null || true
@@ -370,8 +356,21 @@ let
       log "[Tier 1] No valid mihomo config"
     fi
 
+    # ---- TIER 2: Switch to xray ----
+    log "[Tier 2] Switching to xray (backup)..."
+    systemctl restart xray 2>/dev/null || true
+    sleep 5
+    if test_proxy; then
+      echo "xray" > "$STATE_FILE"
+      echo "0" > "$FAIL_COUNT_FILE"
+      log "[Tier 2] Xray working!"
+      notify_tier "Tier 2: Switched to Xray (mihomo down)"
+      exit 0
+    fi
+
     # ---- TIER 3: Fetch fresh free proxies ----
     log "[Tier 3] Fetching fresh free proxies..."
+    systemctl stop xray 2>/dev/null || true
     if proxy-free-fetch 2>/dev/null; then
       sleep 1
       systemctl start mihomo 2>/dev/null || true
