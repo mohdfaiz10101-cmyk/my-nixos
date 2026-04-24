@@ -108,4 +108,12 @@
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;
   systemd.services.ModemManager.enable = lib.mkForce false;
+
+  # --- home-manager 必须等待 /mnt/ai 挂载完成 ---
+  # 根因：home-manager 在 /mnt/ai 挂载前执行，~/.cache/.keep 创建失败
+  # (因为 ~/.cache → /mnt/ai/cache/xdg)，导致用户环境不完整
+  systemd.services."home-manager-charlie" = {
+    after = [ "mnt-ai.mount" ];
+    wants = [ "mnt-ai.mount" ];
+  };
 }

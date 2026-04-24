@@ -1,4 +1,4 @@
-{ inputs, pkgs, ... }:
+{ inputs, pkgs, lib, ... }:
 {
   imports = [ inputs.plasma-manager.homeModules.plasma-manager ];
 
@@ -58,6 +58,19 @@
       }
     ];
   };
+
+  # ── xdg-desktop-portal 提前启动（防止 Plasma 组件 DBus NoReply 超时卡死）──
+  # 根因：portal 默认懒启动，Plasma 各组件启动时 portal 未就绪
+  # → "Failed to register with host portal QDBusError NoReply" → 会话看似卡死
+  # 方案：在 graphical-session.target.wants/ 添加 portal 链接，使其随会话启动
+  home.activation.enableXdgPortalEager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    WANTS_DIR="$HOME/.config/systemd/user/graphical-session.target.wants"
+    PORTAL_SVC="/etc/systemd/user/xdg-desktop-portal.service"
+    if [ ! -L "$WANTS_DIR/xdg-desktop-portal.service" ] && [ -f "$PORTAL_SVC" ]; then
+      $DRY_RUN_CMD mkdir -p "$WANTS_DIR"
+      $DRY_RUN_CMD ln -sf "$PORTAL_SVC" "$WANTS_DIR/xdg-desktop-portal.service"
+    fi
+  '';
 
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
   # wrapper 在 ~/.local/bin/floorp，设置 MOZ_ENABLE_WAYLAND=1 + unset IM 变量
