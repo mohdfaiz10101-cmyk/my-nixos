@@ -32,7 +32,7 @@
     enable = true;
     openFirewall = true;
   };
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
+  networking.firewall.trustedInterfaces = [ "tailscale0" "wlp0s20f0u5" ];
 
   # --- Syncthing 文件同步（全设备）---
   services.syncthing = {

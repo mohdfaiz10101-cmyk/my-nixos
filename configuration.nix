@@ -46,13 +46,15 @@
   i18n.defaultLocale = "zh_CN.UTF-8";
 
   # --- 输入法 fcitx5 ---
-  # waylandFrontend = true: fcitx5 注册 Wayland text-input-v3，Kitty/OpenCode 可用
-  # GTK_IM_MODULE/QT_IM_MODULE 在 desktop.nix sessionVariables 显式设置，不依赖自动注入
+  # !! DO NOT CHANGE waylandFrontend !! auto-save 已多次误改此值
+  # waylandFrontend = true 是必须的：fcitx5 注册 Wayland text-input-v3
+  # Kitty + OpenCode TUI 中文输入依赖此项，改为 false 会导致输入法失效
+  # GTK_IM_MODULE/QT_IM_MODULE 在 desktop.nix sessionVariables 显式设置
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
     fcitx5 = {
-      waylandFrontend = true;
+      waylandFrontend = true; # PROTECTED: DO NOT CHANGE TO FALSE
       addons = with pkgs; [
         qt6Packages.fcitx5-chinese-addons
         fcitx5-rime
