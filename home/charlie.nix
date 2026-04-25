@@ -9,6 +9,38 @@
   # ── mpv 媒体播放器 ──
   programs.mpv.enable = true;
 
+  # ── Kitty 终端：声明式固化中文输入配置 ──
+  programs.kitty = {
+    enable = true;
+    settings = {
+      font_size = 13.0;
+      scrollback_lines = 10000;
+      cursor_shape = "beam";
+      cursor_blink_interval = 0.5;
+      remember_window_size = "yes";
+      window_padding_width = 4;
+      wayland_enable_ime = "yes";
+      input_method = "fcitx5";
+      allow_hyperlinks = "yes";
+    };
+    keybindings = {
+      "ctrl+shift+c" = "copy_to_clipboard";
+      "ctrl+shift+v" = "paste_from_clipboard";
+      "ctrl+shift+equal" = "change_font_size all +2.0";
+      "ctrl+shift+minus" = "change_font_size all -2.0";
+      "ctrl+shift+0" = "change_font_size all 0";
+    };
+    extraConfig = ''
+      # 触控板/鼠标滚轮缩放字体
+      map ctrl+scroll_up change_font_size all +1.0
+      map ctrl+scroll_down change_font_size all -1.0
+
+      # 滚动
+      mouse_map shift+scroll_up scroll_page_up
+      mouse_map shift+scroll_down scroll_page_down
+    '';
+  };
+
   # ── KDE Plasma 任务栏声明式固化 ──────────────────────────────
   # 防止每次开机/rebuild 后任务栏丢失，固定 launchers 使用 applications: 协议
   # 避免 /nix/store/xxx 硬编码路径（rebuild 后路径变更导致图标消失）
