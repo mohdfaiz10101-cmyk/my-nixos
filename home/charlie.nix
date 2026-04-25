@@ -6,6 +6,9 @@
   home.homeDirectory = "/home/charlie";
   home.stateVersion = "25.05";
 
+  # ── mpv 媒体播放器 ──
+  programs.mpv.enable = true;
+
   # ── KDE Plasma 任务栏声明式固化 ──────────────────────────────
   # 防止每次开机/rebuild 后任务栏丢失，固定 launchers 使用 applications: 协议
   # 避免 /nix/store/xxx 硬编码路径（rebuild 后路径变更导致图标消失）
