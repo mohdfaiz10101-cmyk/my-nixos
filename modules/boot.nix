@@ -46,6 +46,11 @@
     fi
   '';
 
+  # NVIDIA Wayland 黑屏修复：启用 NVIDIA framebuffer device，KDE Plasma 6 Wayland 必需
+  # 症状：KDE 开机黑屏，程序可以运行但无桌面壳/壁纸
+  # 根因：nvidia-drm 没有 fbdev → Wayland compositor 无法初始化 KMS 输出
+  boot.kernelParams = [ "nvidia-drm.fbdev=1" ];
+
   # Windows EFI 分区挂载（GRUB chainload 用）
   fileSystems."/mnt/win_efi" = {
     device = "/dev/disk/by-uuid/FA67-631E";

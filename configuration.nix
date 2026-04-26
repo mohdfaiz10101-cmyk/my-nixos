@@ -111,7 +111,8 @@
     services.xserver.videoDrivers = lib.mkForce [ "modesetting" ];
     hardware.nvidia.modesetting.enable = lib.mkForce false;
     boot.extraModprobeConfig = lib.mkForce "";
-    boot.kernelParams = [ "nomodeset" "systemd.unit=multi-user.target" ];
+    # nomodeset: 禁用 GPU KMS，使用 EFI/VESA framebuffer（使 fbterm 可用）
+    boot.kernelParams = lib.mkForce [ "nomodeset" "systemd.unit=multi-user.target" ];
 
     # 禁用桌面环境（KDE/SDDM/Sunshine 全部关闭）
     services.xserver.enable = lib.mkForce false;
@@ -127,6 +128,15 @@
     # 禁用依赖桌面的服务
     services.flatpak.enable = lib.mkForce false;
     xdg.portal.enable = lib.mkForce false;
+
+    # TTY1 自动登录 charlie（无 SDDM 时生效）
+    services.getty.autologinUser = lib.mkForce "charlie";
+
+    # TTY 中文字体支持：fbterm 使用 EFI framebuffer + Noto CJK 字体
+    environment.systemPackages = with pkgs; [ fbterm ];
+    # noGUI 下 console 字体（基础 Unicode 显示）
+    console.font = lib.mkForce "ter-v32n";
+    console.packages = lib.mkForce (with pkgs; [ terminus_font ]);
 
     # 保留：SSH、网络、Docker — 修复用
     # （这些模块已在 imports 中，无需重复声明）

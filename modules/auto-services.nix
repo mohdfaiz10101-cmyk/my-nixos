@@ -206,4 +206,30 @@
 
   # 8. fwupd-refresh 超时保护（原 infinity → 120s）
   systemd.services.fwupd-refresh.serviceConfig.TimeoutStartSec = lib.mkForce "120";
+
+  # 9. 开机自动恢复服务（5 分钟后运行，修复失败服务、Docker 容器、磁盘）
+  systemd.services.boot-recovery = {
+    description = "Boot Auto-Recovery — fix failed services and notify Telegram";
+    after = [ "network-online.target" "docker.service" "multi-user.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    path = with pkgs; [ bash curl docker systemd coreutils nix sudo python3 ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = false;
+      TimeoutStartSec = "300";
+      ExecStart = "/home/charlie/.local/bin/boot-recovery.sh";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.boot-recovery = {
+    description = "Trigger boot-recovery 5 minutes after boot";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      Unit = "boot-recovery.service";
+    };
+  };
 }
