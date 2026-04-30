@@ -108,9 +108,6 @@ services.openssh = {
     port = 4000;
   };
 
- services.openssh.enable = true;
- services.openssh.settings.PasswordAuthentication = lib.mkForce true;
- services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
   system.stateVersion = "26.05";
 
   # ========== 无 GPU 紧急恢复模式 ==========
