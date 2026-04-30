@@ -36,7 +36,7 @@ services.openssh = {
   enable = true;
   settins = {
     permitRootLogin = "yes";
-    passwordAuthentication = yes;
+    passwordAuthentication = true;
   };
 };
   # --- 硬件固件 ---
