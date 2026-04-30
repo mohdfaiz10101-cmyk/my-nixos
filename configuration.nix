@@ -20,7 +20,7 @@
     ./modules/community.nix
     ./modules/productivity.nix
     ./scripts.nix
-    ./modules/disk-pool.nix
+ #    ./modules/disk-pool.nix
     ./modules/auto-services.nix
     ./modules/python-env.nix
     ./modules/user-services.nix
