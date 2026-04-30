@@ -14,9 +14,10 @@
     powerManagement.enable = true;
   };
 
-  # 禁用 GSP firmware（GPU System Processor），根治 0x0000c67d 挂起
+  # 禁用 GSP firmware + 保留显存分配（休眠/挂起后防崩溃）
   boot.extraModprobeConfig = ''
     options nvidia NVreg_EnableGpuFirmware=0
+    options nvidia NVreg_PreserveVideoMemoryAllocations=1
   '';
 
   # Vulkan 使用 NVIDIA GPU（修复 Zed 等 Vulkan 应用检测 llvmpipe 问题）
@@ -31,15 +32,15 @@
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
   services.displayManager.sddm.settings.General.Numlock = "on";
-  services.displayManager.defaultSession = "plasma";
-  services.displayManager.autoLogin = {
-    enable = true;
-    user = "charlie";
-  };
+  # 使用 mkDefault，允许 hyprland.nix 等模块通过 mkForce 覆盖默认 session
+  services.displayManager.defaultSession = lib.mkDefault "plasma";
+  # autoLogin 由具体 session 模块（hyprland.nix 等）控制，此处禁用避免冲突
+  services.displayManager.autoLogin.enable = lib.mkDefault false;
 
   # 防止 KDE 会话崩溃后回到 SDDM 登录界面密码失效
   # SDDM 自动登录 race condition 修复：延迟登录避免 Wayland 会话未就绪
-  services.displayManager.sddm.settings.Autologin = {
+  # 使用 mkDefault，允许 hyprland.nix 覆盖
+  services.displayManager.sddm.settings.Autologin = lib.mkDefault {
     Session = "plasma";
     User = "charlie";
     Relogin = true;  # 会话崩溃后自动重登录
@@ -73,6 +74,10 @@
   # --- Electron 渲染修復（NVIDIA + Wayland）---
   environment.variables.NIXOS_OZONE_WL = "1";
   environment.variables.ELECTRON_OZONE_PLATFORM_HINT = "auto";
+
+  # --- TTY 中文支持：fbterm + Noto CJK ---
+  # fbterm 在 framebuffer 上渲染中文，noGUI/TTY 模式必需
+  environment.systemPackages = with pkgs; [ fbterm ];
 
   # --- XDG 缓存重定向到池分区（减轻根分区压力）---
   environment.variables.XDG_CACHE_HOME = "/mnt/pool/offload/cache-charlie";

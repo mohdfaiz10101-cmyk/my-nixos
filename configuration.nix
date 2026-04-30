@@ -29,8 +29,16 @@
     ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
     ./modules/tablet-proxy.nix         # 平板代理自动切换
     ./modules/docker-nat-fix.nix       # Docker 容器 NAT 转发修复
+    ./modules/hyprland.nix             # Hyprland WM（替代 KDE，KDE 保留为回退）
   ];
 
+services.openssh = {
+  enable = true;
+  settins = {
+    permitRootLogin = "yes";
+    passwordAuthentication = yes;
+  };
+};
   # --- 硬件固件 ---
   nixpkgs.config.allowUnfree = true;
   hardware.enableAllFirmware = true;
@@ -100,6 +108,9 @@
     port = 4000;
   };
 
+ services.openssh.enable = true;
+ services.openssh.settings.PasswordAuthentication = lib.mkForce true;
+ services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
   system.stateVersion = "26.05";
 
   # ========== 无 GPU 紧急恢复模式 ==========
@@ -132,8 +143,7 @@
     # TTY1 自动登录 charlie（无 SDDM 时生效）
     services.getty.autologinUser = lib.mkForce "charlie";
 
-    # TTY 中文字体支持：fbterm 使用 EFI framebuffer + Noto CJK 字体
-    environment.systemPackages = with pkgs; [ fbterm ];
+    # fbterm 已移至 desktop.nix 全局安装（TTY 中文支持）
     # noGUI 下 console 字体（基础 Unicode 显示）
     console.font = lib.mkForce "ter-v32n";
     console.packages = lib.mkForce (with pkgs; [ terminus_font ]);

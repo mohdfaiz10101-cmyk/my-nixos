@@ -481,6 +481,10 @@ in
     wants = [ "network-online.target" ];
     conflicts = [ "xray.service" ];
     restartIfChanged = false;  # prevent nixos-rebuild from killing proxy mid-session
+    environment = {
+      LANG = "C";
+      LC_ALL = "C";
+    };
     serviceConfig = {
       ExecStart = "${pkgs.mihomo}/bin/mihomo -d /etc/mihomo -f /etc/mihomo/config.yaml";
       Restart = "on-failure";

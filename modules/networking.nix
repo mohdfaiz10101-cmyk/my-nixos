@@ -28,6 +28,8 @@
       8283  # Letta proxy
       8284  # Letta API
       8000  # Dify/n8n
+      7699  # AI Launcher（手机统一入口，Caddy reverse proxy）
+      7690  # ttyd Claude Code
     ];
     # 仅允许局域网访问 Docker 服务，不对外暴露
     # 如需从外部访问，请在此添加具体 IP
