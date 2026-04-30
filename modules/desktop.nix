@@ -80,10 +80,10 @@
   environment.systemPackages = with pkgs; [ fbterm ];
 
   # --- XDG 缓存重定向到池分区（减轻根分区压力）---
-  environment.variables.XDG_CACHE_HOME = "/mnt/pool/offload/cache-charlie";
+ #  environment.variables.XDG_CACHE_HOME = "/mnt/pool/offload/cache-charlie";
   system.activationScripts.nix-cache-local = {
     text = ''
-      POOL_NIX="/mnt/pool/offload/cache-charlie/nix"
+ #      POOL_NIX="/mnt/pool/offload/cache-charlie/nix"
       LOCAL_NIX="/home/charlie/.cache/nix"
       mkdir -p "$LOCAL_NIX"
       chown charlie:users "$LOCAL_NIX"
