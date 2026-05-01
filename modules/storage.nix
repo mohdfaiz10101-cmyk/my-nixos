@@ -17,11 +17,11 @@
   };
 
   # Flatpak bind mount 到池分区（释放根分区 3.5G）
-  fileSystems."/var/lib/flatpak" = {
+ # fileSystems."/var/lib/flatpak" = {
  #    device = "/mnt/pool/offload/flatpak";
-    fsType = "none";
-    options = [ "bind" "nofail" ];
-  };
+#    fsType = "none";
+ #   options = [ "bind" "nofail" ];
+ # };
 
   # AI 數據目录 — 原生 ext4 (POOL-D1, sdd1)，替代旧 loop image on NTFS
   # 迁移时间: 2026-04-22，性能提升: 去掉 loop+NTFS 两层开销
