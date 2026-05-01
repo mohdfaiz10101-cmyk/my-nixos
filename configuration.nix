@@ -34,9 +34,8 @@
 
 services.openssh = {
   enable = true;
-  settins = {
-    permitRootLogin = "yes";
-    passwordAuthentication = true;
+  settings = {
+   PermitRootLogin = lib.mkForce "yes";
   };
 };
   # --- 硬件固件 ---
