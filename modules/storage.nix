@@ -23,6 +23,14 @@
  #   options = [ "bind" "nofail" ];
  # };
 
+  # POOL-D1 (sdc1 ext4) - must mount before /mnt/ai bind mount
+  # Fix: home-manager fails at boot because mnt-pool-disks-POOL-D1.mount not found
+  fileSystems."/mnt/pool-disks/POOL-D1" = {
+    device = "/dev/disk/by-uuid/d2c36cb2-ebe9-4317-a76c-c8eb239f2f32";
+    fsType = "ext4";
+    options = [ "nofail" "x-systemd.device-timeout=10s" ];
+  };
+
   # AI 數據目录 — 原生 ext4 (POOL-D1, sdd1)，替代旧 loop image on NTFS
   # 迁移时间: 2026-04-22，性能提升: 去掉 loop+NTFS 两层开销
   fileSystems."/mnt/ai" = {

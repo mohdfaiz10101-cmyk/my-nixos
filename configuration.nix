@@ -38,6 +38,16 @@ services.openssh = {
    PermitRootLogin = lib.mkForce "yes";
   };
 };
+
+  # --- 字体（Nerd Font 图标 + 中文）---
+  fonts.packages = with pkgs; [
+    nerd-fonts.hack
+    noto-fonts
+    noto-fonts-cjk-serif
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
+  ];
+
   # --- 硬件固件 ---
   nixpkgs.config.allowUnfree = true;
   hardware.enableAllFirmware = true;

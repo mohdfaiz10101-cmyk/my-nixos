@@ -34,7 +34,7 @@
   # === systemd 集成：Docker 依赖 ext4 loop mount ===
   systemd.services.docker = {
     after = [ "mnt-ai.mount" ];
-    requires = [ "mnt-ai.mount" ];
+    wants = [ "mnt-ai.mount" ];
   };
 
   # 注：/var/run 已由 NixOS 自动设为 /run 的符号链接，无需额外 tmpfiles 规则。

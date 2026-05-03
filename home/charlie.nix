@@ -115,7 +115,6 @@
       env = [
         "LIBVA_DRIVER_NAME,nvidia"
         "XDG_SESSION_TYPE,wayland"
-        "GBM_BACKEND,nvidia-drm"
         "__GLX_VENDOR_LIBRARY_NAME,nvidia"
         "NVD_BACKEND,direct"
         "ELECTRON_OZONE_PLATFORM_HINT,auto"
@@ -132,7 +131,7 @@
       ];
 
       # 显示器（自动检测）
-      monitor = ",preferred,auto,auto";
+      monitor = "HDMI-A-1,1920x1080@60,0x0,1.25";
 
       # 启动项
       exec-once = [
@@ -143,8 +142,10 @@
         "wl-paste --type text --watch cliphist store"
         # wayvnc：7699 noVNC tab 远程桌面
         "wayvnc 127.0.0.1 5900"
+        # swayidle: 5min screen off, 10min lock, 30min suspend
+        "swayidle -w timeout 300 'hyprctl dispatch dpms off' resume 'hyprctl dispatch dpms on' timeout 600 'loginctl lock-session' timeout 1800 'systemctl suspend' resume 'hyprctl dispatch dpms on'"
         # websockify：WebSocket 桥接（noVNC 需要）
-        "websockify 127.0.0.1:5999 127.0.0.1:5900"
+        "websockify 0.0.0.0:5998 127.0.0.1:5900"
       ];
 
       # 修饰键
@@ -197,11 +198,6 @@
         ];
       };
 
-      # ── NVIDIA 渲染关键配置（防黑屏/闪烁）──────────────────────
-      render = {
-        explicit_sync = 1;  # NVIDIA 555+ 必须启用（2=auto 在某些 NVIDIA 版本有 bug）
-      };
-
       # NVIDIA 硬件光标禁用（Hyprland 原生配置，双保险）
       # WLR_NO_HARDWARE_CURSORS env + cursor.no_hardware_cursors = true
       # NVIDIA DRM 不支持 hw cursors，不设置会导致合成器崩溃黑屏
@@ -247,6 +243,149 @@
       $DRY_RUN_CMD ln -sf "$PORTAL_SVC" "$WANTS_DIR/xdg-desktop-portal.service"
     fi
   '';
+
+
+  # ── Waybar  (Catppuccin Mocha) ─────────────────────────
+  programs.waybar = {
+    enable = true;
+    style = ''
+      @define-color base #1e1e2e;
+      @define-color mantle #181825;
+      @define-color crust #11111b;
+      @define-color surface0 #313244;
+      @define-color surface1 #45475a;
+      @define-color surface2 #585b70;
+      @define-color overlay0 #6c7086;
+      @define-color text #cdd6f4;
+      @define-color subtext0 #a6adc8;
+      @define-color blue #89b4fa;
+      @define-color green #a6e3a1;
+      @define-color red #f38ba8;
+      @define-color yellow #f9e2af;
+      @define-color peach #fab387;
+      @define-color mauve #cba6f7;
+      @define-color teal #94e2d5;
+      @define-color lavender #b4befe;
+
+      * {
+        font-family: "Hack Nerd Font", "Noto Sans CJK SC";
+        font-size: 13px;
+        border: none;
+        border-radius: 0;
+        min-height: 0;
+      }
+
+      window#waybar {
+        background: @base;
+        color: @text;
+      }
+
+      window#waybar.hidden { opacity: 0.2; }
+
+      #workspaces button {
+        padding: 0 10px;
+        background: transparent;
+        color: @text;
+        border-bottom: 2px solid transparent;
+      }
+      #workspaces button.focused { border-bottom: 2px solid @blue; color: @blue; }
+      #workspaces button.urgent { border-bottom: 2px solid @red; color: @red; }
+      #workspaces button:hover { background: @surface0; }
+
+      tooltip { background: @mantle; color: @text; border: 1px solid @surface0; }
+      tooltip label { color: @text; }
+
+      #mode, #window { padding: 0 10px; color: @text; }
+      #window.focused { color: @blue; }
+
+      #clock { color: @blue; padding: 0 10px; }
+      #battery { padding: 0 10px; color: @green; }
+      #battery.warning { color: @peach; }
+      #battery.critical { color: @red; }
+      #cpu { padding: 0 10px; color: @green; }
+      #memory { padding: 0 10px; color: @mauve; }
+      #temperature { padding: 0 10px; color: @teal; }
+      #network { padding: 0 10px; color: @text; }
+      #network.disconnected { color: @overlay0; }
+      #pulseaudio { padding: 0 10px; color: @lavender; }
+      #pulseaudio.muted { color: @overlay0; }
+      #backlight { padding: 0 10px; color: @yellow; }
+      #tray { padding: 0 10px; }
+      #tray > .passive { color: @subtext0; }
+      #tray > .needs-attention { color: @red; }
+      #custom-date { padding: 0 10px; color: @mauve; }
+      #idle_inhibitor { padding: 0 10px; color: @yellow; }
+      #idle_inhibitor.activated { color: @red; }
+    '';
+
+    settings = {
+      mainBar = {
+        layer = "top";
+        position = "top";
+        height = 28;
+        modules-left = [ "hyprland/workspaces" ];
+        modules-center = [ "hyprland/window" ];
+        modules-right = [ "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
+
+        "hyprland/workspaces" = {
+          format = "{icon}";
+          on-click = "activate";
+          format-icons = {
+            default = "○";
+            focused = "●";
+            urgent = "!";
+            "1" = "一";
+            "2" = "二";
+            "3" = "三";
+            "4" = "四";
+            "5" = "五";
+          };
+        };
+
+        "hyprland/window" = {
+          format = "{}";
+          max-length = 50;
+        };
+
+        clock = {
+          format = " {:%H:%M}";
+          format-alt = " {:%Y-%m-%d %H:%M}";
+        };
+
+        cpu = { format = " {usage}%"; };
+        memory = { format = "󰍛 {}%"; };
+
+        network = {
+          format-wifi = " {essid}";
+          format-ethernet = " {ipaddr}";
+          format-disconnected = "󰤭 断开";
+        };
+
+        pulseaudio = {
+          format = "{icon} {volume}%";
+          format-bluetooth = " {volume}%";
+          format-muted = "󰖁 静音";
+          format-icons = { default = [ "󰕿" "󰖀" "󰕾" ]; };
+          on-click = "pamixer -t";
+        };
+
+        battery = {
+          states = { warning = 30; critical = 15; };
+          format = "{icon} {capacity}%";
+          format-charging = "󰂄 {capacity}%";
+          format-icons = [ "󰁺" "󰁻" "󰁼" "󰁽" "󰂀" ];
+        };
+
+        idle_inhibitor = {
+          format = "{icon}";
+          format-icons.activated = "󰅶";
+          format-icons.deactivated = "󰾪";
+        };
+
+        tray = { spacing = 8; };
+      };
+    };
+  };
 
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
   # wrapper 在 ~/.local/bin/floorp，设置 MOZ_ENABLE_WAYLAND=1 + unset IM 变量

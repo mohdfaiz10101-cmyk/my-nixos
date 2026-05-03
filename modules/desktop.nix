@@ -29,8 +29,8 @@
   hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
   # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
-  services.displayManager.sddm.enable = true;
-  services.displayManager.sddm.wayland.enable = true;
+  services.displayManager.sddm.enable = false;
+  services.displayManager.sddm.wayland.enable = false;
   services.displayManager.sddm.settings.General.Numlock = "on";
   # 使用 mkDefault，允许 hyprland.nix 等模块通过 mkForce 覆盖默认 session
   services.displayManager.defaultSession = lib.mkDefault "plasma";
@@ -43,7 +43,7 @@
   services.displayManager.sddm.settings.Autologin = lib.mkDefault {
     Session = "plasma";
     User = "charlie";
-    Relogin = true;  # 会话崩溃后自动重登录
+    Relogin = false;  # 会话崩溃后自动重登录
   };
   services.desktopManager.plasma6.enable = true;
   # services.desktopManager.cosmic.enable = true; # 上游 cosmic-edit 哈希不匹配，等修复
@@ -123,6 +123,6 @@
   # (因为 ~/.cache → /mnt/ai/cache/xdg)，导致用户环境不完整
   systemd.services."home-manager-charlie" = {
     after = [ "mnt-ai.mount" ];
-    wants = [ "mnt-ai.mount" ];
+    requires = [ "mnt-ai.mount" ];
   };
 }
