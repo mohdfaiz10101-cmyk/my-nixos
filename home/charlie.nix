@@ -143,7 +143,7 @@
         # wayvnc：7699 noVNC tab 远程桌面
         "wayvnc 127.0.0.1 5900"
         # swayidle: 5min screen off, 10min lock, 30min suspend
-        "swayidle -w timeout 300 'hyprctl dispatch dpms off' resume 'hyprctl dispatch dpms on' timeout 600 'loginctl lock-session' timeout 1800 'systemctl suspend' resume 'hyprctl dispatch dpms on'"
+        # REMOVED: swayidle causing NVIDIA DPMS black screen - "swayidle -w timeout 300 ..."
         # websockify：WebSocket 桥接（noVNC 需要）
         "websockify 0.0.0.0:5998 127.0.0.1:5900"
       ];
@@ -385,6 +385,24 @@
         tray = { spacing = 8; };
       };
     };
+  };
+
+  # ── Caddy Launcher Gateway (:7699) — 手机统一入口 ──
+  # 修复历史：After=network.target 在用户级 systemd 无效，导致开机后 /mnt/ai
+  # 未挂载时 caddy 启动失败。改为 After/Wants mnt-ai.mount 确保挂载后再启动。
+  systemd.user.services.caddy-launcher = {
+    Unit = {
+      Description = "Caddy Launcher Gateway (:7699)";
+      After = [ "mnt-ai.mount" ];
+      Wants = [ "mnt-ai.mount" ];
+    };
+    Service = {
+      ExecStart = "%h/.nix-profile/bin/caddy run --config /mnt/ai/apps/launcher/Caddyfile";
+      Restart = "on-failure";
+      RestartSec = 5;
+      TimeoutStopSec = 10;
+    };
+    Install = { WantedBy = [ "default.target" ]; };
   };
 
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──

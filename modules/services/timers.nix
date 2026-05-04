@@ -331,12 +331,12 @@ in
     #     };
 
     claude-orphan-killer = {
-      description = "Claude orphan process killer (every 60s)";
+      description = "Claude orphan process killer (every 5min)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";
-        OnUnitActiveSec = "60";
-        AccuracySec = "10";
+        OnUnitActiveSec = "5min";
+        AccuracySec = "30";
       };
     };
 
@@ -370,27 +370,17 @@ in
     };
 
     letta-health-check = {
-      description = "Letta health check (every 10min)";
+      description = "Letta health check (daily)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnBootSec = "1min";
-        OnUnitActiveSec = "10min";
+        OnBootSec = "5min";
+        OnUnitActiveSec = "12h";
         Persistent = true;
       };
     };
 
     letta-health-guard = {
-      description = "Letta health guard (every 5min)";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "2min";
-        OnUnitActiveSec = "5min";
-        Persistent = true;
-      };
-    };
-
-    letta-health-monitor = {
-      description = "Letta health monitor (every 10min)";
+      description = "Letta health guard (every 10min)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";
@@ -399,12 +389,22 @@ in
       };
     };
 
-    letta-sync = {
-      description = "Letta session sync (every 5min)";
+    letta-health-monitor = {
+      description = "Letta health monitor (every 6h)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnBootSec = "2min";
-        OnUnitActiveSec = "5min";
+        OnBootSec = "5min";
+        OnUnitActiveSec = "6h";
+        Persistent = true;
+      };
+    };
+
+    letta-sync = {
+      description = "Letta session sync (hourly)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "5min";
+        OnUnitActiveSec = "1h";
         Persistent = true;
       };
     };
@@ -469,11 +469,11 @@ in
     };
 
     disk-sentinel = {
-      description = "Disk sentinel - check every 5min";
+      description = "Disk sentinel - check every 30min";
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";
-        OnUnitActiveSec = "5min";
+        OnUnitActiveSec = "30min";
         Persistent = true;
       };
     };
@@ -499,10 +499,11 @@ in
     };
 
     disk-space-monitor = {
-      description = "Daily disk space monitor (alert at 80%)";
+      description = "Disk space monitor (every 6h)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnCalendar = "*-*-* 08:00:00";
+        OnUnitActiveSec = "6h";
+        OnBootSec = "10min";
         Persistent = true;
       };
     };
@@ -538,11 +539,11 @@ in
     };
 
     mihomo-guardian = {
-      description = "Mihomo health check (every 3min)";
+      description = "Mihomo health check (every 10min)";
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnBootSec = "2min";
-        OnUnitActiveSec = "3min";
+        OnUnitActiveSec = "10min";
         Persistent = true;
       };
     };
