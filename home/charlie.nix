@@ -156,16 +156,46 @@
         "$mod, Return, exec, kitty"
         "$mod, Q, killactive"
         "$mod, F, fullscreen"
+        "$mod, V, togglefloating"
         "$mod, Space, exec, wofi --show drun"
         "$mod SHIFT, Q, exit"
         "$mod, Tab, cyclenext"
+        # 焦点移动（Vim 风格）
         "$mod, H, movefocus, l"
         "$mod, L, movefocus, r"
         "$mod, K, movefocus, u"
         "$mod, J, movefocus, d"
+        # 窗口大小调整
+        "$mod CTRL, H, resizeactive, -20 0"
+        "$mod CTRL, L, resizeactive, 20 0"
+        "$mod CTRL, K, resizeactive, 0 -20"
+        "$mod CTRL, J, resizeactive, 0 20"
+        # 工作区切换 (1-6)
+        "$mod, 1, workspace, 1"
+        "$mod, 2, workspace, 2"
+        "$mod, 3, workspace, 3"
+        "$mod, 4, workspace, 4"
+        "$mod, 5, workspace, 5"
+        "$mod, 6, workspace, 6"
+        # 移动窗口到工作区
+        "$mod SHIFT, 1, movetoworkspace, 1"
+        "$mod SHIFT, 2, movetoworkspace, 2"
+        "$mod SHIFT, 3, movetoworkspace, 3"
+        "$mod SHIFT, 4, movetoworkspace, 4"
+        "$mod SHIFT, 5, movetoworkspace, 5"
+        "$mod SHIFT, 6, movetoworkspace, 6"
+        # 滚轮切换工作区
+        "$mod, mouse_down, workspace, e+1"
+        "$mod, mouse_up, workspace, e-1"
         # 截图
         ", Print, exec, grim -g \"$(slurp)\" ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
         "$mod, Print, exec, grim ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
+      ];
+
+      # 鼠标绑定：SUPER+左键拖动，SUPER+右键调整大小
+      bindm = [
+        "$mod, mouse:272, movewindow"
+        "$mod, mouse:273, resizewindow"
       ];
 
       # 窗口样式（Catppuccin Mocha 配色）
@@ -339,6 +369,7 @@
             "3" = "三";
             "4" = "四";
             "5" = "五";
+            "6" = "六";
           };
         };
 
