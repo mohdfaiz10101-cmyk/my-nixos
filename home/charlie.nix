@@ -143,7 +143,7 @@
         "wayvnc 127.0.0.1 5900"
         "websockify 0.0.0.0:5998 127.0.0.1:5900"
         "input-leaps -f --config /home/charlie/.config/input-leap/input-leap.conf"
-      ]
+      ];
 
       # 修饰键
       "$mod" = "SUPER";
