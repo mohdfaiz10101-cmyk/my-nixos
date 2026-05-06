@@ -140,13 +140,10 @@
         "mako"
         "hyprpaper"
         "wl-paste --type text --watch cliphist store"
-        # wayvnc：7699 noVNC tab 远程桌面
         "wayvnc 127.0.0.1 5900"
-        # swayidle: 5min screen off, 10min lock, 30min suspend
-        # REMOVED: swayidle causing NVIDIA DPMS black screen - "swayidle -w timeout 300 ..."
-        # websockify：WebSocket 桥接（noVNC 需要）
         "websockify 0.0.0.0:5998 127.0.0.1:5900"
-      ];
+        "input-leaps -f --config /home/charlie/.config/input-leap/input-leap.conf"
+      ]
 
       # 修饰键
       "$mod" = "SUPER";

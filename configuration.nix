@@ -30,6 +30,7 @@
     ./modules/tablet-proxy.nix         # 平板代理自动切换
     ./modules/docker-nat-fix.nix       # Docker 容器 NAT 转发修复
     ./modules/hyprland.nix             # Hyprland WM（替代 KDE，KDE 保留为回退）
+    ./modules/barrier.nix
   ];
 
 services.openssh = {
