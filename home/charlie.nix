@@ -143,7 +143,7 @@
         "wayvnc 127.0.0.1 5900"
         "websockify 0.0.0.0:5998 127.0.0.1:5900"
         "python3 /home/charlie/.local/bin/ydotool-bridge.py 24801"
-      ]
+      ];
 
       # 修饰键
       "$mod" = "SUPER";
