@@ -23,6 +23,7 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
+        ./modules/sshd-permanent.nix
         # 微信 UOS overlay（提取到 packages/wechat-uos.nix）
         { nixpkgs.overlays = [ (import ./packages/wechat-uos.nix) ]; }
         ./configuration.nix
@@ -46,6 +47,7 @@
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
+        ./modules/sshd-permanent.nix
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         ./hosts/minipc/configuration.nix

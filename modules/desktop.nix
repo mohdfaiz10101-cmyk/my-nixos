@@ -104,15 +104,15 @@
     KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
-  # --- fcitx5 環境變量（顯式設置，不依賴 waylandFrontend 自動注入）---
-  # waylandFrontend=true：fcitx5 注冊 Wayland text-input-v3（Kitty/OpenCode 用）
-  # GTK/Qt 應用同時通過環境變量走 fcitx5 模塊路徑，兩者並存
+  # --- fcitx5 環境變量（Wayland 模式）---
+  # waylandFrontend=true：fcitx5 注冊 Wayland text-input-v3
+  # 注意：Wayland 下不要設置 GTK_IM_MODULE/QT_IM_MODULE，否則會強制使用 XWayland 模式
   environment.sessionVariables = {
     XMODIFIERS      = "@im=fcitx";
-    GTK_IM_MODULE   = "fcitx";
-    QT_IM_MODULE    = "fcitx";
     SDL_IM_MODULE   = "fcitx";
     INPUT_METHOD    = "fcitx";
+    # GTK_IM_MODULE 和 QT_IM_MODULE 在 Wayland 下由 text-input-v3 自動處理
+    # 顯式設置會導致應用強制使用 XWayland，破壞輸入法支持
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;

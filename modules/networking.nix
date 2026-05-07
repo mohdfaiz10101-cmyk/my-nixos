@@ -59,7 +59,7 @@
     enable = true;
     settings = {
       PermitRootLogin = "no";
-      PasswordAuthentication = false;
+      PasswordAuthentication = true;
       PubkeyAuthentication = true;
       X11Forwarding = false;
       AllowTcpForwarding = "yes";
