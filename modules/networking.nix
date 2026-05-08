@@ -4,6 +4,10 @@
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
+  # --- ZeroTier ---
+  services.zerotierone.enable = true;
+  services.zerotierone.joinNetworks = [ "885033839011bcac" ];
+
   # 备用 DNS — Tailscale DNS 失败时自动降级
   networking.nameservers = [ "8.8.8.8" "1.1.1.1" "223.5.5.5" ];
 
@@ -30,6 +34,10 @@
       8000  # Dify/n8n
       7699  # AI Launcher（手机统一入口，Caddy reverse proxy）
       7690  # ttyd Claude Code
+      7691  # ttyd CCT GLM
+      7692  # ttyd Overcode
+      7693  # ttyd Aider
+      7694  # ttyd MACG
     ];
     # 仅允许局域网访问 Docker 服务，不对外暴露
     # 如需从外部访问，请在此添加具体 IP
