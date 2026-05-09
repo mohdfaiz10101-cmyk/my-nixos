@@ -1,62 +1,92 @@
 { config, pkgs, ... }: {
-  # 自动挂载 sda4 (拷貝 3 大存儲 2)
-  # 可拆卸 HDD 用 ntfs-3g（FUSE），避免 ntfs3 内核驱动脏卷卡死
-  # NVMe 上的 win_c 保持 ntfs3（MFT 损坏 ntfs-3g 拒绝挂载）
-  fileSystems."/mnt/data" = {
-    device = "/dev/disk/by-uuid/C672D33272D32649";
-    fsType = "ntfs-3g";
-    options = [ "nofail" "x-systemd.device-timeout=5s" "uid=1000" "dmask=022" "fmask=133" ];
-  };
+  # ============================================================
+  # 磁盘挂载统一声明（2026-05-09 重构）
+  # 所有分区统一用 UUID 声明式挂载，udisks2 只做热插拔兜底
+  # git clone → nixos-rebuild switch 即可恢复全部挂载点
+  # ============================================================
+  # 物理盘速查:
+  #   nvme0n1  465G  Windows SSD    → 系统/应用/EFI
+  #   sda      1.8T  POOL-B1       → 冷存储（外置）
+  #   sdb      1.8T  POOL-A1 + 其他 → 主数据/游戏/备份
+  #   sdc      1.8T  POOL-D1+PARITY → AI 数据 + 奇偶校验
+  #   sdd      3.6T  POOL-E1       → 池扩展
+  # 详见 /etc/nixos/DISK-LAYOUT.md
+  # ============================================================
 
-  # Windows C: 盘 (只读挂载，供 KDE 搜索)
-  # MFT 已用 ntfsfix 修复（2026-04-15），统一 ntfs-3g
+  # === NVMe 系统盘 (Windows 分区, 只读) ===
   fileSystems."/mnt/win_c" = {
     device = "/dev/disk/by-uuid/0E8D03FB0E8D03FB";
     fsType = "ntfs-3g";
     options = [ "nofail" "ro" "uid=1000" "x-systemd.device-timeout=5s" ];
   };
+  fileSystems."/mnt/win_efi" = {
+    device = "/dev/disk/by-uuid/FA67-631E";
+    fsType = "vfat";
+    options = [ "nofail" "umask=0077" ];
+  };
+  fileSystems."/mnt/SSD-WinExt" = {
+    device = "/dev/disk/by-uuid/5E8C66368C6608BB";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "ro" "uid=1000" "x-systemd.device-timeout=5s" ];
+  };
+  fileSystems."/mnt/SSD-WinApps" = {
+    device = "/dev/disk/by-uuid/04F0C4BEF0C4B6E8";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "ro" "uid=1000" "x-systemd.device-timeout=5s" ];
+  };
 
-  # Flatpak bind mount 到池分区（释放根分区 3.5G）
- # fileSystems."/var/lib/flatpak" = {
- #    device = "/mnt/pool/offload/flatpak";
-#    fsType = "none";
- #   options = [ "bind" "nofail" ];
- # };
+  # === HDD 数据盘（可读写） ===
+  fileSystems."/mnt/data" = {
+    device = "/dev/disk/by-uuid/C672D33272D32649";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "x-systemd.device-timeout=5s" "uid=1000" "dmask=022" "fmask=133" ];
+  };
+  fileSystems."/mnt/HDD1-Games" = {
+    device = "/dev/disk/by-uuid/1031167F1031167F";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "x-systemd.device-timeout=5s" "uid=1000" "dmask=022" "fmask=133" ];
+  };
+  fileSystems."/mnt/HDD1-Backup" = {
+    device = "/dev/disk/by-uuid/0EF04734F0472177";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "x-systemd.device-timeout=5s" "uid=1000" "dmask=022" "fmask=133" ];
+  };
 
-  # POOL-D1 (sdc1 ext4) - must mount before /mnt/ai bind mount
-  # Fix: home-manager fails at boot because mnt-pool-disks-POOL-D1.mount not found
+  # === 池化存储底层（POOL 磁盘） ===
   fileSystems."/mnt/pool-disks/POOL-D1" = {
     device = "/dev/disk/by-uuid/d2c36cb2-ebe9-4317-a76c-c8eb239f2f32";
     fsType = "ext4";
     options = [ "nofail" "x-systemd.device-timeout=10s" ];
   };
+  fileSystems."/mnt/pool-disks/POOL-E1" = {
+    device = "/dev/disk/by-uuid/DE22F5F022F5CD91";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "x-systemd.device-timeout=10s" "uid=1000" "dmask=022" "fmask=133" ];
+  };
+  fileSystems."/mnt/pool-disks/POOL-B1" = {
+    device = "/dev/disk/by-uuid/B2BCF4DBBCF49B55";
+    fsType = "ntfs-3g";
+    options = [ "nofail" "x-systemd.device-timeout=10s" "uid=1000" "dmask=022" "fmask=133" ];
+  };
 
-  # AI 數據目录 — 原生 ext4 (POOL-D1, sdd1)，替代旧 loop image on NTFS
-  # 迁移时间: 2026-04-22，性能提升: 去掉 loop+NTFS 两层开销
+  # === AI 数据目录（bind mount 到 POOL-D1） ===
   fileSystems."/mnt/ai" = {
     device = "/mnt/pool-disks/POOL-D1/ai";
     fsType = "none";
     options = [ "bind" "nofail" "x-systemd.requires=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" "x-systemd.after=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" ];
   };
 
-  # 方案 B: 将 /var 挂载到外置盘，减轻根分区压力
-  # **已禁用** — NTFS 不支持 POSIX 权限/符号链接/文件锁，导致 systemd 服务失败
-  # 症状：docker.service/syncthing.service/systemd-hostnamed.service 全部报 I/O 错误
-  # 修复：/var 恢复到根分区（ext4），大数据目录单独 bind mount
-  # fileSystems."/var" = {
-  #   device = "/mnt/data/var";
-  #   fsType = "none";
-  #   options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
-  # };
+  # === mergerfs 池（POOL-D1 + POOL-E1 → /mnt/pool） ===
+  # 由 disk-pool.sh 的 merge_pool() 动态合并
+  # 底层 POOL 盘已由本文件声明式挂载，脚本只做 mergerfs 合并
+  # 配置参考: /etc/nixos/scripts/disk-pool-mount.sh
 
-  # /tmp 使用 tmpfs（内存文件系统）— 修复 Claude Code Bash 工具 NTFS 权限问题
-  # 原配置 bind mount 到 NTFS 导致权限错误，现改用 tmpfs
-  # tmpfs 大小：50% 可用内存（24GB RAM → 最大 12GB）
+  # /tmp 使用 tmpfs（内存文件系统）
   boot.tmp.useTmpfs = true;
   boot.tmp.tmpfsSize = "50%";
 
-  # === udisks2 配置 ===
-  # 免认证 + 强制 NTFS 用 ntfs-3g（避免 ntfs3 内核驱动拒绝脏卷）
+  # === udisks2 配置（仅做热插拔兜底） ===
+  # 固定挂载点已由本文件管理，udisks2 只负责未声明的热插拔盘
   services.udisks2.enable = true;
   services.udisks2.settings = {
     "mount_options.conf" = {
@@ -81,11 +111,4 @@
       }
     });
   '';
-
-  # 旧配置（已禁用）：
-  # fileSystems."/tmp" = {
-  #   device = "/mnt/data/tmp";
-  #   fsType = "none";
-  #   options = [ "bind" "nofail" "x-systemd.requires=mnt-data.mount" "x-systemd.after=mnt-data.mount" ];
-  # };
 }
