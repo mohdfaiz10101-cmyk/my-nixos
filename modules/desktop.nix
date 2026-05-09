@@ -87,12 +87,15 @@
       LOCAL_NIX="/home/charlie/.cache/nix"
       mkdir -p "$LOCAL_NIX"
       chown charlie:users "$LOCAL_NIX"
-      if [ -d "$POOL_NIX" ] && [ ! -L "$POOL_NIX" ]; then
-        cp -an "$POOL_NIX/." "$LOCAL_NIX/" 2>/dev/null || true
-        rm -rf "$POOL_NIX" 2>/dev/null || true
-      fi
-      [ -L "$POOL_NIX" ] || ln -sf "$LOCAL_NIX" "$POOL_NIX"
-      chown -h charlie:users "$POOL_NIX"
+       POOL_NIX="/mnt/pool/offload/cache-charlie/nix"
+       if [ -d "$POOL_NIX" ] && [ ! -L "$POOL_NIX" ]; then
+         cp -an "$POOL_NIX/." "$LOCAL_NIX/" 2>/dev/null || true
+         rm -rf "$POOL_NIX" 2>/dev/null || true
+       fi
+       if [ -n "$POOL_NIX" ]; then
+         [ -L "$POOL_NIX" ] || ln -sf "$LOCAL_NIX" "$POOL_NIX"
+         chown -h charlie:users "$POOL_NIX"
+       fi
     '';
     deps = [ "users" ];
   };

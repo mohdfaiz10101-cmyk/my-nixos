@@ -14,10 +14,7 @@
       # 让 NixOS 防火墙统一管理端口，Docker 不再自动操作 iptables
       # 需要手动在 networking.firewall 中开放 Docker 服务端口
       iptables = false;
-      registry-mirrors = [
-        "https://docker.1ms.run"
-        "https://docker.xuanyuan.me"
-      ];
+      registry-mirrors = [ "https://docker.m.daocloud.io" ];
       proxies = {
         http-proxy = "http://127.0.0.1:7890";
         https-proxy = "http://127.0.0.1:7890";
