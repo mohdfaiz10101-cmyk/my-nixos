@@ -344,16 +344,16 @@
       ExecStart = "${pkgs.bash}/bin/bash -c ''
         while sleep 60; do
           # Monitor for [ALERT] in recovery log
-          if grep -q '\\[ALERT\\]' "$HOME/.local/share/data-recovery.log" 2>/dev/null; then
-            ALERT=$(tail -1 "$HOME/.local/share/data-recovery.log" | grep '\\[ALERT\\]' || true)
-            if [ -n "$ALERT" ]; then
+          if grep -q '\\[ALERT\\]' "''$HOME/.local/share/data-recovery.log" 2>/dev/null; then
+            ALERT=$(tail -1 "''$HOME/.local/share/data-recovery.log" | grep '\\[ALERT\\]' || true)
+            if [ -n "''$ALERT" ]; then
               # Send Telegram notification
               curl -s -X POST \
                 https://api.telegram.org/bot''${TELEGRAM_TOKEN}/sendMessage \
                 -d chat_id=''${TELEGRAM_CHAT_ID} \
-                -d text="🚨 Data Recovery: $ALERT" 2>/dev/null || true
+                -d text="🚨 Data Recovery: ''$ALERT" 2>/dev/null || true
               # Clear alert marker
-              sed -i 's/\\[ALERT\\]/[NOTIFIED]/g' "$HOME/.local/share/data-recovery.log"
+              sed -i 's/\\[ALERT\\]/[NOTIFIED]/g' "''$HOME/.local/share/data-recovery.log"
             fi
           fi
         done
