@@ -126,7 +126,7 @@
 
     serviceConfig = {
       Type = "oneshot";
-      User = "charlie";
+      User = "root";
       StandardOutput = "journal";
       StandardError = "journal";
       TimeoutStartSec = "3600";  # 最多1小时
@@ -135,7 +135,7 @@
     script = ''
       set -e
       SNAPSHOT_DIR="/mnt/pool/snapshots"
-      BACKUP_LOG="$HOME/.local/share/backup.log"
+      BACKUP_LOG="/var/log/backup.log"
       mkdir -p "$SNAPSHOT_DIR" "$(dirname "$BACKUP_LOG")"
 
       TIMESTAMP=$(date +%Y%m%d-%H%M%S)
