@@ -14,6 +14,10 @@ let
     # Auth
     auth.method = "token"
     auth.token = "frp-token-charlie-2026"
+    # Allow ports
+    allowPorts = [
+      { start = 17699, end = 17699 }
+    ]
     # Logging
     log.to = "/var/log/frps/frps.log"
     log.level = "info"
