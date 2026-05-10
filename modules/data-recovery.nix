@@ -58,7 +58,7 @@
 
     serviceConfig = {
       Type = "oneshot";
-      User = "charlie";
+      User = "root";
       StandardOutput = "journal";
       StandardError = "journal";
     };
@@ -66,7 +66,7 @@
     script = ''
       set -e
       MONITOR_DIR="/mnt/ai/apps"
-      RECOVERY_LOG="$HOME/.local/share/data-recovery.log"
+      RECOVERY_LOG="/var/log/data-recovery.log"
       mkdir -p "$(dirname "$RECOVERY_LOG")"
 
       check_and_recover() {
@@ -75,26 +75,18 @@
 
         # 检查 .db.corrupt 标记
         if [ -f "$app_dir/.db.corrupt" ]; then
-          echo "[ALERT] Corrupted DB detected in $app_name"
+          echo "[ALERT] Corrupted DB detected in $app_name" >> "$RECOVERY_LOG"
 
           # 尝试从快照恢复
           SNAPSHOT=$(find /mnt/pool/snapshots -name "*$app_name*.tar.gz" \
             -newermt "1 hour ago" 2>/dev/null | head -1)
 
           if [ -n "$SNAPSHOT" ]; then
-            echo "[RECOVER] Restoring $app_name from $SNAPSHOT..."
+            echo "[RECOVER] Restoring $app_name from $SNAPSHOT..." >> "$RECOVERY_LOG"
             cd "$app_dir" && tar -xzf "$SNAPSHOT" --strip-components=3 && \
             rm -f "$app_dir/.db.corrupt" && \
-            echo "[OK] $app_name recovered" || \
-            echo "[FAIL] Recovery failed, waiting for Syncthing..."
-          fi
-        fi
-
-        # 检查文件损坏（字节校验）
-        if [ -f "$app_dir/.checksums" ]; then
-          if ! sha256sum -c "$app_dir/.checksums" >/dev/null 2>&1; then
-            echo "[WARN] Checksum mismatch in $app_name, triggering Syncthing resync..."
-            systemctl --user try-restart syncthing 2>/dev/null || true
+            echo "[OK] $app_name recovered" >> "$RECOVERY_LOG" || \
+            echo "[FAIL] Recovery failed, waiting for Syncthing..." >> "$RECOVERY_LOG"
           fi
         fi
       }
@@ -178,158 +170,12 @@
     };
   };
 
-  # 4️⃣ Syncthing 实时同步配置
-  services.syncthing = {
-    enable = true;
-    user = "charlie";
-    dataDir = "/home/charlie/.local/share/syncthing";
-
-    settings = {
-      devices = {
-        # 定义受信任的设备
-        phone = {
-          id = "ONEPLS-ACEPR-5XXXXX";  # 替换为实际 ID
-          addresses = [ "dynamic" ];
-        };
-        tablet = {
-          id = "XIAOMI-TABLET-5XXXXX";
-          addresses = [ "dynamic" ];
-        };
-        windows = {
-          id = "WINDOWS-GXXXXXXX";
-          addresses = [ "tcp://192.168.2.36:22000" ];
-        };
-      };
-
-      folders = {
-        documents = {
-          path = "/mnt/ai/documents";
-          devices = [ "phone" "tablet" "windows" ];
-          ignorePerms = false;
-          hashers = 0;
-          pullerMaxPendingKiB = 512;
-        };
-        apps = {
-          path = "/mnt/ai/apps";
-          devices = [ "phone" "tablet" "windows" ];
-          ignorePerms = true;
-          pullerMaxPendingKiB = 1024;
-        };
-      };
-
-      gui = {
-        enabled = true;
-        address = "127.0.0.1:8384";
-        apiKey = "syncthing-api-key-will-be-generated";
-      };
-    };
-  };
-
-  # 5️⃣ 数据恢复工具脚本
+  # 4️⃣ 数据恢复工具
   environment.systemPackages = with pkgs; [
-    # 增加必要的恢复工具
     e2fsprogs        # fsck/tune2fs
     extundelete      # 恢复已删除文件
     testdisk         # 分区恢复
     ddrescue         # 磁盘映像/恢复
     syncthing        # 实时同步
   ];
-
-  # 创建用户级别的恢复脚本
-  home-manager.users.charlie = {
-    home.file.".local/bin/data-recovery-cli" = {
-      executable = true;
-      text = ''
-        #!/usr/bin/env bash
-        # 交互式数据恢复工具
-
-        set -e
-
-        show_menu() {
-          echo ""
-          echo "=== Data Recovery Toolkit ==="
-          echo "1. Check filesystem health"
-          echo "2. Restore from latest snapshot"
-          echo "3. List available snapshots"
-          echo "4. Verify file integrity"
-          echo "5. Force Syncthing resync"
-          echo "6. View recovery logs"
-          echo "0. Exit"
-          echo ""
-        }
-
-        check_filesystem() {
-          echo "[CHECK] Scanning filesystems..."
-          for fs in ai data; do
-            DEVICE="/dev/disk/by-label/$fs"
-            if [ -e "$DEVICE" ]; then
-              echo "Checking $fs..."
-              sudo fsck.ext4 -n "$DEVICE" || true
-            fi
-          done
-        }
-
-        restore_from_snapshot() {
-          echo "[RESTORE] Available snapshots:"
-          ls -lh /mnt/pool/snapshots/*.tar.gz 2>/dev/null | head -5
-
-          read -p "Enter snapshot name to restore: " snapshot
-          if [ -f "/mnt/pool/snapshots/$snapshot" ]; then
-            read -p "This will overwrite /mnt/ai/apps. Continue? (y/N): " confirm
-            if [ "$confirm" = "y" ]; then
-              tar -xzf "/mnt/pool/snapshots/$snapshot" -C /mnt/ai
-              echo "[OK] Restore complete"
-            fi
-          fi
-        }
-
-        list_snapshots() {
-          echo "[SNAPSHOTS] Available backups:"
-          ls -lh /mnt/pool/snapshots/*.tar.gz 2>/dev/null | \
-            awk '{print $9, "(" $5 ")"}'
-        }
-
-        verify_integrity() {
-          echo "[VERIFY] Checking file checksums..."
-          find /mnt/ai/apps -type f -name "*.db" -o -name "*.json" | \
-            while read f; do
-              if [ -f "$f.sha256" ]; then
-                sha256sum -c "$f.sha256" && echo "[OK] $f" || echo "[WARN] $f"
-              fi
-            done
-        }
-
-        force_syncthing_resync() {
-          echo "[SYNC] Triggering Syncthing resync..."
-          systemctl --user restart syncthing
-          sleep 3
-          systemctl --user status syncthing
-        }
-
-        view_logs() {
-          echo "[LOGS] Recent recovery events:"
-          tail -20 "$HOME/.local/share/data-recovery.log" 2>/dev/null || \
-          echo "No recovery log found"
-        }
-
-        # Main loop
-        while true; do
-          show_menu
-          read -p "Select option: " choice
-
-          case $choice in
-            1) check_filesystem ;;
-            2) restore_from_snapshot ;;
-            3) list_snapshots ;;
-            4) verify_integrity ;;
-            5) force_syncthing_resync ;;
-            6) view_logs ;;
-            0) echo "Exiting..."; exit 0 ;;
-            *) echo "Invalid option" ;;
-          esac
-        done
-      '';
-    };
-  };
-
 }
