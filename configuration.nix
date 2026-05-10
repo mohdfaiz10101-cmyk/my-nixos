@@ -34,6 +34,8 @@
     ./modules/hyprland.nix             # Hyprland WM（替代 KDE，KDE 保留为回退）
     ./modules/barrier.nix
     ./modules/services/frp.nix         # FRP 内网穿透服务端
+    ./modules/data-recovery.nix        # 智能数据恢复系统
+    ./modules/auto-recovery.nix        # 启动和定时触发
   ];
 
 services.openssh = {
