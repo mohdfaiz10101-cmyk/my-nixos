@@ -201,6 +201,7 @@ in
     # === 网络工具 ===
     tailscale
     ttyd
+    mosh  # 移动端优化 SSH（弱网自动重连）
 
     # === 浏览器自动化 & 图片 ===
     # playwright-mcp  # 临时禁用 — 磁盘空间不足（两阶段重建 Phase 1）

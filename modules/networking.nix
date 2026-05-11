@@ -38,6 +38,16 @@
       7692  # ttyd Overcode
       7693  # ttyd Aider
       7694  # ttyd MACG
+      # FRP 内网穿透
+      7000  # FRP 控制连接
+      7500  # FRP 管理面板
+      2223  # NixOS SSH 穿透
+      2224  # 手机 SSH 穿透
+      17699 # NixOS TTY 穿透
+    ];
+    allowedUDPPorts = [
+      60000 60001 60002  # NixOS mosh
+      60003 60004 60005  # 手机 mosh
     ];
     # 仅允许局域网访问 Docker 服务，不对外暴露
     # 如需从外部访问，请在此添加具体 IP

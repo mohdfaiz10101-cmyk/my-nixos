@@ -6,22 +6,43 @@
 let
   frpsConfig = pkgs.writeText "frps.toml" ''
     bindPort = 7000
-    # Dashboard
-    webServer.addr = "0.0.0.0"
-    webServer.port = 7500
-    webServer.user = "admin"
-    webServer.password = "frp@charlie2026"
-    # Auth
-    auth.method = "token"
-    auth.token = "frp-token-charlie-2026"
-    # Allow ports
-    allowPorts = [
-      { start = 17699, end = 17699 }
-    ]
-    # Logging
-    log.to = "/var/log/frps/frps.log"
-    log.level = "info"
-    log.maxDays = 7
+
+    [webServer]
+    addr = "0.0.0.0"
+    port = 7500
+    user = "admin"
+    password = "frp@charlie2026"
+
+    [auth]
+    method = "token"
+    token = "frp-token-charlie-2026"
+
+    # NixOS 端口
+    [[allowPorts]]
+    start = 2223
+    end = 2223
+
+    [[allowPorts]]
+    start = 17699
+    end = 17699
+
+    [[allowPorts]]
+    start = 60000
+    end = 60002
+
+    # 手机端口
+    [[allowPorts]]
+    start = 2224
+    end = 2224
+
+    [[allowPorts]]
+    start = 60003
+    end = 60005
+
+    [log]
+    to = "/var/log/frps/frps.log"
+    level = "info"
+    maxDays = 7
   '';
 in
 {
@@ -44,5 +65,6 @@ in
   };
 
   # 防火墙放行
-  networking.firewall.allowedTCPPorts = [ 7000 7500 ];
+  networking.firewall.allowedTCPPorts = [ 7000 7500 2224 ];  # 添加手机 SSH 端口
+  networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }
