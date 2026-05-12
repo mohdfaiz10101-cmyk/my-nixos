@@ -39,6 +39,11 @@ let
     start = 60003
     end = 60005
 
+    # OpenCode × StepClaw 融合通道（2026-05-12 新增）
+    [[allowPorts]]
+    start = 19890
+    end = 19892
+
     [log]
     to = "/var/log/frps/frps.log"
     level = "info"
