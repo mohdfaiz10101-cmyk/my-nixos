@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/opencode.json",
+  "provider": {
+    "openai-compatible": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LiteLLM",
+      "options": {
+        "baseURL": "http://localhost:4000/v1",
+        "apiKey": "REDACTED",
+        "timeout": 120000,
+        "maxRetries": 2
+      },
+      "models": {
+        "deepseek-v4-pro": {
+          "name": "DeepSeek V3 Pro (官方)",
+          "limit": {
+            "context": 163840,
+            "output": 8192
+          }
+        },
+        "deepseek-v4-flash": {
+          "name": "DeepSeek V3 Flash (官方)",
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        },
+        "glm-5.1": {
+          "name": "GLM-5.1 旗舰 (Z.AI)",
+          "limit": {
+            "context": 128000,
+            "output": 8192
+          }
+        },
+        "glm-5-turbo": {
+          "name": "GLM-5-Turbo (Z.AI)",
+          "limit": {
+            "context": 128000,
+            "output": 8192
+          }
+        },
+        "glm-4.7": {
+          "name": "GLM-4.7 (Z.AI)",
+          "limit": {
+            "context": 128000,
+            "output": 8192
+          }
+        },
+        "glm-4.6v-flash": {
+          "name": "GLM-4.6V-Flash（Z.AI，视觉理解）",
+... more output
