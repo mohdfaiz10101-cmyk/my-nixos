@@ -1,0 +1,26 @@
+{
+  "_comment": "StepClaw 云端接入本地 OpenCode 配置参考（2026-05-12）",
+  "gateway": {
+    "remote": {
+      "url": "ws://100.91.93.99:19890",
+      "token": "frp-token-charlie-2026",
+      "_note": "StepClaw 通过此 WebSocket 连接本地 OpenCode Gateway"
+    }
+  },
+  "tools": {
+    "hub_api": {
+      "baseURL": "http://100.91.93.99:19891",
+      "_note": "Hub API — 任务派发/记忆读写/服务管理"
+    },
+    "letta": {
+      "baseURL": "http://100.91.93.99:19892",
+      "_note": "Letta 记忆 API — 只读查询，写入走本地"
+    }
+  },
+  "github_config_repo": {
+    "url": "https://github.com/YOUR_USERNAME/ai-config-sync.git",
+    "_note": "替换 YOUR_USERNAME 为你的 GitHub 用户名",
+    "branch": "main",
+    "sync_direction": "bidirectional"
+  }
+}
