@@ -42,7 +42,12 @@ let
     # OpenCode × StepClaw 融合通道（2026-05-12 新增）
     [[allowPorts]]
     start = 19890
-    end = 19892
+    end = 19890
+
+    # OpenClaw Gateway（2026-05-12 新增）
+    [[allowPorts]]
+    start = 19892
+    end = 19893
 
     [log]
     to = "/var/log/frps/frps.log"
