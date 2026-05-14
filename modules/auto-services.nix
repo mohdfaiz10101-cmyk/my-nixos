@@ -232,4 +232,26 @@
       Unit = "boot-recovery.service";
     };
   };
+
+  # 10. 每日系统日报 → 固定 OpenCode session
+  systemd.services.daily-report = {
+    description = "Daily system report to OpenCode session";
+    path = with pkgs; [ python3 systemd docker docker-client coreutils ];
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "30";
+      ExecStart = "${pkgs.python3}/bin/python3 /home/charlie/agi/daily-report.py";
+      StandardOutput = "journal";
+      StandardError = "journal";
+    };
+  };
+
+  systemd.timers.daily-report = {
+    description = "Daily system report at 09:00";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 09:00:00";
+      Persistent = true;
+    };
+  };
 }

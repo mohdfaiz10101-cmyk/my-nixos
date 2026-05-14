@@ -21,7 +21,7 @@
     # 在 multi-user.target 之后启动，确保网络就绪
     after = [ "multi-user.target" "network-online.target" ];
     # 只在 opencode_recovery=1 内核参数时启动
-    conditionKernelCommandLine = "opencode_recovery=1";
+    unitConfig.ConditionKernelCommandLine = "opencode_recovery=1";
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {

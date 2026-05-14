@@ -36,6 +36,8 @@
     ./modules/services/frp.nix         # FRP 内网穿透服务端
     ./modules/data-recovery.nix        # 智能数据恢复系统
     ./modules/auto-recovery.nix        # 启动和定时触发
+    ./modules/initrd-ssh.nix           # initrd SSH 远程救援
+    ./modules/opencode-recovery.nix    # OpenCode Recovery Mode
   ];
 
 services.openssh = {

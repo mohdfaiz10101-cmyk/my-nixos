@@ -141,7 +141,6 @@
       # 启动项
       exec-once = [
         "fcitx5 -d --replace"
-        "waybar"
         "mako"
         "hyprpaper"
         "wl-paste --type text --watch cliphist store"
