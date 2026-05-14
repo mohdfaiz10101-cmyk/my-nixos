@@ -8,6 +8,11 @@
   home.homeDirectory = "/home/charlie";
   home.stateVersion = "25.05";
 
+  # ── 文件冲突处理：强制覆盖（旧文件自动备份为 .hm-bak）──
+  xdg.configFile."hypr/hyprland.conf".force = true;
+  xdg.configFile."waybar/config".force = true;
+  xdg.configFile."waybar/style.css".force = true;
+
   # ── mpv 媒体播放器 ──
   programs.mpv.enable = true;
 
@@ -153,7 +158,8 @@
       bind = [
         "$mod, Return, exec, kitty"
         "$mod, Q, killactive"
-        "$mod, F, fullscreen"
+        # Super+D = 放大窗口（最大化隐藏panel），禁止改为其他键
+        "$mod, d, fullscreen, 1"
         "$mod, V, togglefloating"
         "$mod, Space, exec, wofi --show drun"
         "$mod SHIFT, Q, exit"
