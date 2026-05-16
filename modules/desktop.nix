@@ -8,7 +8,7 @@
     modesetting.enable = true;
     open = false;
     nvidiaSettings = true;
-    package = config.boot.kernelPackages.nvidiaPackages.legacy_535;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
     # 修复 nvidia-modeset 0x0000c67d GPU挂起导致无信号问题（2026-04-20）
     # 根因：GSP firmware 超时 bug，在 595.x Wayland+KDE 下已知存在
     powerManagement.enable = true;
@@ -25,8 +25,8 @@
 
   # NVIDIA Container Toolkit — Docker GPU 直通（数字人流水线需要）
   # suppressNvidiaDriverAssertion：noGUI specialisation 禁用了 nvidia videoDriver，需绕过断言
-  hardware.nvidia-container-toolkit.enable = true;
-  hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
+  hardware.nvidia-container-toolkit.enable = false;
+  # hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
   # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
   services.displayManager.sddm.enable = false;

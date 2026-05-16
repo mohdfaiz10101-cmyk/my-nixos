@@ -279,4 +279,57 @@
     timerConfig = { OnBootSec = "2min"; OnUnitActiveSec = "30s"; AccuracySec = "5s"; };
   };
 
+
+  # ===== 智能 Nix GC：保留当前 + stable标记 + 最近3个，删其余 =====
+  systemd.services.smart-nix-gc = {
+    description = "Smart Nix GC - keep current, stable, last 3 gens";
+    path = with pkgs; [ nix coreutils gnugrep gawk ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "smart-nix-gc" ''
+        PROFILE=/nix/var/nix/profiles/system
+        STABLE_FILE=/var/lib/nixos-safe-upgrade/stable-generation
+        CURRENT=$(readlink "$PROFILE" | grep -oP 'system-\K[0-9]+(?=-link)' || echo 0)
+        STABLE=$(cat "$STABLE_FILE" 2>/dev/null || echo "")
+        echo "Current:$CURRENT Stable:$STABLE"
+        ALL=$(nix-env --profile "$PROFILE" --list-generations | awk '{print $1}')
+        RECENT=$(echo "$ALL" | tail -3)
+        for gen in $ALL; do
+          skip=0
+          [ "$gen" = "$CURRENT" ] && skip=1
+          [ -n "$STABLE" ] && [ "$gen" = "$STABLE" ] && skip=1
+          echo "$RECENT" | grep -qx "$gen" && skip=1
+          [ "$skip" = 0 ] && nix-env --profile "$PROFILE" --delete-generations "$gen"
+        done
+        nix-collect-garbage
+        nix-store --optimise 2>/dev/null || true
+        echo "GC done. Free: $(df -h / | tail -1 | awk '{print $4}')"
+      '';
+    };
+  };
+  systemd.timers.smart-nix-gc = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = { OnCalendar = "Sun 03:00"; Persistent = true; };
+  };
+
+
+  # ===== 自动稳定性检测：48h 无问题 → 自动升为 stable gen =====
+  systemd.services.auto-stable-detect = {
+    description = "Auto stable generation detector";
+    path = with pkgs; [ coreutils gnugrep gawk procps libnotify systemd ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/etc/nixos/scripts/auto-stable-detect.sh";
+      StandardOutput = "journal";
+    };
+  };
+  systemd.timers.auto-stable-detect = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      OnUnitActiveSec = "1h";   # 每小时检查一次
+      Persistent = false;
+    };
+  };
+
 }

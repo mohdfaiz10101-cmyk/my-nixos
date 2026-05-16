@@ -49,6 +49,11 @@ let
     start = 19892
     end = 19893
 
+    # KVM 桥接（ydotool-bridge）
+    [[allowPorts]]
+    start = 24801
+    end = 24801
+
     [log]
     to = "/var/log/frps/frps.log"
     level = "info"
@@ -75,6 +80,6 @@ in
   };
 
   # 防火墙放行
-  networking.firewall.allowedTCPPorts = [ 7000 7500 2224 ];  # 添加手机 SSH 端口
+  networking.firewall.allowedTCPPorts = [ 7000 7500 2224 24801 ];  # KVM bridge  # 添加手机 SSH 端口
   networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }

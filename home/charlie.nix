@@ -240,6 +240,11 @@
         hide_on_key_press = true;
       };
 
+      # NVIDIA 595.x 必须：显式同步，防止 GPU D态挂死
+      render = {
+        explicit_sync = 1;
+      };
+
       misc = {
         disable_hyprland_logo = true;
         disable_splash_rendering = true;
@@ -255,6 +260,18 @@
           tap-to-click = true;
         };
       };
+
+      # AI 项目工作区自动分配
+      windowrulev2 = [
+        "workspace 1 silent, class:^(kitty)$"
+        "workspace 2 silent, class:^(Floorp)$"
+        "workspace 2 silent, class:^(floorp)$"
+        "workspace 3 silent, class:^(chromium-browser-chromium)$"
+        "workspace 3 silent, class:^(Google-chrome)$"
+        "workspace 4 silent, title:^(.*OpenCode.*)$"
+        "workspace 4 silent, class:^(opencode)$"
+        "workspace 5 silent, title:^(.*AI.*)$, class:^(kitty)$"
+      ];
     };
   };
 
@@ -349,6 +366,9 @@
       #custom-date { padding: 0 10px; color: @mauve; }
       #idle_inhibitor { padding: 0 10px; color: @yellow; }
       #idle_inhibitor.activated { color: @red; }
+      #custom-ai { padding: 0 10px; color: @green; font-size: 12px; }
+      #custom-ai.unhealthy { color: @red; animation: blink 2s infinite; }
+      @keyframes blink { to { opacity: 0.3; } }
     '';
 
     settings = {
@@ -358,7 +378,7 @@
         height = 28;
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "hyprland/window" ];
-        modules-right = [ "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
+        modules-right = [ "custom/ai" "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
 
         "hyprland/workspaces" = {
           format = "{icon}";
@@ -417,6 +437,15 @@
         };
 
         tray = { spacing = 8; };
+
+        "custom/ai" = {
+          exec = "/home/charlie/.local/bin/ai-status-v2.sh";
+          interval = 15;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+          on-click = "kitty -e bash -c 'docker ps --format \"table {{.Names}}\t{{.Status}}\"; echo; systemctl --user list-units --type=service --state=running | grep -E \"litellm|opencode|agi|hub\"; read'";
+        };
       };
     };
   };
