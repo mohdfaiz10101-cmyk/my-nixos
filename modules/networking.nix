@@ -33,6 +33,7 @@
       8284  # Letta API
       8000  # Dify/n8n
       7699  # AI Launcher（手机统一入口，Caddy reverse proxy）
+      8090  # OpenCode Sisy（公网远程访问）
       7690  # ttyd Claude Code
       7691  # ttyd CCT GLM
       7692  # ttyd Overcode

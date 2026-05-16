@@ -53,6 +53,7 @@
   # 背景：VSCode 扩展（Roo Code 等）需要 keyring 服务存储 API token
   # 症状：每次重启要重新登录，配置无法持久化
   # 修复：启用 KWallet，自动随 Plasma 启动
+  security.pam.services.sddm.enableGnomeKeyring = true;
   security.pam.services.kwallet = {
     name = "kwallet";
     enableKwallet = true;

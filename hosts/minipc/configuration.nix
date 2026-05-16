@@ -196,15 +196,16 @@
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     trusted-users = [ "root" "charlie" ];
-    # 构建时全局代理（sops-nix Go 模块下载需要翻墙）
-    env-vars = {
-      http_proxy = "http://192.168.2.100:7890";
-      https_proxy = "http://192.168.2.100:7890";
-      HTTP_PROXY = "http://192.168.2.100:7890";
-      HTTPS_PROXY = "http://192.168.2.100:7890";
-      no_proxy = "127.0.0.0/8,192.168.0.0/16,localhost";
-      GOPROXY = "https://goproxy.cn,https://proxy.golang.org,direct";
-    };
+  };
+
+  # 构建时全局代理（sops-nix Go 模块下载需要翻墙）
+  environment.variables = {
+    http_proxy = "http://192.168.2.100:7890";
+    https_proxy = "http://192.168.2.100:7890";
+    HTTP_PROXY = "http://192.168.2.100:7890";
+    HTTPS_PROXY = "http://192.168.2.100:7890";
+    no_proxy = "127.0.0.0/8,192.168.0.0/16,localhost";
+    GOPROXY = "https://goproxy.cn,https://proxy.golang.org,direct";
   };
   nix.buildMachines = [];  # 本地构建
 

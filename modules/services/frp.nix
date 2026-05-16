@@ -39,14 +39,19 @@ let
     start = 60003
     end = 60005
 
+    # OpenCode Sisy 公网访问（2026-05-16 新增）
+    [[allowPorts]]
+    start = 18090
+    end = 18090
+
     # OpenCode × StepClaw 融合通道（2026-05-12 新增）
     [[allowPorts]]
     start = 19890
     end = 19890
 
-    # OpenClaw Gateway（2026-05-12 新增）
+    # OpenClaw Gateway + Letta MCP（2026-05-12 新增）
     [[allowPorts]]
-    start = 19892
+    start = 19891
     end = 19893
 
     # KVM 桥接（ydotool-bridge）
