@@ -31,7 +31,7 @@
     ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
     ./modules/tablet-proxy.nix         # 平板代理自动切换
     ./modules/docker-nat-fix.nix       # Docker 容器 NAT 转发修复
-    ./modules/hyprland.nix             # Hyprland WM（替代 KDE，KDE 保留为回退）
+    ./modules/i3.nix             # i3 WM（X11，替代 Hyprland，规避 NVIDIA 挂死）
     ./modules/barrier.nix
     ./modules/services/frp.nix         # FRP 内网穿透服务端
     ./modules/data-recovery.nix        # 智能数据恢复系统

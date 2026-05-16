@@ -9,7 +9,6 @@
   home.stateVersion = "25.05";
 
   # ── 文件冲突处理：强制覆盖（旧文件自动备份为 .hm-bak）──
-  xdg.configFile."hypr/hyprland.conf".force = true;
   xdg.configFile."waybar/config".force = true;
   xdg.configFile."waybar/style.css".force = true;
 
@@ -114,7 +113,7 @@
   # ── Hyprland 窗口管理器配置 ──────────────────────────────────
   # NVIDIA RTX 3060 Ti 专项 env + fcitx5 + wayvnc + 7699 兼容
   wayland.windowManager.hyprland = {
-    enable = true;
+    enable = false;  # 已切换到 i3
     settings = {
       # NVIDIA 必须环境变量（Hyprland Wiki + NVIDIA 595 专项）
       env = [
