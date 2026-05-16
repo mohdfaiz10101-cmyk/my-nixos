@@ -94,7 +94,7 @@ case "$cmd" in
       exit 1
     fi
     echo "=== 自动确认：测试 ${elapsed_days} 天无异常 ==="
-    sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader
+    sudo nixos-rebuild boot --flake /etc/nixos#charlie
     new_gen=$(readlink /nix/var/nix/profiles/system | grep -o '[0-9]*')
     echo "$new_gen" > "$STABLE_MARKER"
     rm -f "$TEST_MARKER" "$CRASH_LOG"
@@ -104,7 +104,7 @@ case "$cmd" in
   confirm)
     if [ ! -f "$TEST_MARKER" ]; then echo "没有正在测试的配置。"; exit 1; fi
     echo "正式应用配置到 GRUB..."
-    sudo nixos-rebuild switch --flake /etc/nixos#charlie --install-bootloader
+    sudo nixos-rebuild boot --flake /etc/nixos#charlie
     new_gen=$(readlink /nix/var/nix/profiles/system | grep -o '[0-9]*')
     echo "$new_gen" > "$STABLE_MARKER"
     rm -f "$TEST_MARKER" "$CRASH_LOG"

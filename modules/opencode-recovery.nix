@@ -10,7 +10,7 @@
   boot.loader.grub.extraEntries = lib.mkOrder 10 ''
     menuentry "NixOS — OpenCode Recovery (AI Rescue)" {
       search --set=root --label nixos
-      linux /boot/bzImage nomodeset systemd.unit=multi-user.target opencode_recovery=1 console=tty1
+      linux /boot/bzImage systemd.unit=multi-user.target opencode_recovery=1 console=tty1
       initrd /boot/initrd
     }
   '';

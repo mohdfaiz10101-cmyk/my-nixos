@@ -8,7 +8,7 @@
     modesetting.enable = true;
     open = false;
     nvidiaSettings = true;
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    package = config.boot.kernelPackages.nvidiaPackages.legacy_535;
     # 修复 nvidia-modeset 0x0000c67d GPU挂起导致无信号问题（2026-04-20）
     # 根因：GSP firmware 超时 bug，在 595.x Wayland+KDE 下已知存在
     powerManagement.enable = true;

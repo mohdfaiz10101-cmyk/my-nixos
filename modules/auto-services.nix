@@ -160,9 +160,11 @@
     };
   };
 
+  # nixos-auto-confirm timer DISABLED — 会触发 switch 导致 NVIDIA D-state 死锁
+  # 如需手动升级: sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test
   systemd.timers.nixos-auto-confirm = {
     description = "Daily check: auto-confirm NixOS test config after 3 days (15:00)";
-    wantedBy = [ "timers.target" ];
+    wantedBy = [];  # 禁用自动启动
     timerConfig = {
       OnBootSec = "10min";
       OnCalendar = "*-*-* 15:00:00";
@@ -254,4 +256,27 @@
       Persistent = true;
     };
   };
+
+  # Hyprland 冻屏 watchdog — hyprctl 超时 5s → SysRq 重启
+  systemd.services.hyprland-freeze-watchdog = {
+    description = "Hyprland freeze detector";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "hyprland-freeze-watch" ''
+        HYPR_PID=$(pgrep -x Hyprland 2>/dev/null)
+        [ -z "$HYPR_PID" ] && exit 0
+        if ! timeout 5 runuser -l charlie -c 'hyprctl monitors > /dev/null 2>&1'; then
+          echo "Hyprland frozen, rebooting" | systemd-cat -p crit -t hyprland-watchdog
+          echo 1 > /proc/sys/kernel/sysrq
+          sync
+          echo b > /proc/sysrq-trigger
+        fi
+      '';
+    };
+  };
+  systemd.timers.hyprland-freeze-watchdog = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = { OnBootSec = "2min"; OnUnitActiveSec = "30s"; AccuracySec = "5s"; };
+  };
+
 }
