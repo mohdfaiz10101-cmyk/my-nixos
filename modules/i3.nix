@@ -49,4 +49,10 @@
     enable = true;
     user = "charlie";
   };
+  # 覆盖 desktop.nix 的 mkDefault Session=plasma
+  services.displayManager.sddm.settings.Autologin = {
+    Session = "none+i3";
+    User = "charlie";
+    Relogin = false;
+  };
 }
