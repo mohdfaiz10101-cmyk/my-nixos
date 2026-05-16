@@ -42,10 +42,11 @@
   # 默认会话改为 i3
   services.displayManager.defaultSession = lib.mkForce "none+i3";
 
-  # 禁用所有显示管理器，用 TTY autologin + startx
-  services.displayManager.sddm.enable = lib.mkForce false;
-  systemd.services.display-manager.enable = lib.mkForce false;
-
-  # TTY1 自动登录
-  services.getty.autologinUser = lib.mkForce "charlie";
+  # SDDM 自动登录到 i3（X11）
+  services.displayManager.sddm.enable = true;
+  services.displayManager.sddm.wayland.enable = false;
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = "charlie";
+  };
 }

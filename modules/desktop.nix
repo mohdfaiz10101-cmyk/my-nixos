@@ -29,7 +29,7 @@
   # hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
   # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
-  services.displayManager.sddm.enable = false;
+  services.displayManager.sddm.enable = lib.mkDefault false;
   services.displayManager.sddm.wayland.enable = false;
   services.displayManager.sddm.settings.General.Numlock = "on";
   # 使用 mkDefault，允许 hyprland.nix 等模块通过 mkForce 覆盖默认 session
