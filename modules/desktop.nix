@@ -6,7 +6,7 @@
   services.xserver.videoDrivers = [ "nvidia" ];
   hardware.nvidia = {
     modesetting.enable = true;
-    open = false;
+    open = true;
     nvidiaSettings = true;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
     # 修复 nvidia-modeset 0x0000c67d GPU挂起导致无信号问题（2026-04-20）
@@ -108,15 +108,15 @@
     KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
-  # --- fcitx5 環境變量（Wayland 模式）---
-  # waylandFrontend=true：fcitx5 注冊 Wayland text-input-v3
-  # 注意：Wayland 下不要設置 GTK_IM_MODULE/QT_IM_MODULE，否則會強制使用 XWayland 模式
+  # --- ibus 環境變量（Hyprland Wayland 模式）---
+  # ibus-daemon 管理所有输入法上下文
   environment.sessionVariables = {
-    XMODIFIERS      = "@im=fcitx";
-    SDL_IM_MODULE   = "fcitx";
-    INPUT_METHOD    = "fcitx";
-    # GTK_IM_MODULE 和 QT_IM_MODULE 在 Wayland 下由 text-input-v3 自動處理
-    # 顯式設置會導致應用強制使用 XWayland，破壞輸入法支持
+    XMODIFIERS          = "@im=ibus";
+    SDL_IM_MODULE       = "ibus";
+    INPUT_METHOD        = "ibus";
+    GTK_IM_MODULE       = "ibus";
+    GTK_IM_MODULE_FILE  = "/run/current-system/sw/etc/gtk-3.0/immodules.cache";
+    QT_IM_MODULE        = "ibus";
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;
@@ -127,6 +127,6 @@
   # (因为 ~/.cache → /mnt/ai/cache/xdg)，导致用户环境不完整
   systemd.services."home-manager-charlie" = {
     after = [ "mnt-ai.mount" ];
-    requires = [ "mnt-ai.mount" ];
+    wants = [ "mnt-ai.mount" ];
   };
 }

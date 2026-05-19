@@ -28,6 +28,7 @@ in
       description = "Opus + GLM Agent Orchestrator";
       after = [ "network.target" ];
       wantedBy = [ "default.target" ];
+      unitConfig.ConditionPathExists = "${home}/.local/lib/agent-orchestrator/orchestrator.py";
       serviceConfig = {
         Type = "simple";
         ExecStart = "${py}/bin/python3 ${home}/.local/lib/agent-orchestrator/orchestrator.py";
@@ -49,6 +50,7 @@ in
         ExecStart = "${localBin}/ai-watchdog --daemon";
         Restart = "on-failure";
         RestartSec = 10;
+        ConditionPathExists = "${localBin}/ai-watchdog";
       };
       environment = userEnv;
     };
@@ -63,6 +65,7 @@ in
         ExecStart = "${py}/bin/python3 ${launcher}/claude-esp-simple.py";
         Restart = "always";
         RestartSec = 5;
+        ConditionPathExists = "${launcher}/claude-esp-simple.py";
       };
       environment = userEnv;
     };
@@ -102,6 +105,7 @@ in
         ExecStart = "${localBin}/claude-tablet-output";
         Restart = "always";
         RestartSec = 5;
+        ConditionPathExists = "${localBin}/claude-tablet-output";
       };
       environment = userEnv;
     };
@@ -116,6 +120,7 @@ in
         ExecStart = "${localBin}/claude-token-tray";
         Restart = "on-failure";
         RestartSec = 10;
+        ConditionPathExists = "${localBin}/claude-token-tray";
       };
       environment = graphicalEnv // { QT_QPA_PLATFORM = "xcb"; };
     };
@@ -130,6 +135,7 @@ in
         ExecStart = "${py}/bin/python3 ${localBin}/glm-proxy";
         Restart = "on-failure";
         RestartSec = 3;
+        ConditionPathExists = "${localBin}/glm-proxy";
       };
       environment = userEnv;
     };
@@ -144,6 +150,7 @@ in
         ExecStart = "${py}/bin/python3 ${localBin}/glm-monitor";
         Restart = "on-failure";
         RestartSec = 3;
+        ConditionPathExists = "${localBin}/glm-monitor";
       };
       environment = userEnv;
     };
@@ -158,6 +165,7 @@ in
         ExecStart = "${localBin}/letta-mcp";
         Restart = "on-failure";
         RestartSec = 3;
+        ConditionPathExists = "${localBin}/letta-mcp";
       };
       environment = userEnv;
     };
@@ -170,6 +178,7 @@ in
       serviceConfig = {
         Type = "simple";
         ExecStart = "${localBin}/memory-evolution-engine";
+        ConditionPathExists = "${localBin}/memory-evolution-engine";
         Restart = "on-failure";
         RestartSec = 300;
         StartLimitBurst = 3;
@@ -187,6 +196,7 @@ in
         Type = "simple";
         WorkingDirectory = "${aiCluster}/hyperchat";
         ExecStart = "${py}/bin/python3 app_v2.py";
+        ConditionPathExists = "${aiCluster}/hyperchat/app_v2.py";
         Restart = "on-failure";
         RestartSec = 300;
         StartLimitBurst = 3;
@@ -205,6 +215,7 @@ in
         ExecStart = "${pkgs.whisper-cpp}/bin/whisper-server -m /mnt/ai/whisper/ggml-base.bin -l zh --host 127.0.0.1 --port 8178 -t 4";
         Restart = "on-failure";
         RestartSec = 5;
+        ConditionPathExists = "/mnt/ai/whisper/ggml-base.bin";
       };
     };
   };

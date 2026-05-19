@@ -9,6 +9,7 @@
   home.stateVersion = "25.05";
 
   # ── 文件冲突处理：强制覆盖（旧文件自动备份为 .hm-bak）──
+  xdg.configFile."hypr/hyprland.conf".force = true;
   xdg.configFile."waybar/config".force = true;
   xdg.configFile."waybar/style.css".force = true;
 
@@ -26,7 +27,7 @@
       remember_window_size = "yes";
       window_padding_width = 4;
       wayland_enable_ime = "yes";
-      input_method = "fcitx5";
+      input_method = "ibus";
       allow_hyperlinks = "yes";
     };
     keybindings = {
@@ -111,9 +112,9 @@
   '';
 
   # ── Hyprland 窗口管理器配置 ──────────────────────────────────
-  # NVIDIA RTX 3060 Ti 专项 env + fcitx5 + wayvnc + 7699 兼容
+  # NVIDIA RTX 3060 Ti 专项 env + ibus + wayvnc + 7699 兼容
   wayland.windowManager.hyprland = {
-    enable = false;  # 已切换到 i3
+    enable = true;
     settings = {
       # NVIDIA 必须环境变量（Hyprland Wiki + NVIDIA 595 专项）
       env = [
@@ -125,10 +126,10 @@
         "NIXOS_OZONE_WL,1"
         "__GL_GSYNC_ALLOWED,1"
         "__GL_VRR_ALLOWED,1"
-        # fcitx5 中文输入
-        "XMODIFIERS,@im=fcitx"
-        "GTK_IM_MODULE,fcitx"
-        "QT_IM_MODULE,fcitx"
+        # ibus 中文输入
+        "XMODIFIERS,@im=ibus"
+        "GTK_IM_MODULE,ibus"
+        "QT_IM_MODULE,ibus"
         # Qt Wayland
         "QT_QPA_PLATFORM,wayland"
         "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
@@ -139,7 +140,7 @@
 
       # 启动项
       exec-once = [
-        "fcitx5 -d --replace"
+        "ibus-daemon -drx"
         "mako"
         "hyprpaper"
         "wl-paste --type text --watch cliphist store"
@@ -239,11 +240,6 @@
         hide_on_key_press = true;
       };
 
-      # NVIDIA 595.x 必须：显式同步，防止 GPU D态挂死
-      render = {
-        explicit_sync = 1;
-      };
-
       misc = {
         disable_hyprland_logo = true;
         disable_splash_rendering = true;
@@ -261,16 +257,8 @@
       };
 
       # AI 项目工作区自动分配
-      windowrulev2 = [
-        "workspace 1 silent, class:^(kitty)$"
-        "workspace 2 silent, class:^(Floorp)$"
-        "workspace 2 silent, class:^(floorp)$"
-        "workspace 3 silent, class:^(chromium-browser-chromium)$"
-        "workspace 3 silent, class:^(Google-chrome)$"
-        "workspace 4 silent, title:^(.*OpenCode.*)$"
-        "workspace 4 silent, class:^(opencode)$"
-        "workspace 5 silent, title:^(.*AI.*)$, class:^(kitty)$"
-      ];
+
+
     };
   };
 
@@ -292,7 +280,6 @@
       $DRY_RUN_CMD ln -sf "$PORTAL_SVC" "$WANTS_DIR/xdg-desktop-portal.service"
     fi
   '';
-
 
   # ── Waybar  (Catppuccin Mocha) ─────────────────────────
   programs.waybar = {
@@ -366,8 +353,47 @@
       #idle_inhibitor { padding: 0 10px; color: @yellow; }
       #idle_inhibitor.activated { color: @red; }
       #custom-ai { padding: 0 10px; color: @green; font-size: 12px; }
-      #custom-ai.unhealthy { color: @red; animation: blink 2s infinite; }
-      @keyframes blink { to { opacity: 0.3; } }
+      #custom-ai.unhealthy { color: @red; animation: breathe 6s ease-in-out infinite; }
+      @keyframes breathe { from { opacity: 1; } 50% { opacity: 0.3; } to { opacity: 1; } }
+      @keyframes breathe-fast { from { opacity: 1; } 50% { opacity: 0.2; } to { opacity: 1; } }
+      #custom-optasks { padding: 0 10px; color: @green; font-size: 11px; }
+      #custom-optasks.warning { color: @yellow; }
+      #custom-optasks.critical { color: @red; animation: breathe 20s ease-in-out infinite; }
+
+      /* === 统一健康模块 === */
+      #custom-health { padding: 0 10px; font-size: 12px; color: @green; }
+      #custom-health.warning { color: @yellow; }
+      #custom-health.critical { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
+
+      /* === 剪贴板同步 + OTP 合并状态 === */
+      #custom-clip-otp { padding: 0 10px; font-size: 12px; color: @green; }
+      #custom-clip-otp.warning { color: @yellow; }
+      #custom-clip-otp.disconnected { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
+
+      /* === 当前 Agent 状态 === */
+      #custom-agent { padding: 0 10px; font-size: 12px; color: @blue; }
+      #custom-agent.active { color: @blue; }
+      #custom-agent.idle { color: @overlay0; opacity: 0.6; }
+
+      /* === 调度呼吸灯 === */
+      #custom-pulse { padding: 0 10px; font-size: 12px; color: @green; }
+      #custom-pulse.dispatch-green { color: @green; animation: breathe 10s ease-in-out infinite; }
+      #custom-pulse.dispatch-yellow { color: @yellow; animation: breathe 6s ease-in-out infinite; }
+      #custom-pulse.dispatch-red { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
+      #custom-pulse.pulse-off { color: @overlay0; }
+
+      /* === 记忆呼吸灯 === */
+      #custom-mem-pulse { padding: 0 10px; font-size: 12px; color: @green; }
+      #custom-mem-pulse.pulse-green { color: @green; animation: breathe 10s ease-in-out infinite; }
+      #custom-mem-pulse.pulse-yellow { color: @yellow; animation: breathe 6s ease-in-out infinite; }
+      #custom-mem-pulse.pulse-red { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
+      #custom-mem-pulse.pulse-off { color: @overlay0; }
+
+      /* === API额度 === */
+      #custom-quota { padding: 0 10px; font-size: 11px; color: @subtext0; }
+      #custom-quota.quota-ok { color: @teal; }
+      #custom-quota.quota-stale { color: @yellow; }
+      #custom-quota.quota-off { color: @overlay0; }
     '';
 
     settings = {
@@ -377,7 +403,7 @@
         height = 28;
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "hyprland/window" ];
-        modules-right = [ "custom/ai" "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
+        modules-right = [ "custom/health" "custom/ai" "custom/pulse" "custom/mem-pulse" "custom/quota" "custom/optasks" "custom/clip-otp" "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
 
         "hyprland/workspaces" = {
           format = "{icon}";
@@ -437,13 +463,69 @@
 
         tray = { spacing = 8; };
 
+        "custom/optasks" = {
+          exec = "/home/charlie/.local/bin/op-tasks-status.sh";
+          interval = 60;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+        };
         "custom/ai" = {
           exec = "/home/charlie/.local/bin/ai-status-v2.sh";
           interval = 15;
           return-type = "json";
           format = "{}";
           tooltip = true;
-          on-click = "kitty -e bash -c 'docker ps --format \"table {{.Names}}\t{{.Status}}\"; echo; systemctl --user list-units --type=service --state=running | grep -E \"litellm|opencode|agi|hub\"; read'";
+          on-click = "/home/charlie/.local/bin/service-panel.sh";
+        };
+
+        # === 统一健康模块（替代 7 个呼吸灯）===
+        "custom/health" = {
+          exec = "/home/charlie/.local/bin/waybar-health.sh";
+          interval = 30;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+          on-click = "/home/charlie/.local/bin/waybar-health-menu.sh";
+        };
+
+        # === 剪贴板同步 + OTP 合并状态 ===
+        "custom/clip-otp" = {
+          exec = "/home/charlie/.config/waybar/scripts/clip-otp-status.sh";
+          interval = 5;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+        };
+
+        # === 调度呼吸灯 ===
+        "custom/pulse" = {
+          exec = "/home/charlie/.local/bin/waybar-dispatch.sh";
+          interval = 30;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+          on-click = "kitty -e bash -c 'bash ~/.local/bin/smoke-test.sh; echo; read'";
+        };
+
+        # === 记忆呼吸灯 ===
+        "custom/mem-pulse" = {
+          exec = "/home/charlie/.local/bin/waybar-pulse.sh";
+          interval = 60;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+          on-click = "kitty -e bash -c 'curl -sf --noproxy localhost http://localhost:8285/pulse/stats | python3 -m json.tool; echo; read -p \"回车关闭\"'";
+        };
+
+        # === API额度（StepFun + GLM）===
+        "custom/quota" = {
+          exec = "/home/charlie/.local/bin/waybar-api-quota.sh";
+          interval = 300;
+          return-type = "json";
+          format = "{}";
+          tooltip = true;
+          on-click = "/home/charlie/.local/bin/update-api-quota.sh";
         };
       };
     };
@@ -467,8 +549,53 @@
     Install = { WantedBy = [ "default.target" ]; };
   };
 
+  # ── 外接磁盘 watchdog（用户级，可发桌面通知）──
+  # 断电重启后 USB HDD 初始化慢，延迟 15s 后检查并触发 automount
+  # 每 5 分钟巡检一次，磁盘上线后发通知
+  systemd.user.services.disk-watchdog = {
+    Unit = {
+      Description = "外接磁盘状态监控与自动挂载";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = pkgs.writeShellScript "disk-watchdog" ''
+        sleep 15  # 等 USB 控制器初始化
+        while true; do
+          changed=""
+          for mp in /mnt/pool-disks/POOL-D1 /mnt/pool-disks/POOL-E1 /mnt/pool-disks/POOL-B1; do
+            name=$(basename "$mp")
+            if ! mountpoint -q "$mp" 2>/dev/null; then
+              # 磁盘未挂载，尝试触发 automount
+              systemctl start "mnt-pool\\x2ddisks-POOL\\x2d$(echo "$name" | sed 's/POOL-//').automount" 2>/dev/null || true
+              # 也尝试直接访问触发 automount
+              ls "$mp" >/dev/null 2>&1 || true
+              if mountpoint -q "$mp" 2>/dev/null; then
+                changed="''${changed}$name 上线\\n"
+              fi
+            fi
+          done
+          # /mnt/ai bind mount
+          if ! mountpoint -q /mnt/ai 2>/dev/null; then
+            ls /mnt/ai >/dev/null 2>&1 || true
+            if mountpoint -q /mnt/ai 2>/dev/null; then
+              changed="''${changed}/mnt/ai 上线\\n"
+            fi
+          fi
+          if [ -n "$changed" ]; then
+            ${pkgs.libnotify}/bin/notify-send -u normal "磁盘上线" "$changed"
+          fi
+          sleep 300
+        done
+      '';
+      Restart = "on-failure";
+      RestartSec = 10;
+    };
+    Install = { WantedBy = [ "graphical-session.target" ]; };
+  };
+
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
-  # wrapper 在 ~/.local/bin/floorp，MOZ_ENABLE_WAYLAND=0 + fcitx5 IM 变量
+  # wrapper 在 ~/.local/bin/floorp，MOZ_ENABLE_WAYLAND=0 + ibus IM 变量
   # 永久方案 2026-05-07: XWayland 避免 NVIDIA+KWin text-input-v3 relay 不稳定
   xdg.desktopEntries.floorp = {
     name = "Floorp";
@@ -480,5 +607,24 @@
     settings = {
       StartupWMClass = "floorp";
     };
+  };
+
+  # ── FRP 隧道自愈守护 ──
+  systemd.user.services.frp-watchdog = {
+    Unit = {
+      Description = "FRP 隧道自愈守护";
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "/home/charlie/.local/bin/frp-watchdog.sh";
+    };
+  };
+  systemd.user.timers.frp-watchdog = {
+    Unit = { Description = "FRP 隧道健康检查 (每5分钟)"; };
+    Timer = {
+      OnCalendar = "*:0/5";
+      Persistent = true;
+    };
+    Install = { WantedBy = [ "timers.target" ]; };
   };
 }

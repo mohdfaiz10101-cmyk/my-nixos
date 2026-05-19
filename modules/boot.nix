@@ -70,7 +70,8 @@
 
   # 第 3 层：内核硬件 watchdog — 内核本身卡死时强制硬重启
   # 原理：softdog 每 60s 喂一次，超时硬件复位，连 SysRq 都不响应也能救
-  boot.kernelModules = [ "softdog" ];
+  boot.kernelModules = [ "softdog" "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
+  boot.initrd.kernelModules = [ ];  # nvidia 不需要 initrd，由 boot.kernelModules 延迟加载
   systemd.watchdog.runtimeTime = "60s";
   systemd.watchdog.rebootTime = "120s";
   systemd.watchdog.kexecTime = "30s";
@@ -78,6 +79,7 @@
   # 第 4 层：负载异常 watchdog — D 态进程堆积（load > 50）时 SysRq 重启
   systemd.services.nvidia-load-watchdog = {
     description = "NVIDIA D-state storm detector";
+    path = with pkgs; [ gawk coreutils gnugrep ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "nvidia-load-watch" ''

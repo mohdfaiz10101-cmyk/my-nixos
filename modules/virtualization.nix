@@ -5,7 +5,7 @@
   virtualisation.docker = {
     enable = true;
     daemon.settings = {
-      data-root = "/mnt/ai/docker";  # ext4 loop mount (93G), 依赖 mnt-ai.mount
+      data-root = "/mnt/pool-disks/POOL-D1/docker";  # ext4 (587G), 更稳定可靠
       # NVIDIA Container Runtime — 数字人流水线 GPU 直通
       runtimes.nvidia = {
         path = "${pkgs.nvidia-container-toolkit.tools}/bin/nvidia-container-runtime";
@@ -28,10 +28,10 @@
     };
   };
 
-  # === systemd 集成：Docker 依赖 ext4 loop mount ===
+  # === systemd 集成：Docker 依赖 POOL-D1 ext4 挂载 ===
   systemd.services.docker = {
-    after = [ "mnt-ai.mount" ];
-    wants = [ "mnt-ai.mount" ];
+    after = [ "mnt-pool\\x2ddisks-POOL\\x2dD1.mount" ];
+    wants = [ "mnt-pool\\x2ddisks-POOL\\x2dD1.mount" ];
   };
 
   # 注：/var/run 已由 NixOS 自动设为 /run 的符号链接，无需额外 tmpfiles 规则。

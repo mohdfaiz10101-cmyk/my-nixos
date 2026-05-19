@@ -31,7 +31,7 @@
     ./modules/deepseek-auto-train.nix  # DeepSeek 自动训练
     ./modules/tablet-proxy.nix         # 平板代理自动切换
     ./modules/docker-nat-fix.nix       # Docker 容器 NAT 转发修复
-    ./modules/i3.nix             # i3 WM（X11，替代 Hyprland，规避 NVIDIA 挂死）
+    ./modules/hyprland.nix         # Hyprland Wayland (EDID issue workaround for NVIDIA X11)
     ./modules/barrier.nix
     ./modules/services/frp.nix         # FRP 内网穿透服务端
     ./modules/data-recovery.nix        # 智能数据恢复系统
@@ -71,23 +71,14 @@ services.openssh = {
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
-  # --- 输入法 fcitx5 ---
-  # !! DO NOT CHANGE waylandFrontend !! auto-save 已多次误改此值
-  # waylandFrontend = true 是必须的：fcitx5 注册 Wayland text-input-v3
-  # Kitty + OpenCode TUI 中文输入依赖此项，改为 false 会导致输入法失效
-  # GTK_IM_MODULE/QT_IM_MODULE 在 desktop.nix sessionVariables 显式设置
+  # --- 输入法 ibus（替代 fcitx5，更稳定）---
   i18n.inputMethod = {
     enable = true;
-    type = "fcitx5";
-    fcitx5 = {
-      waylandFrontend = true; # PROTECTED: DO NOT CHANGE TO FALSE
-      addons = with pkgs; [
-        qt6Packages.fcitx5-chinese-addons
-        fcitx5-rime
-        fcitx5-gtk
-        qt6Packages.fcitx5-configtool
-      ];
-    };
+    type = "ibus";
+    ibus.engines = with pkgs; [
+      ibus-engines.libpinyin
+      ibus-engines.rime
+    ];
   };
 
   # 包管理已移至 modules/packages.nix 统一管理

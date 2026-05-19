@@ -14,7 +14,7 @@ send_alert() {
         return
     fi
     local HOST_NAME=$(cat /etc/hostname 2>/dev/null || echo "nixos")
-    curl -s "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+    curl -s --connect-timeout 5 --max-time 10 "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
         -d chat_id="$TG_CHAT_ID" \
         -d text="🚨 ${HOST_NAME}: $msg" \
         -d parse_mode="Markdown" > /dev/null 2>&1 || true
@@ -29,22 +29,31 @@ for mount in / /mnt/ai; do
     fi
 done
 
-# 检查核心 Docker 容器
-for svc in chromadb letta litellm; do
-    running=$(docker ps --filter "name=$svc" --format "{{.Names}}" 2>/dev/null | head -1)
-    if [ -z "$running" ]; then
-        send_alert "容器 *$svc* 未运行！尝试自动恢复..."
-        # 尝试自动重启
-        case "$svc" in
-            chromadb) docker start letta-chromadb 2>/dev/null ;;
-            letta) cd /mnt/ai/ai-cluster/letta && docker compose up -d 2>/dev/null ;;
-            litellm) cd /mnt/ai/ai-cluster/litellm && docker compose up -d 2>/dev/null ;;
-        esac
-    fi
-done
+# 检查核心 Docker 容器（用端口探测替代容器名匹配，更可靠）
+check_port() {
+    timeout 3 curl -s --connect-timeout 2 --max-time 3 "http://localhost:$1" > /dev/null 2>&1
+}
+
+# LiteLLM: 端口 4000
+if ! check_port 4000; then
+    send_alert "LiteLLM (:4000) 未响应！尝试恢复..."
+    cd /mnt/ai-cluster/litellm && docker compose up -d 2>/dev/null
+fi
+
+# Letta: 端口 8283
+if ! check_port 8283; then
+    send_alert "Letta (:8283) 未响应！尝试恢复..."
+    cd /mnt/ai/ai-cluster/letta && docker compose up -d 2>/dev/null
+fi
+
+# ChromaDB: 内部端口，检查容器状态
+if ! docker ps --filter "name=letta-chromadb" --filter "status=running" --format "{{.Names}}" 2>/dev/null | grep -q letta-chromadb; then
+    send_alert "ChromaDB 容器未运行！尝试恢复..."
+    cd /mnt/ai/ai-cluster/letta && docker compose up -d chromadb 2>/dev/null
+fi
 
 # 检查 Ollama
-if ! timeout 3 curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+if ! timeout 5 curl -s --connect-timeout 3 --max-time 5 http://localhost:11434/api/tags > /dev/null 2>&1; then
     send_alert "Ollama 服务未响应！"
 fi
 

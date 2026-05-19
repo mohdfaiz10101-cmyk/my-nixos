@@ -59,6 +59,25 @@ let
     start = 24801
     end = 24801
 
+    # Windows FRP 端口（2026-05-18 新增）
+    [[allowPorts]]
+    start = 2222
+    end = 2222
+
+    [[allowPorts]]
+    start = 3389
+    end = 3389
+
+    # CrewAI Gateway 公网访问（2026-05-18 新增）
+    [[allowPorts]]
+    start = 18091
+    end = 18091
+
+    # AGI Control Plane 公网访问（2026-05-18 新增）
+    [[allowPorts]]
+    start = 18300
+    end = 18300
+
     [log]
     to = "/var/log/frps/frps.log"
     level = "info"
@@ -85,6 +104,6 @@ in
   };
 
   # 防火墙放行
-  networking.firewall.allowedTCPPorts = [ 7000 7500 2224 24801 ];  # KVM bridge  # 添加手机 SSH 端口
+  networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17699 18300 18090 18091 19890 19891 19892 19893 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, KVM, RDP 3389
   networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }

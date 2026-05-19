@@ -53,28 +53,40 @@
   };
 
   # === 池化存储底层（POOL 磁盘） ===
+  # 外接 USB HDD：使用 automount，插入后按需挂载，拔出后系统正常
+  # x-systemd.automount: 访问目录时自动触发挂载（无需手动 mount）
+  # x-systemd.idle-timeout: 30分钟无访问自动卸载，保护磁盘
+  # nofail: 磁盘不在线时系统正常启动，不卡等待
   fileSystems."/mnt/pool-disks/POOL-D1" = {
     device = "/dev/disk/by-uuid/d2c36cb2-ebe9-4317-a76c-c8eb239f2f32";
     fsType = "ext4";
-    options = [ "nofail" "x-systemd.device-timeout=10s" ];
+    options = [ "nofail" "x-systemd.device-timeout=30s" "x-systemd.automount" "x-systemd.idle-timeout=30min" ];
   };
   fileSystems."/mnt/pool-disks/POOL-E1" = {
     device = "/dev/disk/by-uuid/DE22F5F022F5CD91";
     fsType = "ntfs-3g";
-    options = [ "nofail" "x-systemd.device-timeout=10s" "uid=1000" "dmask=022" "fmask=133" ];
+    options = [ "nofail" "x-systemd.device-timeout=30s" "uid=1000" "dmask=022" "fmask=133" "x-systemd.automount" "x-systemd.idle-timeout=30min" ];
   };
   fileSystems."/mnt/pool-disks/POOL-B1" = {
     device = "/dev/disk/by-uuid/B2BCF4DBBCF49B55";
     fsType = "ntfs-3g";
-    options = [ "nofail" "x-systemd.device-timeout=10s" "uid=1000" "dmask=022" "fmask=133" ];
+    options = [ "nofail" "x-systemd.device-timeout=30s" "uid=1000" "dmask=022" "fmask=133" "x-systemd.automount" "x-systemd.idle-timeout=30min" ];
   };
 
   # === AI 数据目录（bind mount 到 POOL-D1） ===
+  # automount: 依赖 POOL-D1 automount，访问 /mnt/ai 时级联触发
   fileSystems."/mnt/ai" = {
     device = "/mnt/pool-disks/POOL-D1/ai";
     fsType = "none";
-    options = [ "bind" "nofail" "x-systemd.requires=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" "x-systemd.after=mnt-pool\\x2ddisks-POOL\\x2dD1.mount" ];
+    options = [ "bind" "nofail" "x-systemd.automount" "x-systemd.idle-timeout=30min"
+      "x-systemd.requires=mnt-pool\\x2ddisks-POOL\\x2dD1.automount"
+      "x-systemd.after=mnt-pool\\x2ddisks-POOL\\x2dD1.mount"
+    ];
   };
+
+  # === 磁盘状态监控（已移至 home-manager 用户级） ===
+  # disk-watchdog 和 waybar 磁盘指示器在 home/charlie.nix 中配置
+  # 原因：系统级服务没有 DISPLAY，无法发送桌面通知
 
   # === mergerfs 池（POOL-D1 + POOL-E1 → /mnt/pool） ===
   # 由 disk-pool.sh 的 merge_pool() 动态合并
@@ -85,8 +97,17 @@
   boot.tmp.useTmpfs = true;
   boot.tmp.tmpfsSize = "50%";
 
+  # === udev 热插拔规则：USB 磁盘插入时触发 automount ===
+  services.udev.extraRules = ''
+    # POOL-D1 (ext4, sdc)
+    ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="d2c36cb2-ebe9-4317-a76c-c8eb239f2f32", RUN+="${pkgs.systemd}/bin/systemctl start mnt-pool\\x2ddisks-POOL\\x2dD1.automount"
+    # POOL-E1 (NTFS, sdd)
+    ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="DE22F5F022F5CD91", RUN+="${pkgs.systemd}/bin/systemctl start mnt-pool\\x2ddisks-POOL\\x2dE1.automount"
+    # POOL-B1 (NTFS, sdb)
+    ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="B2BCF4DBBCF49B55", RUN+="${pkgs.systemd}/bin/systemctl start mnt-pool\\x2ddisks-POOL\\x2dB1.automount"
+  '';
+
   # === udisks2 配置（仅做热插拔兜底） ===
-  # 固定挂载点已由本文件管理，udisks2 只负责未声明的热插拔盘
   services.udisks2.enable = true;
   services.udisks2.settings = {
     "mount_options.conf" = {

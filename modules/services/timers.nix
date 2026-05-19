@@ -30,6 +30,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${localBin}/ai-scheduler.sh";
+        ConditionPathExists = "${localBin}/ai-scheduler.sh";
       };
       path = [ pkgs.coreutils pkgs.bash ];
       environment = userEnv;
@@ -73,6 +74,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${launcher}/health-check.sh";
+        ConditionPathExists = "${launcher}/health-check.sh";
       };
       path = [ pkgs.coreutils pkgs.bash pkgs.curl ];
     };
@@ -193,6 +195,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${launcher}/disk-cleanup.sh";
+        ConditionPathExists = "${launcher}/disk-cleanup.sh";
       };
       path = [ pkgs.coreutils pkgs.findutils pkgs.bash ];
     };
@@ -203,6 +206,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${launcher}/disk-sentinel.sh";
+        ConditionPathExists = "${launcher}/disk-sentinel.sh";
       };
       path = [ pkgs.coreutils pkgs.findutils pkgs.bash pkgs.gawk pkgs.gnused pkgs.libnotify pkgs.nix ];
     };
@@ -213,6 +217,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${localBin}/sync-memory-to-ntfs";
+        ConditionPathExists = "${localBin}/sync-memory-to-ntfs";
       };
       environment = userEnv;
     };
@@ -252,6 +257,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${localBin}/ai-architecture-audit";
+        ConditionPathExists = "${localBin}/ai-architecture-audit";
       };
       environment = graphicalEnv;
       path = [ pkgs.coreutils pkgs.bash pkgs.curl pkgs.jq pkgs.findutils pkgs.gnugrep ];
@@ -275,6 +281,7 @@ in
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.bash}/bin/bash ${localBin}/mihomo-guardian --check";
+        ConditionPathExists = "${localBin}/mihomo-guardian";
         TimeoutStartSec = "120";
       };
       environment = graphicalEnv;
@@ -288,6 +295,7 @@ in
       serviceConfig = {
         Type = "simple";
         ExecStart = "${pkgs.bash}/bin/bash ${localBin}/mihomo-guardian --watch";
+        ConditionPathExists = "${localBin}/mihomo-guardian";
         Restart = "on-failure";
         RestartSec = "30";
       };

@@ -4,6 +4,9 @@
   networking.hostName = "nixos";
   networking.networkmanager.enable = true;
 
+  # --- ?????? IP?????DHCP ?????--
+  networking.interfaces.wlp0s20f0u5.ipv4.addresses = [ { address = "192.168.123.209"; prefixLength = 24; } ];
+
   # --- ZeroTier ---
   services.zerotierone.enable = true;
   services.zerotierone.joinNetworks = [ "885033839011bcac" ];
@@ -16,7 +19,7 @@
 
   # LAN 固定设备名称解析
   networking.extraHosts = ''
-    192.168.2.100 tony nixos
+    192.168.123.209 nixos
     192.168.2.101 minipc
     192.168.2.36  winpc windows
   '';
