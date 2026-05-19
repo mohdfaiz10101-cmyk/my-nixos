@@ -365,9 +365,9 @@
       #custom-health.warning { color: @yellow; }
       #custom-health.critical { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
 
-      /* === 剪贴板同步 + OTP 合并状态 === */
-      #custom-clip-otp { padding: 0 10px; font-size: 12px; color: @green; }
-      #custom-clip-otp.warning { color: @yellow; }
+      /* === 设备状态（多设备+剪贴板+ADB自动发现）=== */
+      #custom-clip-otp { padding: 0 10px; font-size: 12px; color: @green; animation: breathe 10s ease-in-out infinite; }
+      #custom-clip-otp.warning { color: @yellow; animation: breathe 6s ease-in-out infinite; }
       #custom-clip-otp.disconnected { color: @red; animation: breathe-fast 3s ease-in-out infinite; }
 
       /* === 当前 Agent 状态 === */
