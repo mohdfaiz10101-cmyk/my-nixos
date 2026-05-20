@@ -35,7 +35,7 @@
   # 使用 mkDefault，允许 hyprland.nix 等模块通过 mkForce 覆盖默认 session
   services.displayManager.defaultSession = lib.mkForce "hyprland-uwsm";
   # autoLogin 由具体 session 模块（hyprland.nix 等）控制，此处禁用避免冲突
-  services.displayManager.autoLogin.enable = lib.mkForce true;
+  services.displayManager.autoLogin.enable = lib.mkDefault true;
   services.displayManager.autoLogin.user = "charlie";
 
   # 防止 KDE 会话崩溃后回到 SDDM 登录界面密码失效
