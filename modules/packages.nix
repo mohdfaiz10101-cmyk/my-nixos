@@ -164,6 +164,7 @@ in
     wezterm
     warp-terminal
     kitty
+    kdePackages.konsole
     zellij
     starship        # 智能提示符
     atuin           # 命令历史搜索
