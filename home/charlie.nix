@@ -193,8 +193,9 @@
         # 截图
         ", Print, exec, grim -g \"$(slurp)\" ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
         "$mod, Print, exec, grim ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
+        # 输入法切换
+        "CTRL, Space, exec, /home/charlie/.local/bin/ibus-toggle.sh"
       ];
-
       # 鼠标绑定：SUPER+左键拖动，SUPER+右键调整大小
       bindm = [
         "$mod, mouse:272, movewindow"
@@ -256,6 +257,13 @@
         };
       };
 
+      # ibus 候选弹窗浮动（防止抢焦点）
+      windowrule = {
+        name = "ibus-float";
+        "match:class" = ".*ibus.*";
+        float = "yes";
+      };
+
       # AI 项目工作区自动分配
 
 
@@ -309,12 +317,12 @@
         border: none;
         border-radius: 0;
         min-height: 0;
-      }
+      };
 
       window#waybar {
         background: @base;
         color: @text;
-      }
+      };
 
       window#waybar.hidden { opacity: 0.2; }
 
@@ -323,7 +331,7 @@
         background: transparent;
         color: @text;
         border-bottom: 2px solid transparent;
-      }
+      };
       #workspaces button.focused { border-bottom: 2px solid @blue; color: @blue; }
       #workspaces button.urgent { border-bottom: 2px solid @red; color: @red; }
       #workspaces button:hover { background: @surface0; }
@@ -628,3 +636,4 @@
     Install = { WantedBy = [ "timers.target" ]; };
   };
 }
+# test
