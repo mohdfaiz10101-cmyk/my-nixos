@@ -48,9 +48,7 @@
 
   # Disable ALL display managers (SDDM, LightDM, etc.)
   # Use TTY autologin + .zprofile to start Hyprland
-  services.displayManager.sddm.enable = lib.mkForce false;
   services.xserver.displayManager.lightdm.enable = lib.mkForce false;
-  systemd.services.display-manager.enable = lib.mkForce false;
 
   # TTY1 autologin for charlie, .zprofile will exec Hyprland
   services.getty.autologinUser = "charlie";

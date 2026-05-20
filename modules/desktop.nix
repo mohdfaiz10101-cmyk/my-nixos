@@ -29,11 +29,11 @@
   # hardware.nvidia-container-toolkit.suppressNvidiaDriverAssertion = true;
 
   # --- 桌面環境：KDE Plasma + SDDM（自動登入）---
-  services.displayManager.sddm.enable = lib.mkDefault false;
-  services.displayManager.sddm.wayland.enable = false;
+  services.displayManager.sddm.enable = lib.mkDefault true;
+  services.displayManager.sddm.wayland.enable = true;
   services.displayManager.sddm.settings.General.Numlock = "on";
   # 使用 mkDefault，允许 hyprland.nix 等模块通过 mkForce 覆盖默认 session
-  services.displayManager.defaultSession = lib.mkDefault "plasma";
+  services.displayManager.defaultSession = lib.mkForce "hyprland-uwsm";
   # autoLogin 由具体 session 模块（hyprland.nix 等）控制，此处禁用避免冲突
   services.displayManager.autoLogin.enable = lib.mkDefault false;
 
@@ -45,7 +45,7 @@
     User = "charlie";
     Relogin = false;  # 会话崩溃后自动重登录
   };
-  services.desktopManager.plasma6.enable = true;
+  services.desktopManager.plasma6.enable = lib.mkDefault false;
   # services.desktopManager.cosmic.enable = true; # 上游 cosmic-edit 哈希不匹配，等修复
   # services.displayManager.cosmic-greeter.enable = false;
 

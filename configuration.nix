@@ -129,11 +129,11 @@ services.openssh = {
     hardware.nvidia.modesetting.enable = lib.mkForce false;
     boot.extraModprobeConfig = lib.mkForce "";
     # nomodeset: 禁用 GPU KMS，使用 EFI/VESA framebuffer（使 fbterm 可用）
-    boot.kernelParams = lib.mkForce [ "nomodeset" "systemd.unit=multi-user.target" ];
+    boot.kernelParams = lib.mkForce [];
 
     # 禁用桌面环境（KDE/SDDM/Sunshine 全部关闭）
     services.xserver.enable = lib.mkForce false;
-    services.displayManager.sddm.enable = lib.mkForce false;
+    services.displayManager.sddm.enable = lib.mkDefault true;
     services.desktopManager.plasma6.enable = lib.mkForce false;
     services.sunshine.enable = lib.mkForce false;
     services.displayManager.autoLogin.enable = lib.mkForce false;
