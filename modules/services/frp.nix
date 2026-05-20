@@ -104,6 +104,6 @@ in
   };
 
   # 防火墙放行
-  networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17699 18300 18090 18091 19890 19891 19892 19893 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, KVM, RDP 3389
+  networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17699 18300 18090 18091 18092 19890 19891 19892 19893 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, KVM, RDP 3389
   networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }
