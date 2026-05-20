@@ -164,9 +164,9 @@
       NC='\033[0m'
 
       log() { echo "[$TIMESTAMP] $1" | tee -a "$LOG"; }
-      log_ok()   { echo -e "${GREEN}✅ $1${NC}" | tee -a "$LOG"; }
-      log_fail() { echo -e "${RED}❌ $1${NC}" | tee -a "$LOG"; }
-      log_warn() { echo -e "${YELLOW}⚠️  $1${NC}" | tee -a "$LOG"; }
+      log_ok()   { echo -e "$GREEN[OK]$NC $1" | tee -a "$LOG"; }
+      log_fail() { echo -e "$RED[FAIL]$NC $1" | tee -a "$LOG"; }
+      log_warn() { echo -e "$YELLOW[WARN]$NC $1" | tee -a "$LOG"; }
 
       if [ "$(id -u)" -ne 0 ]; then
           log_warn "部分修复需要 root，尝试 sudo..."
@@ -226,7 +226,7 @@
       done
 
       if [ -n "$MATCHED" ]; then
-          log "✅ 匹配错误模式: $MATCHED (置信度: ${MAX_CONFIDENCE}%)"
+          log "✅ 匹配错误模式: $MATCHED (置信度: ''${MAX_CONFIDENCE}%)"
 
           if [ "$MAX_CONFIDENCE" -ge 90 ]; then
               log_ok "置信度≥90%，执行自动修复..."
@@ -248,7 +248,7 @@
           echo "" >> "$MEMORY"
           echo "## $(date '+%Y-%m-%d %H:%M') — AI自动修复" >> "$MEMORY"
           echo "**错误模式**: $MATCHED" >> "$MEMORY"
-          echo "**置信度**: ${MAX_CONFIDENCE}%" >> "$MEMORY"
+          echo "**置信度**: ''${MAX_CONFIDENCE}%" >> "$MEMORY"
           echo "" >> "$MEMORY"
       else
           log_warn "未匹配已知错误模式"
