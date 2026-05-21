@@ -70,7 +70,7 @@ in
     [transforms.filter_errors]
     type = "filter"
     inputs = ["journald_errors"]
-    condition = '.status == "failed" || .PRIORITY <= 4' # 仅捕获 Warning/Error/Failed
+    condition = '.status // "failed" == "failed" || .PRIORITY <= 4' # 仅捕获 Warning/Error/Failed
 
     [sinks.ai_context_stream]
     type = "file"
@@ -87,6 +87,8 @@ in
       ExecStart = "${pkgs.vector}/bin/vector --config /etc/vector/vector.toml";
       Restart = "always";
       User = "root";
+      # 确保 data_dir 存在
+      ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p /var/lib/vector /var/lib/ai-context";
     };
   };
 
