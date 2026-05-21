@@ -27,6 +27,7 @@
         # 微信 UOS overlay（提取到 packages/wechat-uos.nix）
         { nixpkgs.overlays = [ (import ./packages/wechat-uos.nix) ]; }
         ./configuration.nix
+        ./modules/ai-center.nix     # AI 全知系统中心
         ./modules/services/litellm-docker.nix
         nix-index-database.nixosModules.nix-index
         { programs.nix-index-database.comma.enable = true; }
