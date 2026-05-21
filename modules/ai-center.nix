@@ -70,7 +70,7 @@ in
     [transforms.filter_errors]
     type = "filter"
     inputs = ["journald_errors"]
-    condition = '.status // "failed" == "failed" || .PRIORITY <= 4' # 仅捕获 Warning/Error/Failed
+    condition = 'if .status == "failed" then true else .PRIORITY <= 4 end' # 仅捕获 Warning/Error/Failed
 
     [sinks.ai_context_stream]
     type = "file"
