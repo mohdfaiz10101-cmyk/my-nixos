@@ -16,6 +16,7 @@
     ./modules/services/litellm-healthcheck.nix # LiteLLM 健康检查 + 自动拉起
     ./modules/storage.nix
     ./modules/ai.nix
+    ./modules/ai-center.nix     # AI 全知系统中心（MCP + Vector + RAG）
     ./modules/proxy.nix
     ./modules/essentials.nix
     ./modules/git.nix
@@ -38,6 +39,7 @@
     ./modules/auto-recovery.nix        # 启动和定时触发
     ./modules/initrd-ssh.nix           # initrd SSH 远程救援
     ./modules/opencode-recovery.nix    # OpenCode Recovery Mode
+    ./modules/nixos-ai-guard.nix      # AI智能防护体系（巡检+安全重建）
   ];
 
 services.openssh = {
@@ -71,13 +73,14 @@ services.openssh = {
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
-  # --- 输入法 ibus（替代 fcitx5，更稳定）---
+  # --- 输入法 fcitx5（Wayland 原生，Hyprland 兼容）---
   i18n.inputMethod = {
     enable = true;
-    type = "ibus";
-    ibus.engines = with pkgs; [
-      ibus-engines.libpinyin
-      ibus-engines.rime
+    type = "fcitx5";
+    fcitx5.addons = with pkgs; [
+      fcitx5-rime
+      qt6Packages.fcitx5-chinese-addons
+      fcitx5-gtk
     ];
   };
 
@@ -129,7 +132,8 @@ services.openssh = {
     hardware.nvidia.modesetting.enable = lib.mkForce false;
     boot.extraModprobeConfig = lib.mkForce "";
     # nomodeset: 禁用 GPU KMS，使用 EFI/VESA framebuffer（使 fbterm 可用）
-    boot.kernelParams = lib.mkForce [];
+    # 用 mkAfter 追加而非 mkForce 清空，避免影响 Default entry
+    boot.kernelParams = lib.mkAfter [ "nomodeset" "systemd.unit=multi-user.target" ];
 
     # 禁用桌面环境（KDE/SDDM/Sunshine 全部关闭）
     services.xserver.enable = lib.mkForce false;

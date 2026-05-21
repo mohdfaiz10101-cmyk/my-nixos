@@ -27,7 +27,7 @@
       remember_window_size = "yes";
       window_padding_width = 4;
       wayland_enable_ime = "yes";
-      input_method = "ibus";
+      input_method = "fcitx";
       allow_hyperlinks = "yes";
     };
     keybindings = {
@@ -126,10 +126,10 @@
         "NIXOS_OZONE_WL,1"
         "__GL_GSYNC_ALLOWED,1"
         "__GL_VRR_ALLOWED,1"
-        # ibus 中文输入
-        "XMODIFIERS,@im=ibus"
-        "GTK_IM_MODULE,ibus"
-        "QT_IM_MODULE,ibus"
+        # fcitx5 中文输入（Wayland 原生）
+        "XMODIFIERS,@im=fcitx"
+        "GTK_IM_MODULE,fcitx"
+        "QT_IM_MODULE,fcitx"
         # Qt Wayland
         "QT_QPA_PLATFORM,wayland"
         "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
@@ -140,7 +140,7 @@
 
       # 启动项
       exec-once = [
-        "ibus-daemon -drx"
+        "fcitx5 -d --replace"
         "mako"
         "hyprpaper"
         "wl-paste --type text --watch cliphist store"
@@ -193,8 +193,7 @@
         # 截图
         ", Print, exec, grim -g \"$(slurp)\" ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
         "$mod, Print, exec, grim ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png"
-        # 输入法切换
-        "CTRL, Space, exec, /home/charlie/.local/bin/ibus-toggle.sh"
+        # 输入法切换（fcitx5 内置 Ctrl+Space 处理，此行保留空）
       ];
       # 鼠标绑定：SUPER+左键拖动，SUPER+右键调整大小
       bindm = [
@@ -257,13 +256,6 @@
         };
       };
 
-      # ibus 候选弹窗浮动（防止抢焦点）
-      windowrule = {
-        name = "ibus-float";
-        "match:class" = ".*ibus.*";
-        float = "yes";
-      };
-
       # AI 项目工作区自动分配
 
 
@@ -317,12 +309,12 @@
         border: none;
         border-radius: 0;
         min-height: 0;
-      };
+      }
 
       window#waybar {
         background: @base;
         color: @text;
-      };
+      }
 
       window#waybar.hidden { opacity: 0.2; }
 
@@ -331,7 +323,7 @@
         background: transparent;
         color: @text;
         border-bottom: 2px solid transparent;
-      };
+      }
       #workspaces button.focused { border-bottom: 2px solid @blue; color: @blue; }
       #workspaces button.urgent { border-bottom: 2px solid @red; color: @red; }
       #workspaces button:hover { background: @surface0; }
@@ -446,6 +438,7 @@
           format-wifi = " {essid}";
           format-ethernet = " {ipaddr}";
           format-disconnected = "󰤭 断开";
+          on-click = "kitty -e nmtui";
         };
 
         pulseaudio = {

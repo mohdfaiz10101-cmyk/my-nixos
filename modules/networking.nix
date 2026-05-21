@@ -70,6 +70,8 @@
       iptables -A nixos-fw -s 172.16.0.0/12 -p tcp --dport 8286 -j nixos-fw-accept
       # LAN 设备（minipc 等）访问宿主机代理
       iptables -A nixos-fw -s 192.168.2.0/24 -p tcp --dport 7890 -j nixos-fw-accept
+      # NixOS TTY 穿透（17699）
+      iptables -A nixos-fw -p tcp --dport 17699 -j nixos-fw-accept
     '';
     extraStopCommands = ''
       iptables -D INPUT -i tailscale0 -j ACCEPT 2>/dev/null || true

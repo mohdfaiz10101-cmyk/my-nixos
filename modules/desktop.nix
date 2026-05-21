@@ -112,12 +112,11 @@
   # --- ibus 環境變量（Hyprland Wayland 模式）---
   # ibus-daemon 管理所有输入法上下文
   environment.sessionVariables = {
-    XMODIFIERS          = "@im=ibus";
-    SDL_IM_MODULE       = "ibus";
-    INPUT_METHOD        = "ibus";
-    GTK_IM_MODULE       = "ibus";
-    GTK_IM_MODULE_FILE  = "/run/current-system/sw/etc/gtk-3.0/immodules.cache";
-    QT_IM_MODULE        = "ibus";
+    XMODIFIERS          = "@im=fcitx";
+    SDL_IM_MODULE       = "fcitx";
+    INPUT_METHOD        = "fcitx";
+    GTK_IM_MODULE       = "fcitx";
+    QT_IM_MODULE        = "fcitx";
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;

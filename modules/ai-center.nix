@@ -40,8 +40,9 @@ in
         ${pkgs.nix-info}/bin/nix-info -m > /var/lib/ai-context/sys-info.txt
         # 导出当前系统的依赖关系图谱 (Graph-RAG 核心原料)
         ${pkgs.nix}/bin/nix-store --query --graph > /var/lib/ai-context/dependency-graph.dot
-        # 复制当前激活的配置快照
-        cp -rL /etc/nixos /var/lib/ai-context/active-config
+        # 复制当前激活的配置快照（排除 result 软链接，避免复制 nix store 导致磁盘暴涨）
+        rm -rf /var/lib/ai-context/active-config
+        rsync -a --exclude='result' --exclude='result-*' /etc/nixos/ /var/lib/ai-context/active-config/
         # 设置权限
         chmod -R 755 /var/lib/ai-context
       '';

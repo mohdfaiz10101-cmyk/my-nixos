@@ -32,7 +32,7 @@
     enable = true;
     openFirewall = true;
     authKeyFile = null;
-    extraUpFlags = [ "--ssh" ];  # 启用 Tailscale SSH，免每次浏览器验证
+    extraUpFlags = [];
   };
   networking.firewall.trustedInterfaces = [ "tailscale0" "wlp0s20f0u5" ];
 

@@ -40,6 +40,7 @@
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHAFruJJ+bY1fAh05xg86ZHMCh+dMJUq6GjmH11yq2uN"
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLV1tGBKQPdPZmGBRd2jzFoOggrB0obaOMxvJ+5tIhL windows-backup@spectrai"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDjcSnYBXzoKR3J6efyYdS9eSasDjxkGyi57ArMCKkgo windows-ssh-to-nixos"
     ];
   };
 
