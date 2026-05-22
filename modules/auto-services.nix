@@ -39,7 +39,7 @@
       '';
       ExecStop = pkgs.writeShellScript "ai-infra-stop" ''
         for dir in /mnt/ai-cluster/litellm /mnt/ai/ai-cluster/litellm; do
-          [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down) || true
+          [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down --timeout 5) || true
         done
       '';
     };
@@ -63,7 +63,7 @@
       '';
       ExecStop = pkgs.writeShellScript "letta-stop" ''
         for dir in /mnt/ai-cluster/letta /mnt/ai/ai-cluster/letta; do
-          [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down) || true
+          [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down --timeout 5) || true
         done
       '';
     };
@@ -96,7 +96,7 @@
           for dir in "$CLUSTER"/*/; do
             name=$(basename "$dir")
             case "$name" in litellm|letta) continue ;; esac
-            [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down) || true
+            [ -f "$dir/docker-compose.yml" ] && (cd "$dir" && docker compose down --timeout 5) || true
           done
         done
       '';
