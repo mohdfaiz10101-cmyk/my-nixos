@@ -109,14 +109,13 @@
     KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
-  # --- ibus 環境變量（Hyprland Wayland 模式）---
-  # ibus-daemon 管理所有输入法上下文
+  # --- fcitx5 环境变量（Hyprland Wayland 模式，mkForce 覆盖 i18n 模块默认值）---
   environment.sessionVariables = {
-    XMODIFIERS          = "@im=fcitx";
-    SDL_IM_MODULE       = "fcitx";
-    INPUT_METHOD        = "fcitx";
-    GTK_IM_MODULE       = "fcitx";
-    QT_IM_MODULE        = "fcitx";
+    XMODIFIERS    = lib.mkForce "@im=fcitx";
+    SDL_IM_MODULE = lib.mkForce "fcitx";
+    INPUT_METHOD  = lib.mkForce "fcitx";
+    QT_IM_MODULE  = lib.mkForce "fcitx";
+    # GTK_IM_MODULE 在纯 Wayland 下用 text-input 协议，不设置
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;

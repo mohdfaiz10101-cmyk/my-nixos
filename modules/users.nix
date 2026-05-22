@@ -63,8 +63,7 @@
       if [ "''${TERM:-}" = "linux" ] && [ -z "''${FBTERM:-}" ] && command -v fbterm &>/dev/null; then
         exec fbterm
       fi
-      # ibus 输入法环境变量
-      export XMODIFIERS=@im=ibus
+      # fcitx5 输入法（由 hyprland.conf env= 注入，此处移除 ibus 残留）
     '';
     shellAliases = {
       ns = "sudo bash /etc/nixos/scripts/nixos-safe-upgrade.sh test";

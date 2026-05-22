@@ -73,10 +73,11 @@ services.openssh = {
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
-  # --- 输入法 fcitx5（Wayland 原生，Hyprland 兼容）---
+  # --- 输入法 fcitx5（Wayland native text-input 协议，Hyprland 兼容）---
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
+    fcitx5.waylandFrontend = true;
     fcitx5.addons = with pkgs; [
       fcitx5-rime
       qt6Packages.fcitx5-chinese-addons

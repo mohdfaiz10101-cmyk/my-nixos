@@ -149,7 +149,7 @@ in
     mihomo
 
     # === AI & 语音 ===
-#    ollama-cuda  # 临时禁用：磁盘空间不足
+ollama-cuda
     whisper-cpp
     ffmpeg
     sox
@@ -187,6 +187,11 @@ in
     (kdePackages.spectacle.override {
       tesseractLanguages = [ "eng" "chi_sim" "chi_tra" "jpn" "kor" ];
     })
+
+    # === 输入法 ===
+    ibus
+    ibus-engines.libpinyin
+    ibus-engines.rime
 
     # === 办公 & 字体 ===
     libreoffice-qt6-fresh

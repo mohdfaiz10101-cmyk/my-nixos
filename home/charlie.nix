@@ -126,10 +126,11 @@
         "NIXOS_OZONE_WL,1"
         "__GL_GSYNC_ALLOWED,1"
         "__GL_VRR_ALLOWED,1"
-        # fcitx5 中文输入（Wayland 原生）
+        # fcitx5 中文输入（Wayland 原生 text-input 协议，不设 GTK_IM_MODULE）
         "XMODIFIERS,@im=fcitx"
-        "GTK_IM_MODULE,fcitx"
         "QT_IM_MODULE,fcitx"
+        "SDL_IM_MODULE,fcitx"
+        "INPUT_METHOD,fcitx"
         # Qt Wayland
         "QT_QPA_PLATFORM,wayland"
         "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
