@@ -22,6 +22,11 @@ let
     start = 2223
     end = 2223
 
+    # ttyd 终端（2026-05-23 从 17699 迁移到 17698）
+    [[allowPorts]]
+    start = 17698
+    end = 17698
+
     [[allowPorts]]
     start = 17699
     end = 17699
@@ -97,6 +102,28 @@ let
     start = 18093
     end = 18093
 
+    # OpenAgents Network 公网访问（2026-05-23 新增）
+    [[allowPorts]]
+    start = 18700
+    end = 18700
+
+    # Sunshine/Moonlight 远程串流（2026-05-23 新增）
+    [[allowPorts]]
+    start = 47980
+    end = 47980
+
+    [[allowPorts]]
+    start = 47994
+    end = 47994
+
+    [[allowPorts]]
+    start = 47999
+    end = 47999
+
+    [[allowPorts]]
+    start = 48020
+    end = 48020
+
     [log]
     to = "/var/log/frps/frps.log"
     level = "info"
@@ -123,6 +150,6 @@ in
   };
 
   # 防火墙放行
-   networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17699 17700 15555 8022 18300 18090 18091 18092 18093 19890 19891 19892 19893 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, 手机ADB 15555, 手机SSH 8022, KVM, RDP 3389, Launcher 17699, ttyd 17700, OpenAgents 18092
+   networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17698 17699 17700 15555 8022 18300 18090 18091 18092 18093 18700 19890 19891 19892 19893 47984 47989 47990 48010 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, 手机ADB 15555, 手机SSH 8022, KVM, RDP 3389, ttyd 17698, Launcher 17699, ttyd 17700, OpenAgents 18092, OpenAgents Network 18700
   networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }
