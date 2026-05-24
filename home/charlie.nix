@@ -347,9 +347,9 @@
       #pulseaudio { padding: 0 10px; color: @lavender; }
       #pulseaudio.muted { color: @overlay0; }
       #backlight { padding: 0 10px; color: @yellow; }
-      #tray { padding: 0 10px; }
-      #tray > .passive { color: @subtext0; }
-      #tray > .needs-attention { color: @red; }
+#tray { padding: 0 10px; }
+       #tray > .passive { color: @subtext0; }
+       #tray > .needs-attention { color: @red; }
       #custom-date { padding: 0 10px; color: @mauve; }
       #idle_inhibitor { padding: 0 10px; color: @yellow; }
       #idle_inhibitor.activated { color: @red; }
@@ -401,7 +401,7 @@
       mainBar = {
         layer = "top";
         position = "top";
-        height = 28;
+        height = 30;
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "hyprland/window" ];
         modules-right = [ "custom/health" "custom/ai" "custom/pulse" "custom/mem-pulse" "custom/quota" "custom/optasks" "custom/clip-otp" "tray" "idle_inhibitor" "network" "pulseaudio" "cpu" "memory" "battery" "clock" ];
@@ -463,7 +463,7 @@
           format-icons.deactivated = "󰾪";
         };
 
-        tray = { spacing = 8; };
+        tray = { spacing = 12; };
 
         "custom/optasks" = {
           exec = "/home/charlie/.local/bin/op-tasks-status.sh";

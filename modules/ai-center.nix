@@ -81,6 +81,7 @@ in
   '';
 
   systemd.services.vector = {
+    enable = false;
     description = "Vector Log Streaming for AI Context";
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];

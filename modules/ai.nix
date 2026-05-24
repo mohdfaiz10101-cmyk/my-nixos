@@ -1,7 +1,7 @@
 { config, pkgs, inputs, lib, ... }: {
   # --- 1. Ollama 推理後端 (NVIDIA CUDA 加速) --- Re-enabled 2026-05-22
   services.ollama = {
-    enable = true;
+    enable = false;  # 禁用 — NAMESPACE/NFS挂载问题
     package = pkgs.ollama-cuda;
     host = "0.0.0.0";
     port = 11434;

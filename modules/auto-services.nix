@@ -315,6 +315,7 @@
 
   # ===== 自动稳定性检测：48h 无问题 → 自动升为 stable gen =====
   systemd.services.auto-stable-detect = {
+    enable = false;
     description = "Auto stable generation detector";
     path = with pkgs; [ coreutils gnugrep gawk procps libnotify systemd ];
     serviceConfig = {
@@ -324,6 +325,7 @@
     };
   };
   systemd.timers.auto-stable-detect = {
+    enable = false;
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "5min";

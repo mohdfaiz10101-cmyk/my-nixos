@@ -11,6 +11,7 @@
 
   # 自动训练 service
   systemd.services.deepseek-auto-train = {
+    enable = false;
     description = "DeepSeek LoRA Auto Training";
     path = with pkgs; [ python3 bash coreutils docker ];
     serviceConfig = {
@@ -24,6 +25,7 @@
 
   # 定时器：开机后每 7 天执行一次
   systemd.timers.deepseek-auto-train = {
+    enable = false;
     description = "DeepSeek LoRA Auto Training Timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
