@@ -83,8 +83,11 @@
     enable = true;
     settings = {
       PermitRootLogin = "no";
-      PasswordAuthentication = true;
+      PasswordAuthentication = false;
       PubkeyAuthentication = true;
+      KbdInteractiveAuthentication = false;
+      MaxAuthTries = 3;
+      AllowUsers = [ "charlie" ];
       X11Forwarding = false;
       AllowTcpForwarding = "yes";
       GatewayPorts = "clientspecified";

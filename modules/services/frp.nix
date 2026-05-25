@@ -97,6 +97,16 @@ let
     start = 18300
     end = 18300
 
+    # AGI Control Plane 直连 3000（2026-05-25 新增）
+    [[allowPorts]]
+    start = 3000
+    end = 3000
+
+    # Khoj 知识库 42111（2026-05-25 新增）
+    [[allowPorts]]
+    start = 42111
+    end = 42111
+
     # OpenAgents WebSocket 端口（18092 被 macg_mcp.py 占用，改 18093）
     [[allowPorts]]
     start = 18093
@@ -142,14 +152,20 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${pkgs.frp}/bin/frps -c ${frpsConfig}";
+      ExecStart = "/usr/local/bin/frps -c ${frpsConfig}";
       Restart = "on-failure";
       RestartSec = 5;
       LimitNOFILE = 1048576;
+      # 内存上限：frp 正常 <100MB，超过 400MB 说明异常，OOM killer 主动介入
+      MemoryMax = "400M";
+      MemoryHigh = "300M";
+      # 崩溃重启限制：10分钟内最多5次
+      StartLimitIntervalSec = 600;
+      StartLimitBurst = 5;
     };
   };
 
   # 防火墙放行
-   networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17698 17699 17700 15555 8022 18300 18090 18091 18092 18093 18700 19890 19891 19892 19893 47984 47989 47990 48010 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, 手机ADB 15555, 手机SSH 8022, KVM, RDP 3389, ttyd 17698, Launcher 17699, ttyd 17700, OpenAgents 18092, OpenAgents Network 18700
+   networking.firewall.allowedTCPPorts = [ 7000 7500 2222 2223 2224 24801 3389 17698 17699 17700 15555 8022 18300 18090 18091 18092 18093 18700 19890 19891 19892 19893 47984 47989 47990 48010 42110 3000 ];  # Win SSH 2222, NixOS SSH 2223, 手机 2224, 手机ADB 15555, 手机SSH 8022, KVM, RDP 3389, ttyd 17698, Launcher 17699, ttyd 17700, OpenAgents 18092, OpenAgents Network 18700
   networking.firewall.allowedUDPPorts = [ 60000 60001 60002 60003 60004 60005 ];  # mosh (NixOS + 手机)
 }

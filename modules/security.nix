@@ -24,8 +24,14 @@
   # fail2ban — SSH 暴力破解防护（NixOS 内置 sshd jail）
   services.fail2ban = {
     enable = true;
-    maxretry = 5;
-    bantime = "1h";
+    maxretry = 3;
+    bantime = "24h";
+    jails.sshd.settings = {
+      mode = "aggressive";
+      maxretry = 3;
+      bantime = "24h";
+      findtime = "10m";
+    };
   };
 
   # sudo — 启用 setuid 位修复权限问题
