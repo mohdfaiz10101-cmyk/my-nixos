@@ -596,6 +596,31 @@
     Install = { WantedBy = [ "graphical-session.target" ]; };
   };
 
+  # ── Chromium 声明式 desktop entry：走 wrapper 关闭测试版提示 + 预同步 cookies ──
+  xdg.desktopEntries.chromium-clean = {
+    name = "Chromium";
+    exec = "/home/charlie/.local/bin/chromium-launch %U";
+    icon = "chromium";
+    comment = "Browse the Web (no automation banners)";
+    categories = [ "Network" "WebBrowser" ];
+    mimeType = [ "text/html" "text/xml" "application/xhtml+xml" "x-scheme-handler/http" "x-scheme-handler/https" "x-scheme-handler/ftp" ];
+    settings = {
+      StartupWMClass = "chromium-browser";
+    };
+  };
+
+  # ── 设 Chromium 为默认浏览器 ──
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "text/html"                = [ "chromium-clean.desktop" ];
+      "x-scheme-handler/http"   = [ "chromium-clean.desktop" ];
+      "x-scheme-handler/https"  = [ "chromium-clean.desktop" ];
+      "x-scheme-handler/ftp"    = [ "chromium-clean.desktop" ];
+      "application/xhtml+xml"   = [ "chromium-clean.desktop" ];
+    };
+  };
+
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
   # wrapper 在 ~/.local/bin/floorp，MOZ_ENABLE_WAYLAND=0 + ibus IM 变量
   # 永久方案 2026-05-07: XWayland 避免 NVIDIA+KWin text-input-v3 relay 不稳定

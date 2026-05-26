@@ -130,6 +130,7 @@ in
     inputs.zen-browser.packages.x86_64-linux.default
     floorp-bin
     google-chrome
+    chromium
 
     # === 通讯 ===
     wechat-uos

@@ -83,7 +83,7 @@
     enable = true;
     settings = {
       PermitRootLogin = "no";
-      PasswordAuthentication = false;
+      PasswordAuthentication = true;
       PubkeyAuthentication = true;
       KbdInteractiveAuthentication = false;
       MaxAuthTries = 3;
