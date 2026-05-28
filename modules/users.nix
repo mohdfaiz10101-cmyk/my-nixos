@@ -96,6 +96,8 @@
       dashboard = "echo 'Dashboard: http://127.0.0.1:9099' && xdg-open http://127.0.0.1:9099 2>/dev/null || true";
       q = "/etc/nixos/scripts/claude-interactive.sh";
       q-lite = "ANTHROPIC_BASE_URL=http://127.0.0.1:4000 ANTHROPIC_API_KEY=sk-litellm-charlie-2026 claude";
+      oc = "tmux attach-session -t openclaw";
+      overcode = "opencode";
     };
   };
 

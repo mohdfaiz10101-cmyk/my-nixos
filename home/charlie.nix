@@ -112,7 +112,7 @@
   '';
 
   # ── Hyprland 窗口管理器配置 ──────────────────────────────────
-  # NVIDIA RTX 3060 Ti 专项 env + ibus + wayvnc + 7699 兼容
+  # NVIDIA RTX 3060 Ti 专项 env + wayvnc + 7699 兼容
   wayland.windowManager.hyprland = {
     enable = true;
     settings = {
@@ -126,11 +126,7 @@
         "NIXOS_OZONE_WL,1"
         "__GL_GSYNC_ALLOWED,1"
         "__GL_VRR_ALLOWED,1"
-        # fcitx5 中文输入（Wayland 原生 text-input 协议，不设 GTK_IM_MODULE）
-        "XMODIFIERS,@im=fcitx"
-        "QT_IM_MODULE,fcitx"
-        "SDL_IM_MODULE,fcitx"
-        "INPUT_METHOD,fcitx"
+        # fcitx5 环境变量由 NixOS i18n 模块自动管理，此处不手动设置
         # Qt Wayland
         "QT_QPA_PLATFORM,wayland"
         "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
@@ -149,6 +145,7 @@
         "websockify 0.0.0.0:5998 127.0.0.1:5900"
         "python3 /home/charlie/.local/bin/ydotool-bridge.py 24801"
         "Telegram"
+        "bash ~/.local/bin/hypr-workspace-sort.sh"
       ];
 
       # 修饰键
@@ -261,6 +258,18 @@
 
 
     };
+
+    extraConfig = ''
+      # 工作区持久化（空工作区也显示在 bar 上）
+      workspace = 1, persistent:true
+      workspace = 2, persistent:true
+      workspace = 3, persistent:true
+      workspace = 4, persistent:true
+      workspace = 5, persistent:true
+
+      # 工作区窗口自动分配规则
+      source = ~/.config/hypr/workspace-rules.conf
+    '';
   };
 
   # ── wayvnc 配置（允许无密码本地连接）─────────────────────────
@@ -325,7 +334,12 @@
         color: @text;
         border-bottom: 2px solid transparent;
       }
-      #workspaces button.focused { border-bottom: 2px solid @blue; color: @blue; }
+      #workspaces button.focused {
+        background: @teal;
+        color: @crust;
+        font-weight: bold;
+        border-bottom: 2px solid @teal;
+      }
       #workspaces button.urgent { border-bottom: 2px solid @red; color: @red; }
       #workspaces button:hover { background: @surface0; }
 
@@ -413,12 +427,11 @@
             default = "○";
             focused = "●";
             urgent = "!";
-            "1" = "一";
-            "2" = "二";
-            "3" = "三";
-            "4" = "四";
-            "5" = "五";
-            "6" = "六";
+            "1" = "终端";
+            "2" = "通讯";
+            "3" = "编辑";
+            "4" = "浏览";
+            "5" = "AI";
           };
         };
 
@@ -622,7 +635,7 @@
   };
 
   # ── Floorp 声明式 desktop entry：强制走 wrapper（修复输入法）──
-  # wrapper 在 ~/.local/bin/floorp，MOZ_ENABLE_WAYLAND=0 + ibus IM 变量
+  # wrapper 在 ~/.local/bin/floorp，MOZ_ENABLE_WAYLAND=0 + fcitx5 IM 变量
   # 永久方案 2026-05-07: XWayland 避免 NVIDIA+KWin text-input-v3 relay 不稳定
   xdg.desktopEntries.floorp = {
     name = "Floorp";
@@ -655,4 +668,3 @@
     Install = { WantedBy = [ "timers.target" ]; };
   };
 }
-# test

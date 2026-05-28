@@ -189,10 +189,7 @@ ollama-cuda
       tesseractLanguages = [ "eng" "chi_sim" "chi_tra" "jpn" "kor" ];
     })
 
-    # === 输入法 ===
-    ibus
-    ibus-engines.libpinyin
-    ibus-engines.rime
+    # === 输入法 ===（fcitx5 由 i18n.inputMethod 管理，不在此安装）
 
     # === 办公 & 字体 ===
     libreoffice-qt6-fresh

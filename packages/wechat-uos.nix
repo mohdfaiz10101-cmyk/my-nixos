@@ -51,10 +51,6 @@ in
       if [[ ''${XMODIFIERS} =~ fcitx ]]; then
         export QT_IM_MODULE=fcitx
         export GTK_IM_MODULE=fcitx
-      elif [[ ''${XMODIFIERS} =~ ibus ]]; then
-        export QT_IM_MODULE=ibus
-        export GTK_IM_MODULE=ibus
-        export IBUS_USE_PORTAL=1
       fi
       exec ${newWechatRaw.outPath}/opt/wechat/wechat
     '';

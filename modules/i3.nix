@@ -41,8 +41,8 @@
   };
 
   environment.sessionVariables = {
-    GTK_IM_MODULE = lib.mkForce "ibus";
-    QT_IM_MODULE  = lib.mkForce "ibus";
+    GTK_IM_MODULE = lib.mkForce "fcitx";
+    QT_IM_MODULE  = lib.mkForce "fcitx";
   };
 
   services.displayManager.defaultSession = lib.mkForce "none+i3";

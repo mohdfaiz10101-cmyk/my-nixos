@@ -109,13 +109,11 @@
     KERNEL=="hidraw*", MODE="0660", GROUP="input"
   '';
 
-  # --- fcitx5 环境变量（Hyprland Wayland 模式，mkForce 覆盖 i18n 模块默认值）---
+  # --- fcitx5 环境变量（Hyprland Wayland 模式）---
+  # 只设 XMODIFIERS，其他由 NixOS i18n 模块自动管理
+  # 手动设置 QT_IM/GTK_IM 会覆盖 waylandFrontend=true 导致焦点丢失
   environment.sessionVariables = {
-    XMODIFIERS    = lib.mkForce "@im=fcitx";
-    SDL_IM_MODULE = lib.mkForce "fcitx";
-    INPUT_METHOD  = lib.mkForce "fcitx";
-    QT_IM_MODULE  = lib.mkForce "fcitx";
-    # GTK_IM_MODULE 在纯 Wayland 下用 text-input 协议，不设置
+    XMODIFIERS = lib.mkForce "@im=fcitx";
   };
   # --- 禁用非必要服务（节省内存）---
   services.geoclue2.enable = lib.mkForce false;
