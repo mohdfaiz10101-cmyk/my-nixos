@@ -269,6 +269,9 @@
 
       # 工作区窗口自动分配规则
       source = ~/.config/hypr/workspace-rules.conf
+
+      # 用户自定义覆盖（手动编辑 ~/.config/hypr/user-overrides.conf，无需 rebuild）
+      source = ~/.config/hypr/user-overrides.conf
     '';
   };
 

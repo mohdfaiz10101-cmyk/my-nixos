@@ -1,8 +1,8 @@
 { config, pkgs, lib, ... }:
 
 {
-  # LiteLLM 健康检查 + 自动拉起服务
-  # 每 5 分钟检查一次，不健康则自动重启
+  # LiteLLM 健康检查已并入 health-aggregator。
+  # 保留手动 service，不再启用 timer，避免多个健康检查同时重启/告警。
 
   systemd.services.litellm-healthcheck = {
     description = "LiteLLM Health Check and Auto-Restart";
@@ -17,7 +17,7 @@
 
   systemd.timers.litellm-healthcheck = {
     description = "LiteLLM Health Check Timer (every 5 minutes)";
-    wantedBy = [ "timers.target" ];
+    wantedBy = lib.mkForce [];
 
     timerConfig = {
       OnBootSec = "2min";       # 启动 2 分钟后首次检查

@@ -359,8 +359,8 @@ in
     };
 
     health-check = {
-      description = "Weekly health check (Mon 08:00)";
-      wantedBy = [ "timers.target" ];
+      description = "Weekly health check (disabled; covered by health-aggregator)";
+      wantedBy = [];
       timerConfig = {
         OnCalendar = "Mon *-*-* 08:00:00";
         Persistent = true;
@@ -378,8 +378,8 @@ in
     };
 
     letta-health-check = {
-      description = "Letta health check (daily)";
-      wantedBy = [ "timers.target" ];
+      description = "Letta health check (disabled; covered by health-aggregator)";
+      wantedBy = [];
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "12h";
@@ -388,8 +388,8 @@ in
     };
 
     letta-health-guard = {
-      description = "Letta health guard (every 10min)";
-      wantedBy = [ "timers.target" ];
+      description = "Letta health guard (disabled; covered by health-aggregator)";
+      wantedBy = [];
       timerConfig = {
         OnBootSec = "2min";
         OnUnitActiveSec = "10min";
@@ -398,8 +398,8 @@ in
     };
 
     letta-health-monitor = {
-      description = "Letta health monitor (every 6h)";
-      wantedBy = [ "timers.target" ];
+      description = "Letta health monitor (disabled; covered by health-aggregator)";
+      wantedBy = [];
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "6h";
@@ -457,8 +457,8 @@ in
     };
 
     system-health-monitor = {
-      description = "System health monitor (hourly)";
-      wantedBy = [ "timers.target" ];
+      description = "System health monitor (disabled; covered by health-aggregator)";
+      wantedBy = [];
       timerConfig = {
         OnBootSec = "5min";
         OnUnitActiveSec = "1h";

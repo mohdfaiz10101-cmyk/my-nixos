@@ -62,14 +62,19 @@
   };
 
 
-  # --- 系统健康监控 ---
-  systemd.services.system-health-monitor = {
-    description = "NixOS system health monitor";
-    path = [ pkgs.bash pkgs.coreutils pkgs.gnutar pkgs.gzip pkgs.nix pkgs.findutils pkgs.libnotify ];
+  # --- 聚合健康监控 ---
+  systemd.services.health-aggregator = {
+    description = "Unified health aggregator with dedupe cooldown";
+    wants = [ "network-online.target" "docker.service" ];
+    after = [ "network-online.target" "docker.service" ];
+    path = with pkgs; [
+      bash coreutils curl docker findutils gawk gnugrep gnused gnutar gzip
+      shadow systemd util-linux
+    ];
     serviceConfig = {
       Type = "oneshot";
       TimeoutStartSec = "120";
-      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/system-health-monitor.sh";
+      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/health-aggregator.sh";
       StandardOutput = "journal";
       StandardError = "journal";
     };
@@ -77,13 +82,14 @@
   };
 
 
-  systemd.timers.system-health-monitor = {
-    description = "Daily system health check (09:00)";
+  systemd.timers.health-aggregator = {
+    description = "Unified health aggregation timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "5min";
-      OnCalendar = "*-*-* 09:00:00";
+      OnBootSec = "4min";
+      OnUnitActiveSec = "30min";
       Persistent = true;
+      RandomizedDelaySec = "2min";
     };
 
   };

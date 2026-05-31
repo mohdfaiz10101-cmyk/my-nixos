@@ -129,25 +129,8 @@
   # systemd.services.knowledge-distill = { ... };
   # systemd.timers.knowledge-distill = { ... };
 
-  # 4. 健康监控 + Telegram 报警（每5分钟）
-  systemd.services.health-monitor = {
-    description = "System health monitor with Telegram alerts";
-    path = with pkgs; [ docker curl bash coreutils gawk hostname ];
-    serviceConfig = {
-      Type = "oneshot";
-      TimeoutStartSec = "30";
-      ExecStart = "${pkgs.bash}/bin/bash /etc/nixos/scripts/health-monitor.sh";
-    };
-  };
-
-  systemd.timers.health-monitor = {
-    description = "Periodic health check";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
-    };
-  };
+  # 4. 旧 health-monitor 已并入 modules/services.nix 的 health-aggregator。
+  #    保留注释，避免重新引入每 5 分钟直发 Telegram 的噪声源。
 
   # 5. NixOS 智能安全升级：自动确认 timer
   systemd.services.nixos-auto-confirm = {

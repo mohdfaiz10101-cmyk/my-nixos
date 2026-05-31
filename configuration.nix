@@ -143,7 +143,7 @@ services.openssh = {
 
     # 禁用桌面环境（KDE/SDDM/Sunshine 全部关闭）
     services.xserver.enable = lib.mkForce false;
-    services.displayManager.sddm.enable = lib.mkDefault true;
+    services.displayManager.sddm.enable = lib.mkForce false;
     services.desktopManager.plasma6.enable = lib.mkForce false;
     services.sunshine.enable = lib.mkForce false;
     services.displayManager.autoLogin.enable = lib.mkForce false;
