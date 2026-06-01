@@ -1,10 +1,11 @@
 {
-  "_comment": "StepClaw 云端接入本地 OpenCode 配置参考（2026-05-12）",
+  "_comment": "StepClaw 云端 × OpenClaw 本地 × OpenCode 三层架构最终配置（2026-05-13 更新）\n\n【三层分工】\n  StepClaw 云端 → 任务入口 + 7×24 调度 + 轻量任务直接执行 + 远程触发\n  OpenClaw 本地 → 桌面控制 + 本地自动化 + 消息接入 + coding-agent 桥接 OpenCode\n  OpenCode 本地 → 唯一编码引擎（所有编码任务）\n\n【任务路由】\n  用户 → StepClaw 云端 → 判断任务类型：\n    ├─ 编码/架构/重构 → 转发 OpenClaw Gateway (ws://100.91.93.99:19893)\n    │                     → OpenClaw 识别编码 → coding-agent → OpenCode CLI\n    ├─ 本地文件/桌面控制 → 转发 OpenClaw Gateway → 直接执行\n    ├─ 信息检索/摘要/定时 → StepClaw 云端直接执行\n    └─ 手机/飞书/钉钉消息 → StepClaw 云端接收 → 按需分发\n\n  日常 CLI 编码 → 直接 OpenCode（不经过 OpenClaw）\n\n【端口映射（FRP）】\n  19890 → OpenCode Web（SSH + Web 终端）\n  19891 → Hub API（任务派发/记忆读写）\n  19892 → Letta MCP（长期记忆 API）\n  19893 → OpenClaw Gateway（桌面控制 + coding-agent）",
+  "updated": "2026-05-13T11:22:38+08:00",
   "gateway": {
     "remote": {
-      "url": "ws://100.91.93.99:19890",
+      "url": "ws://100.91.93.99:19893",
       "token": "frp-token-charlie-2026",
-      "_note": "StepClaw 通过此 WebSocket 连接本地 OpenCode Gateway"
+      "_note": "OpenClaw Gateway WebSocket — StepClaw 云端通过此端口连接本地 OpenClaw"
     }
   },
   "tools": {
@@ -15,6 +16,11 @@
     "letta": {
       "baseURL": "http://100.91.93.99:19892",
       "_note": "Letta 记忆 API — 只读查询，写入走本地"
+    },
+    "openclaw": {
+      "gateway": "ws://100.91.93.99:19893",
+      "dashboard": "http://100.91.93.99:19893",
+      "_note": "OpenClaw Gateway — StepFun 模型通过 LiteLLM 代理（localhost:4000）"
     }
   },
   "github_config_repo": {
@@ -22,5 +28,128 @@
     "_note": "替换 YOUR_USERNAME 为你的 GitHub 用户名",
     "branch": "main",
     "sync_direction": "bidirectional"
+  },
+  "openclaw": {
+    "role": "本地桌面控制 + coding-agent 桥接 OpenCode",
+    "gateway_local": {
+      "mode": "local",
+      "port": 18789,
+      "bind": "127.0.0.1",
+      "auth_token": "0e9ec3e2359ff9c986062728f00d5caae783e03628584ca8",
+      "status": "active (running, systemd user)"
+    },
+    "gateway_remote_ws": "ws://100.91.93.99:19893",
+    "gateway_remote_dashboard": "http://100.91.93.99:19893",
+    "frp_mapping": "nixos-openclaw-gw: 127.0.0.1:18789 → 19893",
+    "frp_log": "start proxy success",
+    "model": "litellm/step-3.5-flash-2603 (primary) → glm-5.1 → deepseek-v4-pro",
+    "agentRuntime": "auto（支持 OpenCode backend）",
+    "coding_agent": {
+      "skill": "enabled",
+      "target": "OpenCode CLI (~/.npm-global/bin/opencode)",
+      "model": "openai-compatible/step-3.5-flash（OpenCode 全局 fallback 链）"
+    },
+    "system_prompt_override": "桌面控制 + 消息接入 + 识别编码任务转发 OpenCode（coding-agent）",
+    "ready_skills": [
+      "browser-automation",
+      "video-frames",
+      "weather",
+      "taskflow",
+      "tmux"
+    ]
+  },
+  "opencode": {
+    "role": "唯一编码引擎（不经过 OpenClaw，直接 CLI）",
+    "agents": 8,
+    "default_model": "openai-compatible/step-3.5-flash（全局 fallback: step-3.5-flash → glm → deepseek）",
+    "arch_model": "openai-compatible/step-3.5-flash-2603",
+    "opencode_web": "http://localhost:8080（FRP 19890）",
+    "agents_list": [
+      {
+        "id": "sisyphus",
+        "mode": "primary",
+        "model": "step-3.5-flash",
+        "role": "主指挥官 — 任务分解/派发子agent/闭环验证"
+      },
+      {
+        "id": "plan",
+        "mode": "primary",
+        "model": "step-3.5-flash",
+        "role": "规划器 — 分析需求/生成可执行计划"
+      },
+      {
+        "id": "arch",
+        "mode": "primary",
+        "model": "step-3.5-flash-2603",
+        "role": "架构师 — 系统设计/技术选型/方案评审"
+      },
+      {
+        "id": "chat",
+        "mode": "primary",
+        "model": "step-3.5-flash",
+        "role": "对话模式 — 日常问答/知识查询/翻译总结"
+      },
+      {
+        "id": "marketing-coordinator",
+        "mode": "primary",
+        "model": "step-3.5-flash",
+        "role": "营销负责人 — 调研/规划/分配营销任务"
+      },
+      {
+        "id": "build",
+        "mode": "subagent",
+        "model": "step-3.5-flash",
+        "role": "代码构建器 — 代码生成/功能实现/测试"
+      },
+      {
+        "id": "explore",
+        "mode": "subagent",
+        "model": "step-3.5-flash",
+        "role": "代码搜索员 — 定位文件/函数/实现模式"
+      },
+      {
+        "id": "refactor",
+        "mode": "subagent",
+        "model": "step-3.5-flash",
+        "role": "重构器 — 代码优化/架构改进/模式重构"
+      }
+    ],
+    "removed": [
+      "ops-dispatcher→sisyphus",
+      "tech-architect→arch",
+      "tech-researcher→explore",
+      "marketing-auditor→marketing-coordinator"
+    ]
+  },
+  "nixos_setup": {
+    "openclaw_gateway": {
+      "status": "already running",
+      "service": "systemd user: openclaw-gateway.service",
+      "config": "~/.openclaw/openclaw.json",
+      "port": 18789,
+      "bind": "127.0.0.1"
+    },
+    "frpc": {
+      "proxy_name": "nixos-openclaw-gw",
+      "mapping": "127.0.0.1:18789 → 19893",
+      "service": "systemd user: frpc.service",
+      "frps_server": "192.168.2.100:7000"
+    },
+    "opencode_cli": {
+      "path": "~/.npm-global/bin/opencode",
+      "version": "1.14.48"
+    },
+    "litellm_proxy": {
+      "url": "http://localhost:4000",
+      "master_key": "sk-litellm-charlie-2026",
+      "models": [
+        "step-3.5-flash-2603",
+        "step-3.5-flash",
+        "glm-5.1",
+        "glm-5-turbo",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash"
+      ]
+    }
   }
 }
